@@ -1,0 +1,113 @@
+﻿@page "/groups"
+
+@using ExpensesBook.Model
+@inject ExpensesData ExpensesData
+
+<h3>Groups</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Group name</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var group in ExpensesData.Groups.OrderBy(g => g.Sort))
+        {
+            <tr>
+                <td>@group.Sort</td>
+                <td>
+                    @if (selectedGroup?.Id == group.Id)
+                    {
+                        <EditForm Model="selectedGroup" OnValidSubmit="UpdateGroup">
+
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <InputText id="name" @bind-Value="selectedGroup.Name" />
+
+                            <button type="submit">Сохранить</button>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        @group.Name
+                    }
+                </td>
+                <td>
+                    @if (selectedGroup?.Id == group.Id)
+                    {
+                        <button @onclick="CancelEdit">Отмена</button>
+                        <button @onclick="DeleteGroup">Удалить</button>
+                    }
+                    else
+                    {
+                        <button @onclick="@(_ => EditGroup(group))">Редактировать</button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3">
+                <EditForm Model="newGroup" OnValidSubmit="AddNewGroup">
+
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <InputText id="name" @bind-Value="newGroup.Name" />
+
+                    <button type="submit">Добавить</button>
+                </EditForm>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+@code {
+    private ExpensesGroupEdit newGroup = new ExpensesGroupEdit();
+    private ExpensesGroupEdit selectedGroup = null;
+
+    private void AddNewGroup()
+    {
+        if (ExpensesData.AddGroup(newGroup.Name))
+        {
+            newGroup.Name = string.Empty;
+        }
+    }
+
+    private void DeleteGroup()
+    {
+        if (selectedGroup == null) return;
+        if (ExpensesData.DeleteCategory(selectedGroup.Id.Value))
+        {
+            selectedGroup = null;
+        }
+    }
+
+    private void UpdateGroup()
+    {
+        if (selectedGroup == null) return;
+        if (ExpensesData.UpdateCategoryName(selectedGroup.Id.Value, selectedGroup.Name))
+        {
+            selectedGroup = null;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        selectedGroup = null;
+    }
+
+    private void EditGroup(ExpensesGroup group)
+    {
+        selectedGroup = new ExpensesGroupEdit
+        {
+            Id = group.Id,
+            Name = group.Name
+        };
+    }
+}

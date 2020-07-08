@@ -1,0 +1,36 @@
+﻿@page "/expensesfile"
+
+@using ExpensesBook.Model
+
+@inject ExpensesData ExpensesData
+@inject IJSRuntime JSRuntime
+
+<h4>Сохранить данные на диск</h4>
+
+<button @onclick="SaveToFile">Сохранить</button>
+<hr />
+<h4>Загрузить данные</h4>
+
+<input type="file" onchange="uploadFileJS(this)" />
+<input type="hidden" id="tempField" @onchange="@(e => ParseJson(e))" />
+<p style="color: green; margin-top:5px;">@message</p>
+<hr />
+
+@code {
+
+    private string message = string.Empty;
+
+    private async Task SaveToFile()
+    {
+        var str = ExpensesData.SerializeToJson();
+        await JSRuntime.InvokeAsync<object>("fileSaveAs", "ExpensesData.json", str);
+    }
+
+    private void ParseJson(ChangeEventArgs e)
+    {
+        var text = e.Value.ToString();
+        ExpensesData.DeserializeAndUpdateFromJson(text);
+
+        message = "Файл загружен";
+    }
+}

@@ -1,0 +1,114 @@
+﻿@page "/categories"
+
+@using ExpensesBook.Model
+@inject ExpensesData ExpensesData
+
+<h3>Categories</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Category name</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var cat in ExpensesData.Categories.OrderBy(c => c.Sort))
+        {
+            <tr>
+                <td>@cat.Sort</td>
+                <td>
+                    @if (selectedCategory?.Id == cat.Id)
+                    {
+                        <EditForm Model="selectedCategory" OnValidSubmit="UpdateCategory">
+
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <InputText id="name" @bind-Value="selectedCategory.Name" />
+
+                            <button type="submit">Сохранить</button>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        @cat.Name
+                    }
+                </td>
+                <td>
+                    @if (selectedCategory?.Id == cat.Id)
+                    {
+                        <button @onclick="CancelEdit">Отмена</button>
+                        <button @onclick="DeleteCategory">Удалить</button>
+                    }
+                    else
+                    {
+                        <button @onclick="@(_ => EditCategory(cat))">Редактировать</button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3">
+                <EditForm Model="newCategory" OnValidSubmit="AddNewCategory">
+
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <InputText id="name" @bind-Value="newCategory.Name" />
+
+                    <button type="submit">Добавить</button>
+                </EditForm>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+@code {   
+
+    private ExpensesCategoryEdit newCategory = new ExpensesCategoryEdit();
+    private ExpensesCategoryEdit selectedCategory = null;
+
+    private void AddNewCategory()
+    {
+        if (ExpensesData.AddCategory(newCategory.Name))
+        {
+            newCategory.Name = string.Empty;
+        }
+    }
+
+    private void DeleteCategory()
+    {
+        if (selectedCategory == null) return;
+        if (ExpensesData.DeleteCategory(selectedCategory.Id.Value))
+        {
+            selectedCategory = null;
+        }
+    }
+
+    private void UpdateCategory()
+    {
+        if (selectedCategory == null) return;
+        if(ExpensesData.UpdateCategoryName(selectedCategory.Id.Value, selectedCategory.Name))
+        {
+            selectedCategory = null;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        selectedCategory = null;
+    }
+
+    private void EditCategory(ExpensesCategory category)
+    {
+        selectedCategory = new ExpensesCategoryEdit
+        {
+            Id = category.Id,
+            Name = category.Name
+        };
+    }
+}
