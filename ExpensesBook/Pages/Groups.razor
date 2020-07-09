@@ -3,48 +3,41 @@
 @using ExpensesBook.Model
 @inject ExpensesData ExpensesData
 
-<h3>Groups</h3>
+<h3>Группы расходов</h3>
 
-<table>
+<table class="table table-striped">
     <thead>
         <tr>
             <th>#</th>
-            <th>Group name</th>
-            <th></th>
+            <th>Название</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var group in ExpensesData.Groups.OrderBy(g => g.Sort))
         {
             <tr>
-                <td>@group.Sort</td>
+                <td>@group.Sort)</td>
                 <td>
                     @if (selectedGroup?.Id == group.Id)
                     {
-                        <EditForm Model="selectedGroup" OnValidSubmit="UpdateGroup">
+                        <div class="form-inline">
+                            <EditForm Model="selectedGroup" OnValidSubmit="UpdateGroup">
 
-                            <DataAnnotationsValidator />
-                            <ValidationSummary />
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
 
-                            <InputText id="name" @bind-Value="selectedGroup.Name" />
+                                <InputText @bind-Value="selectedGroup.Name" />
 
-                            <button type="submit">Сохранить</button>
-                        </EditForm>
+                                <button type="submit" class="btn btn-sm btn-success">Сохранить</button>
+                            </EditForm>
+                            &nbsp;&nbsp;<button @onclick="DeleteGroup" class="btn btn-sm btn-danger">Удалить</button>
+                            &nbsp;&nbsp;<button @onclick="CancelEdit" class="btn btn-sm btn-secondary">Отмена</button>
+                        </div>
                     }
                     else
                     {
                         @group.Name
-                    }
-                </td>
-                <td>
-                    @if (selectedGroup?.Id == group.Id)
-                    {
-                        <button @onclick="CancelEdit">Отмена</button>
-                        <button @onclick="DeleteGroup">Удалить</button>
-                    }
-                    else
-                    {
-                        <button @onclick="@(_ => EditGroup(group))">Редактировать</button>
+                        <button @onclick="@(_ => EditGroup(group))" style="float:right" class="btn btn-sm btn-secondary">Редактировать</button>
                     }
                 </td>
             </tr>
@@ -58,9 +51,11 @@
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
-                    <InputText id="name" @bind-Value="newGroup.Name" />
-
-                    <button type="submit">Добавить</button>
+                    <div class="form-inline">
+                        <InputText class="form-control" @bind-Value="newGroup.Name" />
+                        &nbsp;&nbsp;
+                        <button type="submit" class="btn btn-success">Добавить</button>
+                    </div>
                 </EditForm>
             </td>
         </tr>
@@ -82,7 +77,7 @@
     private void DeleteGroup()
     {
         if (selectedGroup == null) return;
-        if (ExpensesData.DeleteCategory(selectedGroup.Id.Value))
+        if (ExpensesData.DeleteGroup(selectedGroup.Id.Value))
         {
             selectedGroup = null;
         }
@@ -91,7 +86,7 @@
     private void UpdateGroup()
     {
         if (selectedGroup == null) return;
-        if (ExpensesData.UpdateCategoryName(selectedGroup.Id.Value, selectedGroup.Name))
+        if (ExpensesData.UpdateGroupName(selectedGroup.Id.Value, selectedGroup.Name))
         {
             selectedGroup = null;
         }

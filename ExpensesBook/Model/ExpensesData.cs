@@ -10,15 +10,19 @@ namespace ExpensesBook.Model
         private readonly List<ExpensesCategory> _categories = new List<ExpensesCategory>();
         private readonly List<ExpensesGroup> _groups = new List<ExpensesGroup>();
         private readonly List<ExpenseItem> _expenses = new List<ExpenseItem>();
+        private readonly List<Limit> _limits = new List<Limit>();
+
         public ReadOnlyCollection<ExpensesCategory> Categories { get; private set; }
         public ReadOnlyCollection<ExpensesGroup> Groups { get; private set; }
         public ReadOnlyCollection<ExpenseItem> Expenses { get; private set; }
+        public ReadOnlyCollection<Limit> Limits { get; private set; }
 
         public ExpensesData() 
         {
             Categories = new ReadOnlyCollection<ExpensesCategory>(_categories);
             Groups = new ReadOnlyCollection<ExpensesGroup>(_groups);
             Expenses = new ReadOnlyCollection<ExpenseItem>(_expenses);
+            Limits = new ReadOnlyCollection<Limit>(_limits);
         }
         
         private class ExpensesDataSerializable
@@ -26,6 +30,7 @@ namespace ExpensesBook.Model
             public List<ExpensesCategory> Categories { get; set; }
             public List<ExpensesGroup> Groups { get; set; }
             public List<ExpenseItem> Expenses { get; set; }
+            public List<Limit> Limits { get; set; }
         }
 
         public string SerializeToJson()
@@ -34,7 +39,8 @@ namespace ExpensesBook.Model
             {
                 Categories = this.Categories.ToList(),
                 Groups = Groups.ToList(),
-                Expenses = Expenses.ToList()
+                Expenses = Expenses.ToList(),
+                Limits = Limits.ToList()
             };
             return System.Text.Json.JsonSerializer.Serialize(serializableData);
         }
@@ -44,13 +50,16 @@ namespace ExpensesBook.Model
             var deserializedData = System.Text.Json.JsonSerializer.Deserialize<ExpensesDataSerializable>(json);
             
             _categories.Clear();
-            _categories.AddRange(deserializedData.Categories);
+            _categories.AddRange(deserializedData?.Categories ?? Enumerable.Empty<ExpensesCategory>());
 
             _groups.Clear();
-            _groups.AddRange(deserializedData.Groups);
+            _groups.AddRange(deserializedData?.Groups ?? Enumerable.Empty<ExpensesGroup>());
 
             _expenses.Clear();
-            _expenses.AddRange(deserializedData.Expenses);
+            _expenses.AddRange(deserializedData?.Expenses ?? Enumerable.Empty<ExpenseItem>());
+
+            _limits.Clear();
+            _limits.AddRange(deserializedData?.Limits ?? Enumerable.Empty<Limit>());
         }
 
         public bool AddCategory(string categoryName)

@@ -3,48 +3,42 @@
 @using ExpensesBook.Model
 @inject ExpensesData ExpensesData
 
-<h3>Categories</h3>
+<h3>Категории расходов</h3>
 
-<table>
+<table class="table table-striped">
     <thead>
         <tr>
             <th>#</th>
-            <th>Category name</th>
-            <th></th>
+            <th>Название</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var cat in ExpensesData.Categories.OrderBy(c => c.Sort))
         {
             <tr>
-                <td>@cat.Sort</td>
+                <td>@cat.Sort)</td>
                 <td>
                     @if (selectedCategory?.Id == cat.Id)
                     {
+                    <div class="form-inline">
                         <EditForm Model="selectedCategory" OnValidSubmit="UpdateCategory">
 
                             <DataAnnotationsValidator />
                             <ValidationSummary />
 
-                            <InputText id="name" @bind-Value="selectedCategory.Name" />
+                            <InputText class="form-control" @bind-Value="selectedCategory.Name" />
+                                
+                            <button type="submit" class="btn btn-sm btn-success">Сохранить</button>
 
-                            <button type="submit">Сохранить</button>
                         </EditForm>
+                        &nbsp;&nbsp;<button @onclick="DeleteCategory" class="btn btn-sm btn-danger">Удалить</button>
+                        &nbsp;&nbsp;<button @onclick="CancelEdit" class="btn btn-sm btn-secondary">Отмена</button>
+                    </div>
                     }
                     else
                     {
                         @cat.Name
-                    }
-                </td>
-                <td>
-                    @if (selectedCategory?.Id == cat.Id)
-                    {
-                        <button @onclick="CancelEdit">Отмена</button>
-                        <button @onclick="DeleteCategory">Удалить</button>
-                    }
-                    else
-                    {
-                        <button @onclick="@(_ => EditCategory(cat))">Редактировать</button>
+                        <button @onclick="@(_ => EditCategory(cat))" style="float:right" class="btn btn-sm btn-secondary">Редактировать</button>
                     }
                 </td>
             </tr>
@@ -58,9 +52,11 @@
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
-                    <InputText id="name" @bind-Value="newCategory.Name" />
-
-                    <button type="submit">Добавить</button>
+                    <div class="form-inline">
+                        <InputText class="form-control" @bind-Value="newCategory.Name" />
+                        &nbsp;&nbsp;
+                        <button type="submit" class="btn btn-success">Добавить</button>
+                    </div>
                 </EditForm>
             </td>
         </tr>

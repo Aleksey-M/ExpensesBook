@@ -45,4 +45,13 @@ namespace ExpensesBook.Model
         public Guid? GroupId { get; set; }
         public Guid? CategoryId { get; set; }
     }
+
+    internal class Limit
+    {
+        public Guid Id { get; set; }
+        public string Description { get; set; }
+        public DateTimeOffset StartIncluded { get; set; }
+        public DateTimeOffset EndExcluded { get; set; }
+        public double LimitAmounth { get; set; }
+    }
 }
