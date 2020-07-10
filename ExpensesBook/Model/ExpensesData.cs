@@ -140,5 +140,86 @@ namespace ExpensesBook.Model
             return true;
         }
 
+        public bool AddExpenseItem(ExpenseItemDto expenseDto)
+        {
+            var expense = new ExpenseItem
+            {
+                Id = Guid.NewGuid(),
+                Description = expenseDto.Description,
+                Date = expenseDto.Date,
+                Amounth = expenseDto.Amounth,
+                CategoryId = Guid.Parse(expenseDto.CategoryId),
+                GroupId = expenseDto.GroupId == null ? (Guid?)null : Guid.Parse(expenseDto.GroupId)
+            };
+
+            _expenses.Add(expense);
+            return true;
+        }
+
+        public bool UpdateExpenseItem(ExpenseItemDto expenseDto)
+        {
+            var exp = Expenses.SingleOrDefault(e => e.Id.ToString() == expenseDto.Id);
+            if (exp == null) return false;
+
+            exp.Description = expenseDto.Description;
+            exp.Date = expenseDto.Date;
+            exp.Amounth = expenseDto.Amounth;
+            exp.CategoryId = string.IsNullOrEmpty(expenseDto.CategoryId) ? exp.CategoryId : Guid.Parse(expenseDto.CategoryId);
+            exp.GroupId = string.IsNullOrEmpty(expenseDto.GroupId) ? (Guid?)null : Guid.Parse(expenseDto.GroupId);
+
+            return true;
+        }
+
+        public bool DeleteExpenseItem(string guidId)
+        {
+            var exp = Expenses.SingleOrDefault(e => e.Id.ToString() == guidId);
+            if (exp == null) return false;
+
+            _expenses.Remove(exp);
+
+            return true;
+        }
+
+        public bool AddLimit(LimitDto limitDto)
+        {
+            if (limitDto.EndExcluded < limitDto.StartIncluded) return false;
+
+            var newLimit = new Limit
+            {
+                Id = Guid.NewGuid(),
+                Description = limitDto.Description,
+                LimitAmounth = limitDto.LimitAmounth,
+                StartIncluded = limitDto.StartIncluded,
+                EndExcluded = limitDto.EndExcluded
+            };
+
+            _limits.Add(newLimit);
+
+            return true;
+        }
+
+        public bool UpdateLimit(LimitDto limitDto)
+        {
+            var limit = Limits.SingleOrDefault(l => l.Id.ToString() == limitDto.Id);
+            if (limit == null) return false;
+
+            if (limitDto.EndExcluded < limitDto.StartIncluded) return false;
+
+            limit.Description = limitDto.Description;
+            limit.LimitAmounth = limitDto.LimitAmounth;
+            limit.StartIncluded = limitDto.StartIncluded;
+            limit.EndExcluded = limitDto.EndExcluded;
+
+            return true;
+        }
+
+        public bool DeleteLimit(string guidId)
+        {
+            var limit = Limits.SingleOrDefault(l => l.Id.ToString() == guidId);
+            if (limit == null) return false;
+
+            _limits.Remove(limit);
+            return true;
+        }
     }    
 }

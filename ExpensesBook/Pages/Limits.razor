@@ -1,0 +1,165 @@
+﻿@page "/limits"
+
+@using ExpensesBook.Model
+@inject ExpensesData Data
+
+<h3>Лимиты</h3>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Начало <i>(включительно)</i></th>
+            <th>Конец <i>(исключительно)</i></th>
+            <th>Описание</th>
+            <th>Лимит</th>
+            <th>Расходы</th>
+            <th>Превышение</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var (limit, actual, actualAmount) in AllLimits)
+        {
+
+            @if (selectedLimit?.Id != limit.Id.ToString())
+            {
+                <tr style="@(GetStyleForRow(limit, actual, actualAmount))">
+                    <td>@limit.StartIncluded.ToString("yyyy.MM.dd")</td>
+                    <td>@limit.EndExcluded.ToString("yyyy.MM.dd")</td>
+                    <td>@limit.Description</td>
+                    <td>@limit.LimitAmounth.ToString("N2")</td>
+                    <td>@actualAmount.ToString("N2")</td>
+                    <td>@(GetLimitExcess(limit, actualAmount)?.ToString("N2") ?? "")</td>
+                    <td><button @onclick="@(_ => EditLimit(limit))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button></td>
+                </tr>
+            }
+            else
+            {
+    <tr>
+        <td colspan="7">
+            <div class="form-inline">
+                <EditForm Model="selectedLimit" OnValidSubmit="UpdateLimit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <InputDate class="form-control" @bind-Value="selectedLimit.StartIncluded" />
+                    &nbsp;
+                    <InputDate class="form-control" @bind-Value="selectedLimit.EndExcluded" />
+                    &nbsp;
+                    <InputText class="form-control" @bind-Value="selectedLimit.Description" />
+                    &nbsp;
+                    <InputNumber class="form-control" step="0.01" style="width:105px" @bind-Value="selectedLimit.LimitAmounth" />
+                    &nbsp;
+                    <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
+                </EditForm>
+                &nbsp;<button @onclick="DeleteLimit" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                &nbsp;<button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
+            </div>
+        </td>
+    </tr>
+                }
+            
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="7">
+                <EditForm Model="newLimit" OnValidSubmit="AddNewLimit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-inline">
+                        <InputDate class="form-control" @bind-Value="newLimit.StartIncluded" />
+                        &nbsp;
+                        <InputDate class="form-control" @bind-Value="newLimit.EndExcluded" />
+                        &nbsp;
+                        <InputText class="form-control" @bind-Value="newLimit.Description" />
+                        &nbsp;
+                        <InputNumber class="form-control" step="0.01" style="width:105px" @bind-Value="newLimit.LimitAmounth" />
+                        &nbsp;
+                        <button type="submit" class="btn btn-success">Добавить</button>
+                    </div>
+                </EditForm>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+<p style="color: blue">*Лимиты с актуальным временным диапазоном</p>
+<p style="color: red">*Превышенные лимиты</p>
+<p style="color: indianred">*Превышенные лимиты с неактуальным временным диапазоном</p>
+
+@code {
+
+    private IEnumerable<(Limit limit, bool actual, double currentAmount)> AllLimits =>
+        Data.Limits.Select(l => (
+            limit: l,
+            actual: l.StartIncluded <= DateTimeOffset.Now && l.EndExcluded > DateTimeOffset.Now,
+            currentAmount: Data.Expenses.Where(e => e.Date >= l.StartIncluded && e.Date < l.EndExcluded).Select(e => e.Amounth).DefaultIfEmpty().Sum()))
+        .OrderBy(l => l.actual)
+        .ThenBy(l => l.limit.EndExcluded)
+        .ToList();
+
+    private string GetStyleForRow(Limit limit, bool actual, double actualAmount) => (actualAmount > limit.LimitAmounth, actual) switch
+    {
+        (true, false) => "color: indianred",
+        (true, true) => "color: red",
+        (false, true) => "color: blue",
+        (false, false) => ""
+    };
+
+    private double? GetLimitExcess(Limit limit, double actualAmount)
+    {
+        var delta = (limit.LimitAmounth - actualAmount);
+        if (delta >= 0) return null;
+        return -delta;
+    }
+
+    private LimitDto newLimit = new LimitDto();
+
+    private void AddNewLimit()
+    {
+        if (Data.AddLimit(newLimit))
+        {
+            newLimit = new LimitDto();
+        }
+    }
+
+    private LimitDto selectedLimit;
+
+    private void EditLimit(Limit limit)
+    {
+        selectedLimit = new LimitDto
+        {
+            Id = limit.Id.ToString(),
+            Description = limit.Description,
+            StartIncluded = limit.StartIncluded,
+            EndExcluded = limit.EndExcluded,
+            LimitAmounth = limit.LimitAmounth
+        };
+    }
+
+    private void UpdateLimit()
+    {
+        if (selectedLimit == null) return;
+        if (Data.UpdateLimit(selectedLimit))
+        {
+            selectedLimit = null;
+        }
+    }
+
+    public void DeleteLimit()
+    {
+        if (selectedLimit == null) return;
+        if (Data.DeleteLimit(selectedLimit.Id))
+        {
+            selectedLimit = null;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        selectedLimit = null;
+    }
+
+}

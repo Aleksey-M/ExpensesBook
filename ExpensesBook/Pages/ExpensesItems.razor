@@ -1,11 +1,202 @@
 ﻿@page "/expensesitems"
 
-<h3>Расходы</h3>
+@using ExpensesBook.Model
+@inject ExpensesData Data
+
+<h3>Текущие расходы</h3>
 
 <table class="table table-striped">
+    <thead>
+        <tr>
+            <td colspan="2">
+                <select class="form-control form-control-sm" @onchange="UpdateSelectedMonth">
+                    @foreach (var (year, month, monthName) in MonthsWithExpenses)
+                    {
+                        <option value="@($"{year}-{month}")" selected="@(year == _year && month == _month)" >@($"{year} {monthName}")</option>
+                    }
+                </select>
+            </td>
+            <td colspan="4"></td>
+        </tr>
+        <tr>
+            <th>Дата</th>
+            <th>Описание расходов</th>
+            <th>Потрачено</th>
+            <th>Категория расходов</th>
+            <th>Группа расходов</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var (exp, category, group) in CurrentExpenses)
+        {
+            <tr>
+                @if (selectedItem?.Id == exp.Id.ToString())
+                {
+                    <td colspan="6">
+                        <div class="form-inline">
+                            <EditForm Model="selectedItem" OnValidSubmit="UpdateItem">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
 
+                                <div class="form-inline">
+                                    <InputDate class="form-control" @bind-Value="selectedItem.Date" />
+                                    &nbsp;
+                                    <InputText class="form-control" @bind-Value="selectedItem.Description" />
+                                    &nbsp;
+                                    <InputNumber class="form-control" step="0.01" style="width:105px" @bind-Value="selectedItem.Amounth" />
+                                    &nbsp;
+                                    <InputSelect class="form-control" @bind-Value="selectedItem.CategoryId">
+                                        @foreach (var c in Data.Categories)
+                                                {
+                                            <option value="@c.Id.ToString()">@c.Name</option>
+                                                }
+                                    </InputSelect>
+                                    &nbsp;
+                                    <InputSelect class="form-control" @bind-Value="selectedItem.GroupId">
+                                        <option value="">группа не выбрана</option>
+                                        @foreach (var g in Data.Groups)
+                                                {
+                                            <option value="@g.Id.ToString()">@g.Name</option>
+                                                }
+                                    </InputSelect>
+                                    &nbsp;
+                                    <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
+                                </div>
+                            </EditForm>
+                            &nbsp;<button @onclick="DeleteItem" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                            &nbsp;<button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
+                        </div>
+                    </td>
+                }
+                else
+                {
+                    <td>@exp.Date.ToString("yyyy.MM.dd")</td>
+                    <td>@exp.Description</td>
+                    <td>@exp.Amounth.ToString("N2")</td>
+                    <td>@category</td>
+                    <td>@group</td>
+                    <td><button @onclick="@(_ => EditItem(exp))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button></td>
+                }
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="6">
+                <i>Всего потрачено: @CurrentExpenses.Select(c => c.item.Amounth).DefaultIfEmpty().Sum() грн.</i>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="6">
+                <EditForm Model="newExpense" OnValidSubmit="AddNewExpenseItem">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-inline">
+                        <InputDate class="form-control" @bind-Value="newExpense.Date" />
+                        &nbsp;
+                        <InputText class="form-control" @bind-Value="newExpense.Description" />
+                        &nbsp;
+                        <InputNumber class="form-control" step="0.01" style="width:105px" @bind-Value="newExpense.Amounth" />
+                        &nbsp;
+                        <InputSelect class="form-control" @bind-Value="newExpense.CategoryId">
+                            <option value="@Guid.Empty.ToString()"></option>
+                            @foreach (var c in Data.Categories)
+                            {
+                                <option value="@c.Id.ToString()">@c.Name</option>
+                            }
+                        </InputSelect>
+                        &nbsp;
+                        <InputSelect class="form-control" @bind-Value="newExpense.GroupId">
+                            <option value="">Группа не выбрана</option>
+                            @foreach (var g in Data.Groups)
+                            {
+                                <option value="@g.Id.ToString()">@g.Name</option>
+                            }
+                        </InputSelect>
+                        &nbsp;
+                        <button type="submit" class="btn btn-success">Добавить</button>
+                    </div>
+                </EditForm>
+            </td>
+        </tr>
+    </tfoot>
 </table>
 
 @code {
+    private ExpenseItemDto newExpense = new ExpenseItemDto();
 
+    private void AddNewExpenseItem()
+    {
+        if (Data.AddExpenseItem(newExpense))
+        {
+            newExpense = new ExpenseItemDto();
+        }
+    }
+
+    private IEnumerable<(ExpenseItem item, string category, string group)> CurrentExpenses => Data.Expenses
+        .Where(e => e.Date.Year == _year && e.Date.Month == _month)
+        .Join(Data.Categories,
+             e => e.CategoryId,
+             c => c.Id,
+             (e, c) => (e, c.Name, Data.Groups.SingleOrDefault(g => g.Id == (e.GroupId ?? Guid.Empty))?.Name))
+        .OrderBy(i => i.e.Date)
+        .ToList();
+
+
+    private IEnumerable<(int year, int month, string monthName)> MonthsWithExpenses => Data.Expenses
+        .Select(e => (e.Date.Year, e.Date.Month, e.Date.ToString("MMMM", System.Globalization.CultureInfo.CreateSpecificCulture("ru-RU"))))
+        .Distinct()
+        .OrderBy(ym => ym.Year).ThenBy(ym => ym.Month)
+        .ToList();
+
+
+    private ExpenseItemDto selectedItem;
+
+    private void EditItem(ExpenseItem item)
+    {
+        selectedItem = new ExpenseItemDto
+        {
+            Id = item.Id.ToString(),
+            Description = item.Description,
+            Date = item.Date,
+            Amounth = item.Amounth,
+            CategoryId = item.CategoryId.ToString(),
+            GroupId = item.GroupId?.ToString()
+        };
+    }
+
+    private void UpdateItem()
+    {
+        if (selectedItem == null) return;
+        if (Data.UpdateExpenseItem(selectedItem))
+        {
+            selectedItem = null;
+        }
+    }
+
+    public void DeleteItem()
+    {
+        if (selectedItem == null) return;
+        if (Data.DeleteExpenseItem(selectedItem.Id))
+        {
+            selectedItem = null;
+        }
+    }
+
+    private void CancelEdit()
+    {
+        selectedItem = null;
+    }
+
+    private int _year = DateTimeOffset.Now.Year;
+    private int _month = DateTimeOffset.Now.Month;
+
+    private void UpdateSelectedMonth(ChangeEventArgs e)
+    {
+        var values = e.Value.ToString().Split("-");
+        (_year, _month) = (int.Parse(values[0]), int.Parse(values[1]));
+        StateHasChanged();
+    }
 }

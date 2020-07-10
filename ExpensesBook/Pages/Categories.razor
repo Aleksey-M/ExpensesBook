@@ -1,7 +1,7 @@
 ﻿@page "/categories"
 
 @using ExpensesBook.Model
-@inject ExpensesData ExpensesData
+@inject ExpensesData Data
 
 <h3>Категории расходов</h3>
 
@@ -13,7 +13,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var cat in ExpensesData.Categories.OrderBy(c => c.Sort))
+        @foreach (var (cat, canBeDeleted) in AllCategories)
         {
             <tr>
                 <td>@cat.Sort)</td>
@@ -28,17 +28,17 @@
 
                             <InputText class="form-control" @bind-Value="selectedCategory.Name" />
                                 
-                            <button type="submit" class="btn btn-sm btn-success">Сохранить</button>
+                            <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
 
                         </EditForm>
-                        &nbsp;&nbsp;<button @onclick="DeleteCategory" class="btn btn-sm btn-danger">Удалить</button>
-                        &nbsp;&nbsp;<button @onclick="CancelEdit" class="btn btn-sm btn-secondary">Отмена</button>
+                        &nbsp;<button @onclick="DeleteCategory" class="btn btn-sm btn-danger" title="Удалить" disabled="@canBeDeleted"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                        &nbsp;<button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
                     </div>
                     }
                     else
                     {
                         @cat.Name
-                        <button @onclick="@(_ => EditCategory(cat))" style="float:right" class="btn btn-sm btn-secondary">Редактировать</button>
+                        <button @onclick="@(_ => EditCategory(cat))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button>
                     }
                 </td>
             </tr>
@@ -70,7 +70,7 @@
 
     private void AddNewCategory()
     {
-        if (ExpensesData.AddCategory(newCategory.Name))
+        if (Data.AddCategory(newCategory.Name))
         {
             newCategory.Name = string.Empty;
         }
@@ -79,7 +79,7 @@
     private void DeleteCategory()
     {
         if (selectedCategory == null) return;
-        if (ExpensesData.DeleteCategory(selectedCategory.Id.Value))
+        if (Data.DeleteCategory(selectedCategory.Id.Value))
         {
             selectedCategory = null;
         }
@@ -88,7 +88,7 @@
     private void UpdateCategory()
     {
         if (selectedCategory == null) return;
-        if(ExpensesData.UpdateCategoryName(selectedCategory.Id.Value, selectedCategory.Name))
+        if(Data.UpdateCategoryName(selectedCategory.Id.Value, selectedCategory.Name))
         {
             selectedCategory = null;
         }
@@ -107,4 +107,11 @@
             Name = category.Name
         };
     }
+
+    private IEnumerable<(ExpensesCategory category, bool canBeDeleted)> AllCategories =>
+        Data.Categories
+        .OrderBy(c => c.Sort)
+        .Select(c => (c, Data.Expenses.Any(i => i.CategoryId == c.Id)))
+        .ToList();
+
 }

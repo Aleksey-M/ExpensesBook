@@ -26,18 +26,18 @@
                                 <DataAnnotationsValidator />
                                 <ValidationSummary />
 
-                                <InputText @bind-Value="selectedGroup.Name" />
+                                <InputText class="form-control" @bind-Value="selectedGroup.Name" />
 
-                                <button type="submit" class="btn btn-sm btn-success">Сохранить</button>
+                                <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
                             </EditForm>
-                            &nbsp;&nbsp;<button @onclick="DeleteGroup" class="btn btn-sm btn-danger">Удалить</button>
-                            &nbsp;&nbsp;<button @onclick="CancelEdit" class="btn btn-sm btn-secondary">Отмена</button>
+                            &nbsp;<button @onclick="DeleteGroup" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                            &nbsp;<button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
                         </div>
                     }
                     else
                     {
                         @group.Name
-                        <button @onclick="@(_ => EditGroup(group))" style="float:right" class="btn btn-sm btn-secondary">Редактировать</button>
+                        <button @onclick="@(_ => EditGroup(group))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button>
                     }
                 </td>
             </tr>
