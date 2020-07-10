@@ -5,4 +5,208 @@
 
 <h3>Книга расходов</h3>
 
+<hr />
+@if (!Data.Expenses.Any())
+{
+    <h2>Нет данных</h2>
+}
+else
+{
+    <h4 style="color:blue">Расходы за год по категориям</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th></th>
+                @foreach (var str in _yearExpensesByCategories[0].cellContent)
+                {
+                    <th>@str</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 1; i < _yearExpensesByCategories.Count; i++)
+            {
+                <tr>
+                    <th>@_yearExpensesByCategories[i].rowCaption</th>
 
+                    @foreach (var str in _yearExpensesByCategories[i].cellContent)
+                    {
+                        <td>@str</td>
+                    }
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Всего</th>
+                @for (int i = 0; i < _yearExpensesByCategories[0].cellContent.Count(); i++)
+                {
+                    <td>@_yearExpensesByCategories.Skip(1).Select(c => double.Parse(c.cellContent[i])).DefaultIfEmpty().Sum().ToString("N2")</td>
+                }
+            </tr>
+        </tfoot>
+    </table>
+
+    <hr />
+    <h4 style="color:blue">Расходы за год по группам</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th></th>
+                @foreach (var str in _yearExpensesByGroups[0].cellContent)
+                {
+                    <th>@str</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 1; i < _yearExpensesByGroups.Count; i++)
+            {
+                <tr>
+                    <th>@_yearExpensesByGroups[i].rowCaption</th>
+
+                    @foreach (var str in _yearExpensesByGroups[i].cellContent)
+                    {
+                        <td>@str</td>
+                    }
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Всего</th>
+                @for (int i = 0; i < _yearExpensesByGroups[0].cellContent.Count(); i++)
+                {
+                    <td>@_yearExpensesByGroups.Skip(1).Select(c => double.Parse(c.cellContent[i])).DefaultIfEmpty().Sum().ToString("N2")</td>
+                }
+            </tr>
+        </tfoot>
+    </table>
+
+    <hr />
+    <h4 style="color:blue">Актуальные лимиты</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Начало <i>(включительно)</i></th>
+                <th>Конец <i>(исключительно)</i></th>
+                <th>Описание</th>
+                <th>Лимит</th>
+                <th>Расходы</th>
+                <th>Превышение</th>
+                <th>Остаток</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var (limit, spent, left) in ActualLimits)
+            {
+                <tr>
+                    <td>@limit.StartIncluded.ToString("yyyy.MM.dd")</td>
+                    <td>@limit.EndExcluded.ToString("yyyy.MM.dd")</td>
+                    <td>@limit.Description</td>
+                    <td>@limit.LimitAmounth.ToString("N2")</td>
+                    <td>@spent.ToString("N2")</td>
+                    <td>@(left < 0 ? (-left).ToString("N2") : "")</td>
+                    <td>@(left >= 0 ? left.ToString("N2") : "")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+}
+@code{
+
+    private int _year = DateTimeOffset.Now.Year;
+
+    private List<(string rowCaption, List<string> cellContent)> _yearExpensesByCategories;
+
+    private List<(int month, string name)> Months => Data.Expenses
+            .Where(e => e.Date.Year == _year)
+            .Select(e => (month: e.Date.Month, name: e.Date.ToString("MMMM", System.Globalization.CultureInfo.CreateSpecificCulture("ru-RU"))))
+            .Distinct().OrderBy(m => m.month).ToList();
+
+    private List<(string rowCaption, List<string> cellContent)> GetYearExpensesByCategories()
+    {
+        var months = Months;
+
+        var result = new List<(string, List<string>)>();
+        result.Add((string.Empty, months.Select(m => m.name).ToList()));
+
+        foreach (var c in Data.Categories.OrderBy(c => c.Sort))
+        {
+            var values = new List<string>();
+
+            foreach (var m in months)
+            {
+                var amountForMonth = Data.Expenses
+                    .Where(e => e.Date.Year == _year && e.Date.Month == m.month && e.CategoryId == c.Id)
+                    .Select(e => e.Amounth)
+                    .DefaultIfEmpty()
+                    .Sum();
+
+                values.Add(amountForMonth.ToString("N2"));
+            }
+
+            result.Add((c.Name, values));
+        }
+
+        return result;
+    }
+
+    private List<(string rowCaption, List<string> cellContent)> _yearExpensesByGroups;
+
+    private List<(string rowCaption, List<string> cellContent)> GetYearExpensesByGroups()
+    {
+        var months = Months;
+
+        var result = new List<(string, List<string>)>();
+        result.Add((string.Empty, months.Select(m => m.name).ToList()));
+
+        var values = new List<string>();
+        foreach (var m in months)
+        {
+            var amountForMonth = Data.Expenses
+                .Where(e => e.Date.Year == _year && e.Date.Month == m.month && e.GroupId == null)
+                .Select(e => e.Amounth)
+                .DefaultIfEmpty()
+                .Sum();
+
+            values.Add(amountForMonth.ToString("N2"));
+        }
+        result.Add(("Без группы", values));
+
+        foreach (var g in Data.Groups.OrderBy(g => g.Sort))
+        {
+            values = new List<string>();
+
+            foreach (var m in months)
+            {
+                var amountForMonth = Data.Expenses
+                    .Where(e => e.Date.Year == _year && e.Date.Month == m.month && e.GroupId == g.Id)
+                    .Select(e => e.Amounth)
+                    .DefaultIfEmpty()
+                    .Sum();
+
+                values.Add(amountForMonth.ToString("N2"));
+            }
+
+            result.Add((g.Name, values));
+        }
+
+        return result;
+    }
+
+    private IEnumerable<(Limit limit, double spent, double left)> ActualLimits =>
+        Data.Limits.Select(l => (
+            limit: l,
+            currentAmount: Data.Expenses.Where(e => e.Date >= l.StartIncluded && e.Date < l.EndExcluded).Select(e => e.Amounth).DefaultIfEmpty().Sum()))
+        .Select(l => (l.limit, l.currentAmount, l.limit.LimitAmounth - l.currentAmount))
+        .OrderBy(l => l.limit.EndExcluded)
+        .ToList();
+
+    protected override void OnInitialized()
+    {
+        _yearExpensesByCategories = GetYearExpensesByCategories();
+        _yearExpensesByGroups = GetYearExpensesByGroups();
+    }
+}
