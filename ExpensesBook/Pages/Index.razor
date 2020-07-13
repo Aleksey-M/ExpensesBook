@@ -147,7 +147,10 @@ else
                 values.Add(amountForMonth.ToString("N2"));
             }
 
-            result.Add((c.Name, values));
+            if(values.Any(s => double.Parse(s) > 0))
+            {
+                result.Add((c.Name, values));
+            }
         }
 
         return result;
@@ -173,7 +176,10 @@ else
 
             values.Add(amountForMonth.ToString("N2"));
         }
-        result.Add(("Без группы", values));
+        if(values.Any(s => double.Parse(s) > 0))
+        {
+            result.Add(("Без группы", values));
+        }
 
         foreach (var g in Data.Groups.OrderBy(g => g.Sort))
         {
@@ -190,7 +196,10 @@ else
                 values.Add(amountForMonth.ToString("N2"));
             }
 
-            result.Add((g.Name, values));
+            if (values.Any(s => double.Parse(s) > 0))
+            {
+                result.Add((g.Name, values));
+            }
         }
 
         return result;
