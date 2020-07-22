@@ -81,6 +81,10 @@
     private async Task DeleteCategory()
     {
         if (selectedCategory == null) return;
+
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить категорию?");
+        if (!confirmed) return;
+
         if (Data.DeleteCategory(selectedCategory.Id.Value))
         {
             selectedCategory = null;

@@ -79,6 +79,10 @@
     private async Task DeleteGroup()
     {
         if (selectedGroup == null) return;
+
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить группу?");
+        if (!confirmed) return;
+
         if (ExpensesData.DeleteGroup(selectedGroup.Id.Value))
         {
             selectedGroup = null;

@@ -182,6 +182,10 @@
     public async Task DeleteItem()
     {
         if (selectedItem == null) return;
+
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить запись?");
+        if (!confirmed) return;
+
         if (Data.DeleteExpenseItem(selectedItem.Id))
         {
             selectedItem = null;

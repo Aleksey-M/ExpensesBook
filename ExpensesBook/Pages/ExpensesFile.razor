@@ -32,6 +32,13 @@
 
     private async Task ParseJson(ChangeEventArgs e)
     {
+        bool saved = await JSRuntime.InvokeAsync<bool>("getSavedValue");
+        if (!saved)
+        {
+            bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Загрузка перезапишет несохраненные изменения. Продолжить?");
+            if (!confirmed) return;
+        }
+
         var text = e.Value.ToString();
         ExpensesData.DeserializeAndUpdateFromJson(text);
 

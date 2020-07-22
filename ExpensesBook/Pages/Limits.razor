@@ -154,6 +154,10 @@
     public async Task DeleteLimit()
     {
         if (selectedLimit == null) return;
+
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить лимит?");
+        if (!confirmed) return;
+
         if (Data.DeleteLimit(selectedLimit.Id))
         {
             selectedLimit = null;

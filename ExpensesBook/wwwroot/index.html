@@ -36,6 +36,10 @@
             document.getElementById("changesSaved").value = "false";
         }
 
+        function getSavedValue() {
+            return document.getElementById("changesSaved").value === "true";
+        }
+
         (function () {
 
             window.onbeforeunload = function () {
