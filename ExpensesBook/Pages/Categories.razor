@@ -2,6 +2,7 @@
 
 @using ExpensesBook.Model
 @inject ExpensesData Data
+@inject IJSRuntime JSRuntime 
 
 <h3>Категории расходов</h3>
 
@@ -68,29 +69,32 @@
     private ExpensesCategoryEdit newCategory = new ExpensesCategoryEdit();
     private ExpensesCategoryEdit selectedCategory = null;
 
-    private void AddNewCategory()
+    private async Task AddNewCategory()
     {
         if (Data.AddCategory(newCategory.Name))
         {
             newCategory.Name = string.Empty;
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 
-    private void DeleteCategory()
+    private async Task DeleteCategory()
     {
         if (selectedCategory == null) return;
         if (Data.DeleteCategory(selectedCategory.Id.Value))
         {
             selectedCategory = null;
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 
-    private void UpdateCategory()
+    private async Task UpdateCategory()
     {
         if (selectedCategory == null) return;
         if(Data.UpdateCategoryName(selectedCategory.Id.Value, selectedCategory.Name))
         {
             selectedCategory = null;
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 

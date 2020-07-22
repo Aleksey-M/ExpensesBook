@@ -15,7 +15,7 @@
     <label for="sFile" class="btn btn-lg btn-warning"><span class="oi oi-cloud-upload" aria-hidden="true"></span> Загрузить</label>
     <input type="file" accept=".json" id="sFile" style="visibility:hidden;" onchange="uploadFileJS(this)" />
 </div>
-<input type="hidden" id="tempField" @onchange="@(e => ParseJson(e))" />
+<input type="hidden" id="tempField" @onchange="@(async e => await ParseJson(e))" />
 <p style="color: green; margin-top:5px;">@message</p>
 <hr />
 
@@ -27,13 +27,15 @@
     {
         var str = ExpensesData.SerializeToJson();
         await JSRuntime.InvokeAsync<object>("fileSaveAs", "ExpensesData.json", str);
+        await JSRuntime.InvokeVoidAsync("setSaved");
     }
 
-    private void ParseJson(ChangeEventArgs e)
+    private async Task ParseJson(ChangeEventArgs e)
     {
         var text = e.Value.ToString();
         ExpensesData.DeserializeAndUpdateFromJson(text);
 
         message = "Файл загружен";
+        await JSRuntime.InvokeVoidAsync("setSaved");
     }
 }

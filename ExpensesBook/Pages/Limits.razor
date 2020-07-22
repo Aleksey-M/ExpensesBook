@@ -2,6 +2,7 @@
 
 @using ExpensesBook.Model
 @inject ExpensesData Data
+@inject IJSRuntime JSRuntime
 
 <h3>Лимиты</h3>
 
@@ -117,11 +118,12 @@
 
     private LimitDto newLimit = new LimitDto();
 
-    private void AddNewLimit()
+    private async Task AddNewLimit()
     {
         if (Data.AddLimit(newLimit))
         {
             newLimit = new LimitDto();
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 
@@ -139,21 +141,23 @@
         };
     }
 
-    private void UpdateLimit()
+    private async Task UpdateLimit()
     {
         if (selectedLimit == null) return;
         if (Data.UpdateLimit(selectedLimit))
         {
             selectedLimit = null;
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 
-    public void DeleteLimit()
+    public async Task DeleteLimit()
     {
         if (selectedLimit == null) return;
         if (Data.DeleteLimit(selectedLimit.Id))
         {
             selectedLimit = null;
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 

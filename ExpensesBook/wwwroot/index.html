@@ -10,7 +10,6 @@
     <link href="css/app.css" rel="stylesheet" />
     <link href="manifest.json" rel="manifest" />
     <link rel="apple-touch-icon" sizes="512x512" href="icon.png" />
-
     <script src="SaveFile.js"></script>
 </head>
 
@@ -25,6 +24,32 @@
     
     <script src="_framework/blazor.webassembly.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
+
+    <input type="hidden" id="changesSaved" value="true" />
+    <script>
+
+        function setSaved() {
+            document.getElementById("changesSaved").value = "true";
+        }
+
+        function setUnsaved() {
+            document.getElementById("changesSaved").value = "false";
+        }
+
+        (function () {
+
+            window.onbeforeunload = function () {
+                let saved = document.getElementById("changesSaved").value;
+                if (saved === "true") {
+                    return null;
+                }
+                else {
+                    return 'Are you sure you want to leave?';
+                }
+            };
+
+        })();
+    </script>
 </body>
 
 </html>

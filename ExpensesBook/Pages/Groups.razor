@@ -2,6 +2,7 @@
 
 @using ExpensesBook.Model
 @inject ExpensesData ExpensesData
+@inject IJSRuntime JSRuntime 
 
 <h3>Группы расходов</h3>
 
@@ -66,29 +67,32 @@
     private ExpensesGroupEdit newGroup = new ExpensesGroupEdit();
     private ExpensesGroupEdit selectedGroup = null;
 
-    private void AddNewGroup()
+    private async Task AddNewGroup()
     {
         if (ExpensesData.AddGroup(newGroup.Name))
         {
             newGroup.Name = string.Empty;
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 
-    private void DeleteGroup()
+    private async Task DeleteGroup()
     {
         if (selectedGroup == null) return;
         if (ExpensesData.DeleteGroup(selectedGroup.Id.Value))
         {
             selectedGroup = null;
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 
-    private void UpdateGroup()
+    private async Task UpdateGroup()
     {
         if (selectedGroup == null) return;
         if (ExpensesData.UpdateGroupName(selectedGroup.Id.Value, selectedGroup.Name))
         {
             selectedGroup = null;
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 

@@ -2,6 +2,7 @@
 
 @using ExpensesBook.Model
 @inject ExpensesData Data
+@inject IJSRuntime JSRuntime 
 
 <h3>Текущие расходы</h3>
 
@@ -127,11 +128,12 @@
 @code {
     private ExpenseItemDto newExpense = new ExpenseItemDto();
 
-    private void AddNewExpenseItem()
+    private async Task AddNewExpenseItem()
     {
         if (Data.AddExpenseItem(newExpense))
         {
             newExpense = new ExpenseItemDto();
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 
@@ -167,21 +169,23 @@
         };
     }
 
-    private void UpdateItem()
+    private async Task UpdateItem()
     {
         if (selectedItem == null) return;
         if (Data.UpdateExpenseItem(selectedItem))
         {
             selectedItem = null;
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 
-    public void DeleteItem()
+    public async Task DeleteItem()
     {
         if (selectedItem == null) return;
         if (Data.DeleteExpenseItem(selectedItem.Id))
         {
             selectedItem = null;
+            await JSRuntime.InvokeVoidAsync("setUnsaved");
         }
     }
 
