@@ -1,221 +1,192 @@
 ﻿@page "/"
 
 @using ExpensesBook.Model
-@inject ExpensesData Data
+@inject Calculator Calc
 
 <h3>Книга расходов</h3>
-
 <hr />
-@if (!Data.Expenses.Any())
-{
-    <h2>Нет данных</h2>
-}
-else
-{
-    <h4 style="color:blue">Расходы за год по категориям</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th></th>
-                @foreach (var str in _yearExpensesByCategories[0].cellContent)
-                {
-                    <th>@str</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            @for (int i = 1; i < _yearExpensesByCategories.Count; i++)
-            {
-                <tr>
-                    <th>@_yearExpensesByCategories[i].rowCaption</th>
+<div class="row">
+    <div class="col-3">
+        <input type="date" id="startDate" class="form-control" @bind-value="_startDate" />
+    </div>
+    <div class="col-3">
+        <input type="date" id="endDate" class="form-control" @bind-value="_endDate" />
+    </div>
+    <div class="col-4">
+        <select id="viewType" class="form-control" @bind="_viewType">
+            <option selected value="@ViewType.Default">Без группировки</option>
+            <option value="@ViewType.ByDate">Сгруппировать по дате</option>
+            <option value="@ViewType.ByGroup">Сгруппировать по группе</option>
+            <option value="@ViewType.ByCategory">Сгруппировать по категории</option>
+            <option value="@ViewType.Limits">Актуальные лимиты</option>
+        </select>
+    </div>
+    <div class="col-2">
+        <label for="viewType"></label>
+        <button type="button" class="btn btn-info" @onclick="ShowTable">Показать</button>
+    </div>
+</div>
 
-                    @foreach (var str in _yearExpensesByCategories[i].cellContent)
+<br />
+
+<div class="row">
+    <div class="col-12">
+        @if (_ungroupedItems != null)
+        {
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Описание</th>
+                        <th>Потрачено</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _ungroupedItems)
                     {
-                        <td>@str</td>
+                        <tr>
+                            <td>@item.Date.ToString("yyyy.MM.dd")</td>
+                            <td>@item.Description</td>
+                            <td>@item.Amounth.ToString("N2")</td>
+                        </tr>
                     }
-                </tr>
-            }
-        </tbody>
-        <tfoot>
-            <tr>
-                <th>Всего</th>
-                @for (int i = 0; i < _yearExpensesByCategories[0].cellContent.Count(); i++)
-                {
-                    <td>@_yearExpensesByCategories.Skip(1).Select(c => double.Parse(c.cellContent[i])).DefaultIfEmpty().Sum().ToString("N2")</td>
-                }
-            </tr>
-        </tfoot>
-    </table>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3">
+                            Всего: @_total
+                        </th>
+                    </tr>
+                </tfoot>
+            </table>
+        }
 
-    <hr />
-    <h4 style="color:blue">Расходы за год по группам</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th></th>
-                @foreach (var str in _yearExpensesByGroups[0].cellContent)
-                {
-                    <th>@str</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            @for (int i = 1; i < _yearExpensesByGroups.Count; i++)
-            {
-                <tr>
-                    <th>@_yearExpensesByGroups[i].rowCaption</th>
-
-                    @foreach (var str in _yearExpensesByGroups[i].cellContent)
+        @if (ActualDataSet != null)
+        {
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>
+                            @((_groupedByDate != null, _groupedByGroup != null, _groupedByCategory != null) switch
                     {
-                        <td>@str</td>
+                        (true, false, false) => "Дата",
+                        (false, true, false) => "Группа",
+                        (false, false, true) => "Категория",
+                        _ => "",
+                    })
+                        </th>
+                        <th>Потрачено</th>
+                        <th>%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in ActualDataSet)
+                    {
+                        <tr>
+                            <td>@item.Item1</td>
+                            <td>@item.Item2</td>
+                            <td>@item.Item3</td>
+                        </tr>
                     }
-                </tr>
-            }
-        </tbody>
-        <tfoot>
-            <tr>
-                <th>Всего</th>
-                @for (int i = 0; i < _yearExpensesByGroups[0].cellContent.Count(); i++)
-                {
-                    <td>@_yearExpensesByGroups.Skip(1).Select(c => double.Parse(c.cellContent[i])).DefaultIfEmpty().Sum().ToString("N2")</td>
-                }
-            </tr>
-        </tfoot>
-    </table>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3">
+                            Всего: @_total
+                        </th>
+                    </tr>
+                </tfoot>
+            </table>
+        }
 
-    <hr />
-    <h4 style="color:blue">Актуальные лимиты</h4>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Начало <i>(включительно)</i></th>
-                <th>Конец <i>(исключительно)</i></th>
-                <th>Описание</th>
-                <th>Лимит</th>
-                <th>Расходы</th>
-                <th>Превышение</th>
-                <th>Остаток</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var (limit, spent, left) in ActualLimits)
-            {
-                <tr>
-                    <td>@limit.StartIncluded.ToString("yyyy.MM.dd")</td>
-                    <td>@limit.EndExcluded.ToString("yyyy.MM.dd")</td>
-                    <td>@limit.Description</td>
-                    <td>@limit.LimitAmounth.ToString("N2")</td>
-                    <td>@spent.ToString("N2")</td>
-                    <td>@(left < 0 ? (-left).ToString("N2") : "")</td>
-                    <td>@(left >= 0 ? left.ToString("N2") : "")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+        @if (_actualLimits != null)
+        {
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>Период</th>
+                        <th>Описание</th>
+                        <th>Лимит</th>
+                        <th>Потрачено</th>
+                        <th>Остаток</th>
+                        <th>Превышение</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in _actualLimits)
+                    {
+                    <tr>
+                        <td>@item.datesRange</td>
+                        <td>@item.description</td>
+                        <td>@item.limit</td>
+                        <td>@item.spent</td>
+                        <td>@item.left</td>
+                        <td>@item.deficit</td>
+                    </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="6">
+                            <i>Выведены лимиты, в которые попали расходы из выбранного диапазона дат. Для расчета показателей лимита используются только те расходы, которые попали в выбранный диапазон</i>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        }
+    </div>
+</div>
 
-}
-@code{
 
-    private int _year = DateTimeOffset.Now.Year;
+@code {
+    private DateTimeOffset _startDate = DateTimeOffset.Now.Date.AddDays(-7);
+    private DateTimeOffset _endDate = DateTimeOffset.Now.Date.AddDays(7);
+    private ViewType _viewType;
 
-    private List<(string rowCaption, List<string> cellContent)> _yearExpensesByCategories;
+    private List<ExpenseItem> _ungroupedItems;
+    private List<(string date, string value, string percent)> _groupedByDate;
+    private List<(string group, string value, string percent)> _groupedByGroup;
+    private List<(string category, string value, string percent)> _groupedByCategory;
+    private List<(string datesRange, string description, string limit, string spent, string left, string deficit)> _actualLimits;
+    private string _total;
 
-    private List<(int month, string name)> Months => Data.Expenses
-            .Where(e => e.Date.Year == _year)
-            .Select(e => (month: e.Date.Month, name: e.Date.ToString("MMMM", System.Globalization.CultureInfo.CreateSpecificCulture("ru-RU"))))
-            .Distinct().OrderBy(m => m.month).ToList();
+    private List<(string, string, string)> ActualDataSet => _groupedByDate ?? _groupedByGroup ?? _groupedByCategory;
 
-    private List<(string rowCaption, List<string> cellContent)> GetYearExpensesByCategories()
+    private void ShowTable()
     {
-        var months = Months;
+        _ungroupedItems = null;
+        _groupedByGroup = null;
+        _groupedByCategory = null;
+        _groupedByDate = null;
+        _actualLimits = null;
 
-        var result = new List<(string, List<string>)>();
-        result.Add((string.Empty, months.Select(m => m.name).ToList()));
-
-        foreach (var c in Data.Categories.OrderBy(c => c.Sort))
+        if(_viewType != ViewType.Limits)
         {
-            var values = new List<string>();
-
-            foreach (var m in months)
-            {
-                var amountForMonth = Data.Expenses
-                    .Where(e => e.Date.Year == _year && e.Date.Month == m.month && e.CategoryId == c.Id)
-                    .Select(e => e.Amounth)
-                    .DefaultIfEmpty()
-                    .Sum();
-
-                values.Add(amountForMonth.ToString("N2"));
-            }
-
-            if(values.Any(s => double.Parse(s) > 0))
-            {
-                result.Add((c.Name, values));
-            }
+            _total = Calc.GetTotal(_startDate, _endDate).ToString("N2");
         }
 
-        return result;
-    }
-
-    private List<(string rowCaption, List<string> cellContent)> _yearExpensesByGroups;
-
-    private List<(string rowCaption, List<string> cellContent)> GetYearExpensesByGroups()
-    {
-        var months = Months;
-
-        var result = new List<(string, List<string>)>();
-        result.Add((string.Empty, months.Select(m => m.name).ToList()));
-
-        var values = new List<string>();
-        foreach (var m in months)
+        switch (_viewType)
         {
-            var amountForMonth = Data.Expenses
-                .Where(e => e.Date.Year == _year && e.Date.Month == m.month && e.GroupId == null)
-                .Select(e => e.Amounth)
-                .DefaultIfEmpty()
-                .Sum();
+            case ViewType.ByDate:
+                _groupedByDate = Calc.GetGroupedByDate(_startDate, _endDate);
+                break;
 
-            values.Add(amountForMonth.ToString("N2"));
+            case ViewType.ByGroup:
+                _groupedByGroup = Calc.GetGroupedByGroup(_startDate, _endDate);
+                break;
+
+            case ViewType.ByCategory:
+                _groupedByCategory = Calc.GetGroupedByCategory(_startDate, _endDate);
+                break;
+
+            case ViewType.Limits:
+                _actualLimits = Calc.GetActualLimits(_startDate, _endDate);
+                break;
+
+            case ViewType.Default:
+            default:
+                _ungroupedItems = Calc.GetRange(_startDate, _endDate);
+                break;
         }
-        if(values.Any(s => double.Parse(s) > 0))
-        {
-            result.Add(("Без группы", values));
-        }
-
-        foreach (var g in Data.Groups.OrderBy(g => g.Sort))
-        {
-            values = new List<string>();
-
-            foreach (var m in months)
-            {
-                var amountForMonth = Data.Expenses
-                    .Where(e => e.Date.Year == _year && e.Date.Month == m.month && e.GroupId == g.Id)
-                    .Select(e => e.Amounth)
-                    .DefaultIfEmpty()
-                    .Sum();
-
-                values.Add(amountForMonth.ToString("N2"));
-            }
-
-            if (values.Any(s => double.Parse(s) > 0))
-            {
-                result.Add((g.Name, values));
-            }
-        }
-
-        return result;
-    }
-
-    private IEnumerable<(Limit limit, double spent, double left)> ActualLimits =>
-        Data.Limits.Select(l => (
-            limit: l,
-            currentAmount: Data.Expenses.Where(e => e.Date >= l.StartIncluded && e.Date < l.EndExcluded).Select(e => e.Amounth).DefaultIfEmpty().Sum()))
-        .Select(l => (l.limit, l.currentAmount, l.limit.LimitAmounth - l.currentAmount))
-        .OrderBy(l => l.limit.EndExcluded)
-        .ToList();
-
-    protected override void OnInitialized()
-    {
-        _yearExpensesByCategories = GetYearExpensesByCategories();
-        _yearExpensesByGroups = GetYearExpensesByGroups();
     }
 }
