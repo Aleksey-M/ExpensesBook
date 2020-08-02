@@ -16,6 +16,7 @@ namespace ExpensesBook.Model
         public ReadOnlyCollection<ExpensesGroup> Groups { get; private set; }
         public ReadOnlyCollection<ExpenseItem> Expenses { get; private set; }
         public ReadOnlyCollection<Limit> Limits { get; private set; }
+        public bool IsDataUpdated {get; set;}
 
         public ExpensesData() 
         {
@@ -60,6 +61,8 @@ namespace ExpensesBook.Model
 
             _limits.Clear();
             _limits.AddRange(deserializedData?.Limits ?? Enumerable.Empty<Limit>());
+
+            IsDataUpdated = false;
         }
 
         public bool AddCategory(string categoryName)
@@ -73,6 +76,8 @@ namespace ExpensesBook.Model
                     Name = categoryName
                 };
                 _categories.Add(newCategory);
+
+            IsDataUpdated = true;
             return true;
         }
 
@@ -84,6 +89,7 @@ namespace ExpensesBook.Model
             if (cat == null) return false;
 
             cat.Name = categoryNewName;
+            IsDataUpdated = true;
             return true;
         }
 
@@ -95,6 +101,7 @@ namespace ExpensesBook.Model
             if (Expenses.Any(e => e.CategoryId == id)) return false;
 
             _categories.Remove(cat);
+            IsDataUpdated = true;
             return true;
         }
 
@@ -109,6 +116,7 @@ namespace ExpensesBook.Model
                 Name = groupName
             };
             _groups.Add(newGroup);
+            IsDataUpdated = true;
             return true;
         }
 
@@ -120,6 +128,7 @@ namespace ExpensesBook.Model
             if (group == null) return false;
 
             group.Name = groupNewName;
+            IsDataUpdated = true;
             return true;
         }
 
@@ -137,6 +146,7 @@ namespace ExpensesBook.Model
             }
 
             _groups.Remove(group);
+            IsDataUpdated = true;
             return true;
         }
 
@@ -153,6 +163,7 @@ namespace ExpensesBook.Model
             };
 
             _expenses.Add(expense);
+            IsDataUpdated = true;
             return true;
         }
 
@@ -167,6 +178,7 @@ namespace ExpensesBook.Model
             exp.CategoryId = string.IsNullOrEmpty(expenseDto.CategoryId) ? exp.CategoryId : Guid.Parse(expenseDto.CategoryId);
             exp.GroupId = string.IsNullOrEmpty(expenseDto.GroupId) ? (Guid?)null : Guid.Parse(expenseDto.GroupId);
 
+            IsDataUpdated = true;
             return true;
         }
 
@@ -177,6 +189,7 @@ namespace ExpensesBook.Model
 
             _expenses.Remove(exp);
 
+            IsDataUpdated = true;
             return true;
         }
 
@@ -195,6 +208,7 @@ namespace ExpensesBook.Model
 
             _limits.Add(newLimit);
 
+            IsDataUpdated = true;
             return true;
         }
 
@@ -210,6 +224,7 @@ namespace ExpensesBook.Model
             limit.StartIncluded = limitDto.StartIncluded;
             limit.EndExcluded = limitDto.EndExcluded;
 
+            IsDataUpdated = true;
             return true;
         }
 
@@ -219,6 +234,7 @@ namespace ExpensesBook.Model
             if (limit == null) return false;
 
             _limits.Remove(limit);
+            IsDataUpdated = true;
             return true;
         }
     }    

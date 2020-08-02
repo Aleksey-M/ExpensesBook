@@ -31,108 +31,121 @@
 
 <div class="row">
     <div class="col-12">
-        @if (_ungroupedItems != null)
-        {
-            <table class="table table-striped table-sm">
-                <thead>
-                    <tr>
-                        <th>Дата</th>
-                        <th>Описание</th>
-                        <th>Потрачено</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in _ungroupedItems)
-                    {
-                        <tr>
-                            <td>@item.Date.ToString("yyyy.MM.dd")</td>
-                            <td>@item.Description</td>
-                            <td>@item.Amounth.ToString("N2")</td>
-                        </tr>
-                    }
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th colspan="3">
-                            Всего: @_total
-                        </th>
-                    </tr>
-                </tfoot>
-            </table>
-        }
 
-        @if (ActualDataSet != null)
+        @if (RecordsNotFound)
         {
-            <table class="table table-striped table-sm">
-                <thead>
-                    <tr>
-                        <th>
-                            @((_groupedByDate != null, _groupedByGroup != null, _groupedByCategory != null) switch
-                    {
-                        (true, false, false) => "Дата",
-                        (false, true, false) => "Группа",
-                        (false, false, true) => "Категория",
-                        _ => "",
-                    })
-                        </th>
-                        <th>Потрачено</th>
-                        <th>%</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in ActualDataSet)
-                    {
-                        <tr>
-                            <td>@item.Item1</td>
-                            <td>@item.Item2</td>
-                            <td>@item.Item3</td>
-                        </tr>
-                    }
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <th colspan="3">
-                            Всего: @_total
-                        </th>
-                    </tr>
-                </tfoot>
-            </table>
+            <h4 style="color:darkorange">Нет записей для указанного диапазона дат</h4>
         }
-
-        @if (_actualLimits != null)
+        else
         {
-            <table class="table table-striped table-sm">
-                <thead>
-                    <tr>
-                        <th>Период</th>
-                        <th>Описание</th>
-                        <th>Лимит</th>
-                        <th>Потрачено</th>
-                        <th>Остаток</th>
-                        <th>Превышение</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in _actualLimits)
-                    {
-                    <tr>
-                        <td>@item.datesRange</td>
-                        <td>@item.description</td>
-                        <td>@item.limit</td>
-                        <td>@item.spent</td>
-                        <td>@item.left</td>
-                        <td>@item.deficit</td>
-                    </tr>
-                    }
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="6">
-                            <i>Выведены лимиты, в которые попали расходы из выбранного диапазона дат. Для расчета показателей лимита используются только те расходы, которые попали в выбранный диапазон</i>
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
+            @if (_ungroupedItems != null)
+            {
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Описание</th>
+                            <th>Потрачено</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in _ungroupedItems)
+                        {
+                            <tr>
+                                <td>@item.Date.ToString("yyyy.MM.dd")</td>
+                                <td>@item.Description</td>
+                                <td>@item.Amounth.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3">
+                                Всего: @_total
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            }
+
+            @if (ActualDataSet != null)
+            {
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>
+                                @((_groupedByDate != null, _groupedByGroup != null, _groupedByCategory != null) switch
+                        {
+                            (true, false, false) => "Дата",
+                            (false, true, false) => "Группа",
+                            (false, false, true) => "Категория",
+                            _ => "",
+                        })
+                            </th>
+                            <th>Потрачено</th>
+                            <th>%</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in ActualDataSet)
+                        {
+                            <tr>
+                                <td>@item.Item1</td>
+                                <td>@item.Item2</td>
+                                <td>@item.Item3</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3">
+                                Всего: @_total
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            }
+
+            @if (_actualLimits != null)
+            {
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>Период</th>
+                            <th>Описание</th>
+                            <th>Лимит</th>
+                            <th>Потрачено</th>
+                            <th>Остаток</th>
+                            <th>Превышение</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in _actualLimits)
+                        {
+                            <tr>
+                                <td>@item.datesRange</td>
+                                <td>@item.description</td>
+                                <td>@item.limit</td>
+                                <td>@item.spent</td>
+                                <td>@item.left</td>
+                                <td>@item.deficit</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6">
+                                <i>Выведены лимиты, в которые попали расходы из выбранного диапазона дат. Для расчета показателей лимита используются только те расходы, которые попали в выбранный диапазон</i>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            }
+
+            @if (RecordsIsNotFiltered)
+            {
+                <h4 style="color:blue">Фильтрация не применена</h4>
+            }
         }
     </div>
 </div>
@@ -149,6 +162,17 @@
     private List<(string category, string value, string percent)> _groupedByCategory;
     private List<(string datesRange, string description, string limit, string spent, string left, string deficit)> _actualLimits;
     private string _total;
+    private bool RecordsIsNotFiltered =>
+        _ungroupedItems == null &&
+        _groupedByGroup == null &&
+        _groupedByCategory == null &&
+        _groupedByDate == null &&
+        _actualLimits == null;
+
+    private bool RecordsNotFound =>
+        (ActualDataSet != null && ActualDataSet.Count == 0) ||
+        (_ungroupedItems != null && _ungroupedItems.Count == 0) ||
+        (_actualLimits != null && _actualLimits.Count == 0);
 
     private List<(string, string, string)> ActualDataSet => _groupedByDate ?? _groupedByGroup ?? _groupedByCategory;
 
@@ -160,7 +184,7 @@
         _groupedByDate = null;
         _actualLimits = null;
 
-        if(_viewType != ViewType.Limits)
+        if (_viewType != ViewType.Limits)
         {
             _total = Calc.GetTotal(_startDate, _endDate).ToString("N2");
         }

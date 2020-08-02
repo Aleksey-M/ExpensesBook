@@ -1,10 +1,16 @@
 ﻿@inherits LayoutComponentBase
+@using ExpensesBook.Model
+@inject ExpensesData Data
 
 <div class="sidebar">
     <NavMenu />
 </div>
 
 <div class="main">
+    @if (Data.IsDataUpdated)
+    {
+        <p style="color: red; display:block; text-align:center">Есть несохраненные данные</p>
+    }
     <div class="content px-4">
         @Body
     </div>

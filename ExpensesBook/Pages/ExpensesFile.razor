@@ -28,6 +28,7 @@
         var str = ExpensesData.SerializeToJson();
         await JSRuntime.InvokeAsync<object>("fileSaveAs", "ExpensesData.json", str);
         await JSRuntime.InvokeVoidAsync("setSaved");
+        ExpensesData.IsDataUpdated = false;
     }
 
     private async Task ParseJson(ChangeEventArgs e)
