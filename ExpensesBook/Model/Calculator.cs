@@ -41,7 +41,7 @@ namespace ExpensesBook.Model
                 .ToList();
 
             var withoutGroupAmount = items.Where(i => i.GroupId == default).Select(e => e.Amounth).DefaultIfEmpty().Sum();
-            if(withoutGroupAmount > 0)
+            if (withoutGroupAmount > 0)
             {
                 withGroups.Add(("Без группы", withoutGroupAmount.ToString("N2"), (withoutGroupAmount * 100 / total).ToString("N2") + " %"));
             }
@@ -79,7 +79,7 @@ namespace ExpensesBook.Model
                 .Where(l => l.currentAmount > 0)
                 .OrderBy(l => l.limit.EndExcluded)
                 .Select(l => (
-                    datesRange: $@"{l.limit.StartIncluded.ToString("yyyy.MM.dd")} - {l.limit.EndExcluded.ToString("yyyy.MM.dd")}",
+                    datesRange: $@"{l.limit.StartIncluded:yyyy.MM.dd} - {l.limit.EndExcluded:yyyy.MM.dd}",
                     description: l.limit.Description,
                     limit: l.limit.LimitAmounth.ToString("N2"),
                     spent: l.currentAmount.ToString("N2"),
@@ -89,6 +89,176 @@ namespace ExpensesBook.Model
                 .ToList();
 
             return res;
+        }
+
+        public List<(ExpenseItem item, string category, string group)> GetMonthExpenses(int year, int month) => _data.Expenses
+            .Where(e => e.Date.Year == year && e.Date.Month == month)
+            .Join(_data.Categories,
+               e => e.CategoryId,
+               c => c.Id,
+                (e, c) => (e, c.Name, _data.Groups.SingleOrDefault(g => g.Id == (e.GroupId ?? Guid.Empty))?.Name))
+            .OrderBy(i => i.e.Date)
+            .ToList();
+
+        public List<(int year, int month, string monthName)> GetMonths() => _data.Expenses
+            .Select(e => (e.Date.Year, e.Date.Month, e.Date.ToString("MMMM", System.Globalization.CultureInfo.CreateSpecificCulture("ru-RU"))))
+            .Distinct()
+            .OrderBy(ym => ym.Year).ThenBy(ym => ym.Month)
+            .ToList();
+
+        private List<CalculatedLimit> GetCalculatedLimits(IEnumerable<Limit> limits, DateTimeOffset currentDate) => limits
+            .Select(l => new CalculatedLimit(l, _data.Expenses, currentDate))
+            .OrderBy(l => l.IsActual)
+            .ThenBy(l => l.EndExcluded)
+            .ToList();
+
+        public List<CalculatedLimit> GetCalculatedLimits(DateTimeOffset currentDate) => GetCalculatedLimits(_data.Limits, currentDate);
+
+        public List<CalculatedLimit> GetYearLimits(int year, DateTimeOffset currentDate) =>
+            GetCalculatedLimits(_data.Limits.Where(l => l.StartIncluded.Date.Year == year || l.EndExcluded.Date.Year == year), currentDate);
+
+        public List<int> GetAllYears() => _data.Expenses.Select(e => e.Date.Date.Year).Distinct().ToList();
+
+        public YearPivotTable GetYearExpensesByCategories(int year) => new YearPivotTable(year, _data.Expenses,
+            items => _data.Categories
+                .OrderBy(c => c.Sort)
+                .GroupJoin(
+                    items,
+                    c => c.Id,
+                    i => i.CategoryId,
+                    (category, items) => (category.Name, items.Select(e => e.Amounth).DefaultIfEmpty().Sum()))
+            );
+
+        public YearPivotTable GetYearExpensesByGroup(int year) => new YearPivotTable(year, _data.Expenses,
+            items => _data.Groups.Concat(new List<ExpensesGroup> { new ExpensesGroup { Id = default, Name = "Без группы", Sort = 1000 } })
+                .OrderBy(g => g.Sort)
+                .GroupJoin(
+                    items, 
+                    g => g.Id, 
+                    i => i.GroupId ?? default, 
+                    (group, items) => (group.Name, items.Select(e => e.Amounth).DefaultIfEmpty().Sum()))
+            );
+    }
+
+    internal class CalculatedLimit
+    {
+        public Guid LimitId { get; }
+        public string Description { get; }
+        public DateTimeOffset StartIncluded { get; }
+        public DateTimeOffset EndExcluded { get; }
+        public double LimitAmounth { get; }
+        public string LimitAmounthStr => LimitAmounth.ToString("N2");
+        public bool IsActual { get; }
+        private List<ExpenseItem> ExpensesFromRange { get; }
+        public string DatesRange { get; }
+        public double Spent { get; }
+        public double Left { get; }
+        public double Deficite { get; }
+        public string SpentStr => Spent.ToString("N2");
+        public string LeftStr => Left.ToString("N2");
+        public string DeficiteStr => Deficite.ToString("N2");
+
+        public string RowColorStyle => (Spent > LimitAmounth, IsActual) switch
+        {
+            (true, false) => "color: indianred",
+            (true, true) => "color: red",
+            (false, true) => "color: blue",
+            (false, false) => ""
+        };
+
+
+        public CalculatedLimit(Limit limit, IEnumerable<ExpenseItem> allExpenses, DateTimeOffset currentDate)
+        {
+            LimitId = limit.Id;
+            Description = limit.Description;
+            StartIncluded = limit.StartIncluded.Date;
+            EndExcluded = limit.EndExcluded.Date;
+            LimitAmounth = limit.LimitAmounth;
+
+            IsActual = StartIncluded <= currentDate.Date && EndExcluded > currentDate.Date;
+            DatesRange = $@"{StartIncluded:yyyy.MM.dd} - {EndExcluded:yyyy.MM.dd}";
+            ExpensesFromRange = allExpenses.Where(e => e.Date.Date >= StartIncluded && e.Date.Date < EndExcluded).ToList();
+
+            Spent = ExpensesFromRange.Select(e => e.Amounth).DefaultIfEmpty().Sum();
+
+            Left = LimitAmounth - Spent;
+            if (Left < 0)
+            {
+                Deficite = -Left;
+                Left = 0;
+            }
+            else
+            {
+                Deficite = 0;
+            }
+        }
+    }
+
+    internal class YearPivotTable
+    {
+        public List<(string rowName, List<(string value, string percent)>)> Rows { get; }
+        public List<(int month, string total, string percent)> MonthsTotals { get; }
+        public List<string> MonthsNames { get; }
+        public double Total { get; }
+        public string TotalStr => Total.ToString("N2");
+        public ViewType ViewType { get; set; }
+        public YearPivotTable(int year, IEnumerable<ExpenseItem> allExpenses, Func<IEnumerable<ExpenseItem>, IEnumerable<(string, double)>> groupingLogic)
+        {
+            var yearExpenses = allExpenses.Where(e => e.Date.Year == year).ToList();
+            Total = yearExpenses.Select(e => e.Amounth).DefaultIfEmpty().Sum();
+
+            var yearMonths = yearExpenses
+                .Select(e => e.Date.Month)
+                .DefaultIfEmpty()
+                .Distinct()
+                .OrderBy(m => m).ToList();
+
+            MonthsNames = yearMonths.Select(m => new DateTimeOffset(year, m, 1, 0, 0, 0, TimeSpan.FromSeconds(0)).ToString("MMMM", System.Globalization.CultureInfo.CreateSpecificCulture("ru-RU"))).ToList();
+
+            var monthsTotals = yearExpenses.GroupBy(e => e.Date.Month).Select(g => (g.Key, g.Select(e => e.Amounth).Sum())).ToList();
+            MonthsTotals = monthsTotals.Select(mt => (mt.Key, mt.Item2.ToString("N2"), (mt.Item2 * 100 / Total).ToString("N2") + "%")).ToList();
+
+            var monthsCalculated = new Dictionary<int, List<(string name, string value, string percent)>>();
+
+            foreach(int m in yearMonths)
+            {
+                var total = monthsTotals.Single(t => t.Key == m).Item2;
+
+                monthsCalculated[m] = groupingLogic(yearExpenses.Where(e => e.Date.Month == m))
+                    .Where(i => i.Item2 > 0)
+                    .Select(i => (i.Item1, i.Item2.ToString("N2"), (i.Item2 * 100 / total).ToString("N2") + "%"))
+                    .ToList();
+            }
+
+            var allRowsNames = monthsCalculated.SelectMany(kv => kv.Value).Select(v => v.name).Distinct().ToList();
+
+            Rows = new List<(string rowName, List<(string value, string percent)>)>();
+
+            foreach(var n in allRowsNames)
+            {
+                var row = new List<(string value, string percent)>();
+                foreach(int m in yearMonths)
+                {
+                    if (monthsCalculated.ContainsKey(m))
+                    {
+                        var val = monthsCalculated[m].SingleOrDefault(v => v.name == n);
+                        if(val == default)
+                        {
+                            row.Add(("0.00", "0%"));
+                        }
+                        else
+                        {
+                            row.Add((val.value, val.percent));
+                        }                        
+                    }
+                    else
+                    {
+                        row.Add(("0.00", "0%"));
+                    }
+                }
+
+                Rows.Add((rowName: n, row));
+            }
         }
     }
 }

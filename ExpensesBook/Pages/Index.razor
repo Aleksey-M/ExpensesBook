@@ -5,25 +5,24 @@
 
 <h3>Книга расходов</h3>
 <hr />
-<div class="row">
-    <div class="col-3">
+<div class="form-row">
+    <div class="col-sm-6 col-lg-3 mb-2">
         <input type="date" id="startDate" class="form-control" @bind-value="_startDate" />
     </div>
-    <div class="col-3">
+    <div class="col-lg-3 col-sm-6 mb-2">
         <input type="date" id="endDate" class="form-control" @bind-value="_endDate" />
     </div>
-    <div class="col-4">
+    <div class="col-lg-4 col-sm-9 mb-2">
         <select id="viewType" class="form-control" @bind="_viewType">
             <option selected value="@ViewType.Default">Без группировки</option>
-            <option value="@ViewType.ByDate">Сгруппировать по дате</option>
-            <option value="@ViewType.ByGroup">Сгруппировать по группе</option>
-            <option value="@ViewType.ByCategory">Сгруппировать по категории</option>
+            <option value="@ViewType.ByDate">По дате</option>
+            <option value="@ViewType.ByGroup">По группе</option>
+            <option value="@ViewType.ByCategory">По категории</option>
             <option value="@ViewType.Limits">Актуальные лимиты</option>
         </select>
     </div>
-    <div class="col-2">
-        <label for="viewType"></label>
-        <button type="button" class="btn btn-info" @onclick="ShowTable">Показать</button>
+    <div class="col-lg-2 col-sm-3 mb-2">
+        <button type="button" class="btn btn-info" style="float:right" @onclick="ShowTable">Показать</button>
     </div>
 </div>
 
@@ -114,7 +113,7 @@
                             <th>Период</th>
                             <th>Описание</th>
                             <th>Лимит</th>
-                            <th>Потрачено</th>
+                            <th>Расходы</th>
                             <th>Остаток</th>
                             <th>Превышение</th>
                         </tr>
@@ -152,8 +151,8 @@
 
 
 @code {
-    private DateTimeOffset _startDate = DateTimeOffset.Now.Date.AddDays(-7);
-    private DateTimeOffset _endDate = DateTimeOffset.Now.Date.AddDays(7);
+    private DateTimeOffset _startDate = DateTimeOffset.Now.Date.AddDays(-14);
+    private DateTimeOffset _endDate = DateTimeOffset.Now.Date.AddDays(1);
     private ViewType _viewType;
 
     private List<ExpenseItem> _ungroupedItems;

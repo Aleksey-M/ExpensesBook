@@ -2,7 +2,7 @@
 
 @using ExpensesBook.Model
 @inject ExpensesData ExpensesData
-@inject IJSRuntime JSRuntime 
+@inject IJSRuntime JSRuntime
 
 <h3>Группы расходов</h3>
 
@@ -21,19 +21,21 @@
                 <td>
                     @if (selectedGroup?.Id == group.Id)
                     {
-                        <div class="form-inline">
-                            <EditForm Model="selectedGroup" OnValidSubmit="UpdateGroup">
+                        <EditForm Model="selectedGroup" OnValidSubmit="UpdateGroup">
 
-                                <DataAnnotationsValidator />
-                                <ValidationSummary />
-
-                                <InputText class="form-control" @bind-Value="selectedGroup.Name" />
-
-                                <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
-                            </EditForm>
-                            &nbsp;<button @onclick="DeleteGroup" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
-                            &nbsp;<button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
-                        </div>
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+                            <div class="form-row">
+                                <div class="col-lg-6 col-sm-12 mb-2">
+                                    <InputText class="form-control" @bind-Value="selectedGroup.Name" />
+                                </div>
+                                <div class="col-lg-3 col-sm-12 mb-2">
+                                    <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
+                                    <button @onclick="DeleteGroup" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                                    <button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
+                                </div>
+                            </div>
+                        </EditForm>
                     }
                     else
                     {
@@ -52,10 +54,13 @@
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
-                    <div class="form-inline">
-                        <InputText class="form-control" @bind-Value="newGroup.Name" />
-                        &nbsp;&nbsp;
-                        <button type="submit" class="btn btn-success">Добавить</button>
+                    <div class="form-row">
+                        <div class="col-lg-6 col-sm-12 mb-2">
+                            <InputText class="form-control" @bind-Value="newGroup.Name" />
+                        </div>
+                        <div class="col-lg-2 col-sm-12 mb-2">
+                            <button type="submit" class="btn btn-success">Добавить</button>
+                        </div>
                     </div>
                 </EditForm>
             </td>
