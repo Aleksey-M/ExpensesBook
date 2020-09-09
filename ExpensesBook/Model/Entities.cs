@@ -39,7 +39,7 @@ namespace ExpensesBook.Model
     {
         [Key]
         public Guid Id { get; set; }
-        [Required, StringLength(50)]
+        [Required, StringLength(200)]
         public string Description { get; set; }
         [Required]
         public DateTimeOffset Date { get; set; }
@@ -53,7 +53,7 @@ namespace ExpensesBook.Model
     internal class ExpenseItemDto
     {
         public string Id { get; set; }
-        [Required, StringLength(50)]
+        [Required, StringLength(200)]
         public string Description { get; set; }
         [Required]
         public DateTimeOffset Date { get; set; } = DateTimeOffset.Now;
@@ -68,7 +68,7 @@ namespace ExpensesBook.Model
     {
         [Key]
         public Guid Id { get; set; }
-        [Required, StringLength(50)]
+        [Required, StringLength(200)]
         public string Description { get; set; }
         [Required]
         public DateTimeOffset StartIncluded { get; set; }
@@ -81,7 +81,7 @@ namespace ExpensesBook.Model
     internal class LimitDto
     {
         public string Id { get; set; }
-        [Required, StringLength(50)]
+        [Required, StringLength(200)]
         public string Description { get; set; }
         [Required]
         public DateTimeOffset StartIncluded { get; set; } = DateTimeOffset.Now;
@@ -89,5 +89,34 @@ namespace ExpensesBook.Model
         public DateTimeOffset EndExcluded { get; set; } = DateTimeOffset.Now.AddMonths(1);
         [Required]
         public double LimitAmounth { get; set; } = 10000.00;
+    }
+
+    internal class SavingsItem
+    {
+        [Key]
+        public Guid Id { get; set; }
+        [Required, Range(2000, 2100)]
+        public int Year { get; set; }
+        [Required, Range(1, 12)]
+        public int Month { get; set; }
+        [Required, StringLength(200)]
+        public string  Description { get; set; }
+        [Required]
+        public double Income { get; set; }
+
+        public string DisplayDate => new DateTimeOffset(Year, Month, 1, 0, 0, 0, TimeSpan.FromSeconds(0)).ToString("MMMM yyyy", System.Globalization.CultureInfo.CreateSpecificCulture("ru-RU"));
+    }
+
+    internal class SavingsDto
+    {
+        public string Id { get; set; }
+        [Required, Range(2000, 2100)]
+        public int Year { get; set; }
+        [Required, Range(1, 12)]
+        public int Month { get; set; }
+        [Required, StringLength(200)]
+        public string Description { get; set; }
+        [Required]
+        public double Income { get; set; }
     }
 }

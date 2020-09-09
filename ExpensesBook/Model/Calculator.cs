@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ExpensesBook.Pages;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -138,6 +139,48 @@ namespace ExpensesBook.Model
                     i => i.GroupId ?? default, 
                     (group, items) => (group.Name, items.Select(e => e.Amounth).DefaultIfEmpty().Sum()))
             );
+
+        public SavingsCalculated GetSavingsForMonths() => new SavingsCalculated(_data.Savings, _data.Expenses);
+    }
+
+    internal class SavingsCalculated
+    {
+        public List<(SavingsItem saving, string expenses, string totalSaving, string color)> Savings { get; }
+        public string TotalExpenses { get; }
+        public string TotalIncome { get; }
+        public string TotalSavings { get; }
+        public string TotalSavingsStyle { get; }
+
+        public SavingsCalculated(IEnumerable<SavingsItem> allSavings, IEnumerable<ExpenseItem> allExpenses)
+        {
+            var actualExpenses = allExpenses
+                .GroupBy(e => (e.Date.Year, e.Date.Month))
+                .Where(g => allSavings.Any(s => s.Year == g.Key.Year && s.Month == g.Key.Month))
+                .Select(g => (g.Key.Year, g.Key.Month, total: g.Select(e => e.Amounth).DefaultIfEmpty().Sum()))
+                .ToList();
+
+            double expenses = actualExpenses.Select(e => e.total).DefaultIfEmpty().Sum();
+            double income = allSavings.Select(s => s.Income).DefaultIfEmpty().Sum();
+            double savings =  income - expenses;
+
+            TotalExpenses = expenses.ToString("N2");
+            TotalSavings = savings.ToString("N2");
+            TotalIncome = income.ToString("N2");
+            TotalSavingsStyle = savings >= 0 ? "color:forestgreen" : "color:red";
+
+            Savings = new List<(SavingsItem, string, string, string)>();
+            foreach(var s in allSavings)
+            {
+                var monthExpenses = actualExpenses.SingleOrDefault(e => e.Year == s.Year && e.Month == s.Month);
+
+                double saving = s.Income - monthExpenses.total;
+                string color = saving >= 0 ? "color:forestgreen" : "color:red";
+
+                Savings.Add((s, monthExpenses.total.ToString("N2"), saving.ToString("N2"), color));
+            }
+
+            Savings = Savings.OrderBy(s => s.saving.Year).ThenBy(s => s.saving.Month).ToList();
+        }
     }
 
     internal class CalculatedLimit

@@ -11,11 +11,13 @@ namespace ExpensesBook.Model
         private readonly List<ExpensesGroup> _groups = new List<ExpensesGroup>();
         private readonly List<ExpenseItem> _expenses = new List<ExpenseItem>();
         private readonly List<Limit> _limits = new List<Limit>();
+        private readonly List<SavingsItem> _savings = new List<SavingsItem>();
 
         public ReadOnlyCollection<ExpensesCategory> Categories { get; private set; }
         public ReadOnlyCollection<ExpensesGroup> Groups { get; private set; }
         public ReadOnlyCollection<ExpenseItem> Expenses { get; private set; }
         public ReadOnlyCollection<Limit> Limits { get; private set; }
+        public ReadOnlyCollection<SavingsItem> Savings { get; private set; }
         public bool IsDataUpdated {get; set;}
 
         public ExpensesData() 
@@ -24,6 +26,7 @@ namespace ExpensesBook.Model
             Groups = new ReadOnlyCollection<ExpensesGroup>(_groups);
             Expenses = new ReadOnlyCollection<ExpenseItem>(_expenses);
             Limits = new ReadOnlyCollection<Limit>(_limits);
+            Savings = new ReadOnlyCollection<SavingsItem>(_savings);
         }
         
         private class ExpensesDataSerializable
@@ -32,6 +35,7 @@ namespace ExpensesBook.Model
             public List<ExpensesGroup> Groups { get; set; }
             public List<ExpenseItem> Expenses { get; set; }
             public List<Limit> Limits { get; set; }
+            public List<SavingsItem> Savings { get; set; }
         }
 
         public string SerializeToJson()
@@ -41,7 +45,8 @@ namespace ExpensesBook.Model
                 Categories = this.Categories.ToList(),
                 Groups = Groups.ToList(),
                 Expenses = Expenses.ToList(),
-                Limits = Limits.ToList()
+                Limits = Limits.ToList(),
+                Savings = this.Savings.ToList()
             };
             return System.Text.Json.JsonSerializer.Serialize(serializableData);
         }
@@ -61,6 +66,9 @@ namespace ExpensesBook.Model
 
             _limits.Clear();
             _limits.AddRange(deserializedData?.Limits ?? Enumerable.Empty<Limit>());
+
+            _savings.Clear();
+            _savings.AddRange(deserializedData?.Savings ?? Enumerable.Empty<SavingsItem>());
 
             IsDataUpdated = false;
         }
@@ -234,6 +242,57 @@ namespace ExpensesBook.Model
             if (limit == null) return false;
 
             _limits.Remove(limit);
+            IsDataUpdated = true;
+            return true;
+        }
+
+        public bool AddSaving(SavingsDto newSaving)
+        {
+            if (Savings.Any(s => s.Year == newSaving.Year && s.Month == newSaving.Month)) return false;
+            if (newSaving.Income < 0) return false;
+            if (newSaving.Month > 12 || newSaving.Month < 1) return false;
+
+            var saving = new SavingsItem
+            {
+                Id = Guid.NewGuid(),
+                Description = newSaving.Description,
+                Year = newSaving.Year,
+                Month = newSaving.Month,
+                Income = newSaving.Income
+            };
+
+            _savings.Add(saving);
+
+            IsDataUpdated = true;
+            return true;
+        }
+
+        public bool UpdateSaving(SavingsDto updatedSaving)
+        {            
+            if (updatedSaving.Income <= 0) return false;
+            if (updatedSaving.Month > 12 || updatedSaving.Month < 1) return false;
+
+            var sav = Savings.SingleOrDefault(s => s.Year == updatedSaving.Year && s.Month == updatedSaving.Month);
+            if (sav != null && sav.Id.ToString() != updatedSaving.Id) return false;
+
+            sav = Savings.SingleOrDefault(s => s.Id.ToString() == updatedSaving.Id);
+            if (sav == null) return false;
+
+            sav.Description = updatedSaving.Description;
+            sav.Year = updatedSaving.Year;
+            sav.Month = updatedSaving.Month;
+            sav.Income = updatedSaving.Income;
+            
+            IsDataUpdated = true;
+            return true;
+        }
+
+        public bool DeleteSaving(string savingId)
+        {
+            var saving = Savings.SingleOrDefault(s => s.Id.ToString() == savingId);
+            if (saving == null) return false;
+
+            _savings.Remove(saving);
             IsDataUpdated = true;
             return true;
         }
