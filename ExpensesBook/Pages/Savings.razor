@@ -27,7 +27,7 @@
                 <td style="color:darkblue">@sav.saving.Income.ToString("N2")</td>
                 <td>@sav.saving.Description</td>
                 <td style="color:darkred">@sav.expenses</td>
-                <td style="@sav.color">@sav.totalSaving</td>
+                <td style="@sav.color">@sav.totalSaving <small><i>@sav.totalSavingPercent</i></small></td>
                 <td><button @onclick="@(_ => EditSaving(sav.saving))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button></td>               
             </tr>
             }
@@ -73,7 +73,7 @@
             <th style="color:darkblue">@Saving.TotalIncome</th>
             <th></th>
             <th style="color:darkred">@Saving.TotalExpenses</th>
-            <th style="@Saving.TotalSavingsStyle">@Saving.TotalSavings</th>
+            <th style="@Saving.TotalSavingsStyle">@Saving.TotalSavings <small><i>@Saving.TotalSavingsPercent</i></small></th>
             <th></th>
         </tr>
         <tr>

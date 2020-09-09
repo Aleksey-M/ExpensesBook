@@ -145,10 +145,11 @@ namespace ExpensesBook.Model
 
     internal class SavingsCalculated
     {
-        public List<(SavingsItem saving, string expenses, string totalSaving, string color)> Savings { get; }
+        public List<(SavingsItem saving, string expenses, string totalSaving, string totalSavingPercent, string color)> Savings { get; }
         public string TotalExpenses { get; }
         public string TotalIncome { get; }
         public string TotalSavings { get; }
+        public string TotalSavingsPercent { get; }
         public string TotalSavingsStyle { get; }
 
         public SavingsCalculated(IEnumerable<SavingsItem> allSavings, IEnumerable<ExpenseItem> allExpenses)
@@ -162,21 +163,24 @@ namespace ExpensesBook.Model
             double expenses = actualExpenses.Select(e => e.total).DefaultIfEmpty().Sum();
             double income = allSavings.Select(s => s.Income).DefaultIfEmpty().Sum();
             double savings =  income - expenses;
+            double savingsPercent = savings > 0 ? savings * 100 / income : 0;
 
             TotalExpenses = expenses.ToString("N2");
             TotalSavings = savings.ToString("N2");
             TotalIncome = income.ToString("N2");
             TotalSavingsStyle = savings >= 0 ? "color:forestgreen" : "color:red";
+            TotalSavingsPercent = savingsPercent.ToString("N2") + "%";
 
-            Savings = new List<(SavingsItem, string, string, string)>();
+            Savings = new List<(SavingsItem, string, string, string, string)>();
             foreach(var s in allSavings)
             {
                 var monthExpenses = actualExpenses.SingleOrDefault(e => e.Year == s.Year && e.Month == s.Month);
 
                 double saving = s.Income - monthExpenses.total;
+                double savingPercent = saving > 0 ? saving * 100 / s.Income : 0;
                 string color = saving >= 0 ? "color:forestgreen" : "color:red";
 
-                Savings.Add((s, monthExpenses.total.ToString("N2"), saving.ToString("N2"), color));
+                Savings.Add((s, monthExpenses.total.ToString("N2"), saving.ToString("N2"), savingPercent.ToString("N2")+"%", color));
             }
 
             Savings = Savings.OrderBy(s => s.saving.Year).ThenBy(s => s.saving.Month).ToList();
