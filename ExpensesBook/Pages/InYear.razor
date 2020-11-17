@@ -25,43 +25,12 @@ else
             <select id="viewType" class="form-control" @bind="_viewType">
                 <option value="@ViewType.ByGroup">По группe</option>
                 <option value="@ViewType.ByCategory">По категории</option>
-                <option value="@ViewType.Limits">Лимиты года</option>
             </select>
         </div>
         <div class="col-lg-2 col-sm-2 mb-2">
             <button type="button" class="btn btn-info" @onclick="ShowTable">Показать</button>
         </div>
     </div>
-
-    @if (_yearLimits != null)
-    {
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Период</th>
-                    <th>Описание</th>
-                    <th>Лимит</th>
-                    <th>Расходы</th>
-                    <th>Остаток</th>
-                    <th>Превышение</th>
-
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var calcLimit in _yearLimits)
-                {
-
-                    <tr style="@calcLimit.RowColorStyle">
-                        <td>@calcLimit.DatesRange</td>
-                        <td>@calcLimit.Description</td>
-                        <td>@calcLimit.LimitAmounthStr</td>
-                        <td>@calcLimit.SpentStr</td>
-                        <td>@calcLimit.LeftStr</td>
-                        <td>@calcLimit.DeficiteStr</td>
-                    </tr>
-                }
-            </tbody>
-        </table>}
 
     @if (_yearPivotTable != null)
     {
@@ -111,30 +80,22 @@ else
     private ViewType _viewType = ViewType.ByGroup;
     private List<int> _allYears;
 
-    private List<CalculatedLimit> _yearLimits;
     private YearPivotTable _yearPivotTable;
 
     private void ShowTable()
     {
         switch (_viewType)
         {
-            case ViewType.Limits:
-                _yearPivotTable = null;
-                _yearLimits = Calc.GetYearLimits(_year, DateTimeOffset.Now);
-                break;
             case ViewType.ByCategory:
                 _yearPivotTable = Calc.GetYearExpensesByCategories(_year);
                 _yearPivotTable.ViewType = ViewType.ByCategory;
-                _yearLimits = null;
                 break;
             case ViewType.ByGroup:
                 _yearPivotTable = Calc.GetYearExpensesByGroup(_year);
                 _yearPivotTable.ViewType = ViewType.ByGroup;
-                _yearLimits = null;
                 break;
             default:
                 _yearPivotTable = null;
-                _yearLimits = null;
                 break;
         }
     }

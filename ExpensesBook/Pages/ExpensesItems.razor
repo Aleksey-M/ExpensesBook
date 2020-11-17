@@ -7,7 +7,7 @@
 
 <h3>Текущие расходы</h3>
 
-<table class="table table-striped" style="font-size:small">
+<table class="table table-striped" style="font-size:small; word-wrap: break-word">
     <thead>
         <tr>
             <td colspan="6">
@@ -35,7 +35,16 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (var (exp, category, group) in CurrentExpenses)
+        @if (!_showFullList && CurrentExpenses.Count > 3)
+        {
+            <tr>
+                <td colspan="6">
+                    <button type="button" @onclick="@(_ => _showFullList = true)" class="btn btn-link">Показать все записи (@CurrentExpenses.Count)</button>
+                </td>
+            </tr>
+        }
+
+        @foreach (var (exp, category, group) in DisplayItems)
         {
             <tr>
                 @if (selectedItem?.Id == exp.Id.ToString())
@@ -58,18 +67,18 @@
                                 <div class="col-lg-3 col-sm-6 mb-2">
                                     <InputSelect class="form-control" @bind-Value="selectedItem.CategoryId">
                                         @foreach (var c in Data.Categories)
-                                                {
+                                        {
                                             <option value="@c.Id.ToString()">@c.Name</option>
-                                                }
+                                        }
                                     </InputSelect>
                                 </div>
                                 <div class="col-lg-4 col-sm-6 mb-2">
                                     <InputSelect class="form-control" @bind-Value="selectedItem.GroupId">
                                         <option value="">группа не выбрана</option>
                                         @foreach (var g in Data.Groups)
-                                                {
+                                        {
                                             <option value="@g.Id.ToString()">@g.Name</option>
-                                                }
+                                        }
                                     </InputSelect>
                                 </div>
                                 <div class="offset-lg-5 col-lg-3 col-sm-12 mb-2">
@@ -151,6 +160,7 @@
     private int _year = DateTimeOffset.Now.Year;
     private int _month = DateTimeOffset.Now.Month;
     private List<(int year, int month, string monthName)> _allMonths;
+    private bool _showFullList = false;
 
     protected override void OnInitialized()
     {
@@ -174,6 +184,7 @@
         {
             _year = 0;
             _month = 0;
+            _showFullList = false;
         }
 
         StateHasChanged();
@@ -194,6 +205,18 @@
 
     private List<(ExpenseItem item, string category, string group)> CurrentExpenses => Calc.GetMonthExpenses(_year, _month);
     private double AllExpensesSum => CurrentExpenses.Select(c => c.item.Amounth).DefaultIfEmpty().Sum();
+
+    private List<(ExpenseItem item, string category, string group)> GetThreeLastItems()
+    {
+        var exp = CurrentExpenses;
+        int count = exp.Count;
+
+        var lastItems = count > 3 ? exp.Skip(count - 3).ToList() : exp;
+
+        return lastItems;
+    }
+
+    private List<(ExpenseItem item, string category, string group)> DisplayItems => _showFullList ? CurrentExpenses : GetThreeLastItems();
 
     private ExpenseItemDto selectedItem;
 

@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace ExpensesBook.Model
 {
-    internal enum ViewType { Default, ByDate, ByGroup, ByCategory, Limits }
+    internal enum ViewType { Default, ByDate, ByGroup, ByCategory }
 
     internal class Calculator
     {
@@ -29,6 +29,19 @@ namespace ExpensesBook.Model
                 .ToList();
         }
 
+        public List<ExpenseItem> GetExpensesForGroupName(string groupName, DateTimeOffset start, DateTimeOffset end)
+        {
+            if(groupName.Equals("Без группы", StringComparison.OrdinalIgnoreCase))
+            {
+                return GetRange(start, end).Where(e => e.GroupId == null).ToList();
+            }
+
+            var groupId = _data.Groups.SingleOrDefault(g => g.Name.Equals(groupName, StringComparison.OrdinalIgnoreCase))?.Id;
+            if (groupId == null) return Enumerable.Empty<ExpenseItem>().ToList();
+
+            return GetRange(start, end).Where(e => e.GroupId == groupId).ToList();
+        }
+
         public List<(string group, string value, string percent)> GetGroupedByGroup(DateTimeOffset start, DateTimeOffset end)
         {
             var total = GetTotal(start, end);
@@ -50,6 +63,14 @@ namespace ExpensesBook.Model
             return withGroups;
         }
 
+        public List<ExpenseItem> GetExpensesForCategoryName(string categoryName, DateTimeOffset start, DateTimeOffset end)
+        {
+            var categoryId = _data.Categories.SingleOrDefault(c => c.Name.Equals(categoryName, StringComparison.OrdinalIgnoreCase))?.Id;
+            if (categoryId == null) return Enumerable.Empty<ExpenseItem>().ToList();
+
+            return GetRange(start, end).Where(e => e.CategoryId == categoryId).ToList();
+        }
+
         public List<(string category, string value, string percent)> GetGroupedByCategory(DateTimeOffset start, DateTimeOffset end)
         {
             var total = GetTotal(start, end);
@@ -61,35 +82,6 @@ namespace ExpensesBook.Model
                 .Where(i => i.Item2 > 0)
                 .Select(i => (i.Name, i.Item2.ToString("N2"), (i.Item2 * 100 / total).ToString("N2") + " %"))
                 .ToList();
-        }
-
-        public List<(string datesRange, string description, string limit, string spent, string left, string deficit)> GetActualLimits(DateTimeOffset start, DateTimeOffset end)
-        {
-            var total = GetTotal(start, end);
-            var items = GetRange(start, end)
-                .GroupBy(e => e.Date.Date)
-                .Select(g => (g.Key, g.Select(e => e.Amounth).DefaultIfEmpty().Sum()))
-                .Where(i => i.Item2 > 0)
-                .ToList();
-
-            var limits = _data.Limits.Where(l => items.Any(i => i.Key >= l.StartIncluded && i.Key < l.EndExcluded)).ToList();
-            var res = limits.Select(l => (
-                    limit: l,
-                    currentAmount: items.Where(e => e.Key >= l.StartIncluded && e.Key < l.EndExcluded).Select(e => e.Item2).DefaultIfEmpty().Sum()))
-                .Select(l => (l.limit, l.currentAmount, l.limit.LimitAmounth - l.currentAmount))
-                .Where(l => l.currentAmount > 0)
-                .OrderBy(l => l.limit.EndExcluded)
-                .Select(l => (
-                    datesRange: $@"{l.limit.StartIncluded:yyyy.MM.dd} - {l.limit.EndExcluded:yyyy.MM.dd}",
-                    description: l.limit.Description,
-                    limit: l.limit.LimitAmounth.ToString("N2"),
-                    spent: l.currentAmount.ToString("N2"),
-                    left: (l.Item3 > 0 ? l.Item3 : 0).ToString("N2"),
-                    deficite: (l.Item3 < 0 ? -l.Item3 : 0).ToString("N2")
-                    ))
-                .ToList();
-
-            return res;
         }
 
         public List<(ExpenseItem item, string category, string group)> GetMonthExpenses(int year, int month) => _data.Expenses
@@ -114,9 +106,6 @@ namespace ExpensesBook.Model
             .ToList();
 
         public List<CalculatedLimit> GetCalculatedLimits(DateTimeOffset currentDate) => GetCalculatedLimits(_data.Limits, currentDate);
-
-        public List<CalculatedLimit> GetYearLimits(int year, DateTimeOffset currentDate) =>
-            GetCalculatedLimits(_data.Limits.Where(l => l.StartIncluded.Date.Year == year || l.EndExcluded.Date.Year == year), currentDate);
 
         public List<int> GetAllYears() => _data.Expenses.Select(e => e.Date.Date.Year).Distinct().ToList();
 
@@ -174,13 +163,13 @@ namespace ExpensesBook.Model
             Savings = new List<(SavingsItem, string, string, string, string)>();
             foreach(var s in allSavings)
             {
-                var monthExpenses = actualExpenses.SingleOrDefault(e => e.Year == s.Year && e.Month == s.Month);
+                var (Year, Month, total) = actualExpenses.SingleOrDefault(e => e.Year == s.Year && e.Month == s.Month);
 
-                double saving = s.Income - monthExpenses.total;
+                double saving = s.Income - total;
                 double savingPercent = saving > 0 ? saving * 100 / s.Income : 0;
                 string color = saving >= 0 ? "color:forestgreen" : "color:red";
 
-                Savings.Add((s, monthExpenses.total.ToString("N2"), saving.ToString("N2"), savingPercent.ToString("N2")+"%", color));
+                Savings.Add((s, total.ToString("N2"), saving.ToString("N2"), savingPercent.ToString("N2")+"%", color));
             }
 
             Savings = Savings.OrderBy(s => s.saving.Year).ThenBy(s => s.saving.Month).ToList();

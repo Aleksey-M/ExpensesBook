@@ -10,18 +10,17 @@
 <button @onclick="SaveToFile" class="btn btn-lg btn-success"><span class="oi oi-cloud-download" aria-hidden="true"></span> Сохранить</button>
 <hr />
 
-<h4>Загрузить данные из файла</h4><h6 class="text-danger">(текущие несохраненные данные будут перезаписаны)</h6>
+<h4>Загрузить данные из файла</h4>
+<h6 class="text-danger">(текущие несохраненные данные будут перезаписаны)</h6>
 <div>
-    <label for="sFile" class="btn btn-lg btn-warning"><span class="oi oi-cloud-upload" aria-hidden="true"></span> Загрузить</label>
-    <input type="file" accept=".json" id="sFile" style="visibility:hidden;" onchange="uploadFileJS(this)" />
+    <InputFile OnChange="UploadDataFile" accept=".json" />
+    <p style="color: green; margin-top:5px;">@message</p>
 </div>
-<input type="hidden" id="tempField" @onchange="@(async e => await ParseJson(e))" />
-<p style="color: green; margin-top:5px;">@message</p>
-<hr />
+
 
 @code {
 
-    private string message = string.Empty;
+    private string message = "";
 
     private async Task SaveToFile()
     {
@@ -31,7 +30,7 @@
         ExpensesData.IsDataUpdated = false;
     }
 
-    private async Task ParseJson(ChangeEventArgs e)
+    private async Task UploadDataFile(InputFileChangeEventArgs e)
     {
         bool saved = await JSRuntime.InvokeAsync<bool>("getSavedValue");
         if (!saved)
@@ -40,7 +39,14 @@
             if (!confirmed) return;
         }
 
-        var text = e.Value.ToString();
+        message = $@"Загрузка файла {e.File.Name}";
+
+        var stream = e.File.OpenReadStream();
+        using var reader = new StreamReader(stream);
+        var text = await reader.ReadToEndAsync();
+
+        message = "Чтение данных";
+
         ExpensesData.DeserializeAndUpdateFromJson(text);
 
         message = "Файл загружен";
