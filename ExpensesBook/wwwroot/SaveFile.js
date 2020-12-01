@@ -6,3 +6,17 @@
     link.click();
     document.body.removeChild(link);
 }
+
+function uploadFileJS(element) {
+
+    let file = element.files[0];
+    let reader = new FileReader();
+
+    reader.addEventListener("loadend", function () {
+        let tmpField = document.getElementById('tempField');
+        tmpField.value = reader.result;
+        tmpField.dispatchEvent(new Event('change'));
+    });
+
+    reader.readAsText(file);
+} 
