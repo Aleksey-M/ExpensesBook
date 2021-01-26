@@ -12,12 +12,12 @@
     <button @onclick="SaveToFile" class="btn btn-lg btn-success"><span class="oi oi-cloud-download" aria-hidden="true"></span> Сохранить</button>
     <hr />
 
-    <h4>Загрузить данные из файла</h4>
+    @*<h4>Загрузить данные из файла</h4>
         <h6 class="text-danger">(текущие несохраненные данные будут перезаписаны)</h6>
         <div>
             <InputFile OnChange="UploadDataFile" accept=".json" />
             <p style="color: green; margin-top:5px;">@message</p>
-        </div>
+        </div>*@
 
     <h4>Загрузить данные из файла</h4>
     <h6 class="text-danger">(текущие несохраненные данные будут перезаписаны)</h6>
@@ -35,7 +35,8 @@
     private async Task SaveToFile()
     {
         var str = ExpensesData.SerializeToJson();
-        await JSRuntime.InvokeAsync<object>("fileSaveAs", "ExpensesData.json", str);
+        var fileName = "Exp-" + DateTime.Now.ToString("yyyy.MM.dd_hh.mm") + ".json";
+        await JSRuntime.InvokeAsync<object>("fileSaveAs", fileName, str);
         await JSRuntime.InvokeVoidAsync("setSaved");
         ExpensesData.IsDataUpdated = false;
     }
