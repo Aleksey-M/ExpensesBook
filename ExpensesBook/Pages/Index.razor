@@ -1,7 +1,9 @@
 ﻿@page "/"
 
-@using ExpensesBook.Model
-@inject Calculator Calc
+@using ExpensesBook.Domain.Calculators
+@using ExpensesBook.Domain.Entities
+@using System.Collections.Generic
+@inject PeriodExpenseCalculator Calc
 
 <h3>Книга расходов</h3>
 <hr />
@@ -14,10 +16,10 @@
     </div>
     <div class="col-lg-4 col-sm-9 mb-2">
         <select id="viewType" class="form-control" @bind="_viewType">
-            <option selected value="@ViewType.Default">Без группировки</option>
-            <option value="@ViewType.ByDate">По дате</option>
-            <option value="@ViewType.ByGroup">По группе</option>
-            <option value="@ViewType.ByCategory">По категории</option>
+            <option selected value="@ExpensesGroupingType.None">Без группировки</option>
+            <option value="@ExpensesGroupingType.ByDate">По дате</option>
+            <option value="@ExpensesGroupingType.ByGroup">По группе</option>
+            <option value="@ExpensesGroupingType.ByCategory">По категории</option>
         </select>
     </div>
     <div class="col-lg-2 col-sm-3 mb-2">
@@ -30,107 +32,76 @@
 <div class="row" style="word-wrap: break-word">
     <div class="col-12">
 
-        @if (RecordsNotFound)
-        {
-            <h4 style="color:darkorange">Нет записей для указанного диапазона дат</h4>
-        }
-        else
-        {
-            @if (_ungroupedItems != null)
-            {
-                <table class="table table-striped table-sm">
-                    <thead>
-                        <tr>
-                            <th>Дата</th>
-                            <th>Описание</th>
-                            <th>Потрачено</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in _ungroupedItems)
-                        {
-                            <tr>
-                                <td>@item.Date.ToString("yyyy.MM.dd")</td>
-                                <td>@item.Description</td>
-                                <td>@item.Amounth.ToString("N2")</td>
-                            </tr>
-                        }
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="3">
-                                Всего: @_total
-                            </th>
-                        </tr>
-                    </tfoot>
-                </table>
-            }
-
-            @if (ActualDataSet != null)
-            {
-    <table class="table table-striped table-sm">
-        <thead>
-            <tr>
-                <th>
-                    @((_groupedByDate != null, _groupedByGroup != null, _groupedByCategory != null) switch
-                        {
-                            (true, false, false) => "Дата",
-                            (false, true, false) => "Группа",
-                            (false, false, true) => "Категория",
-                            _ => "",
-                        })
-                </th>
-                <th>Потрачено</th>
-                <th>%</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in ActualDataSet)
-            {
-                @if (_groupingCriteriaName == item.Item1)
+    @if (RecordsNotFound)
+    {
+        <h4 style="color:darkorange">Нет записей для указанного диапазона дат</h4>
+    }
+    else
+    {       
+        <table class="table table-striped table-sm">
+            <thead>
+                <tr>
+                    <th>@_headers.Item1</th>
+                    <th>@_headers.Item2</th>
+                    <th>@_headers.Item3</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in _actualDataSet)
                 {
-                    <tr>
-                        <td colspan="3">
-                            <h5 style="color:navy"><i>@item.Item1 (@item.Item2 грн)</i></h5>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Дата</th>
-                                        <th>Описание</th>
-                                        <th>Потрачено</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var expandedItem in _expandedSublist)
-                                    {
+                    @if (_detailsListAvailable && _groupingCriteriaName == item.Item1)
+                    {
+                        <tr>
+                            <td colspan="3">
+                                <h5 style="color:navy"><i>@item.Item1 (@item.Item2 грн)</i></h5>
+                                <table>
+                                    <thead>
                                         <tr>
-                                            <td>@expandedItem.Date.ToString("yyyy.MM.dd")</td>
-                                            <td>@expandedItem.Description</td>
-                                            <td>@expandedItem.Amounth.ToString("N2")</td>
+                                            <th>Дата</th>
+                                            <th>Описание</th>
+                                            <th>Потрачено</th>
                                         </tr>
-                                    }
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <th colspan="3">
-                                            <button type="button" class="btn btn-link" @onclick="_ => _groupingCriteriaName = null">Свернуть</button>
-                                        </th>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </td>
-                    </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var expandedItem in _expandedSublist)
+                                        {
+                                            <tr>
+                                                <td>@expandedItem.Date.ToString("yyyy.MM.dd")</td>
+                                                <td>@expandedItem.Description</td>
+                                                <td>@expandedItem.Amounth.ToString("N2")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <th colspan="3">
+                                                <button type="button" class="btn btn-link" @onclick="_ => _groupingCriteriaName = null">Свернуть</button>
+                                            </th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td>
+                                @if (_detailsListAvailable)
+                                {
+                                    <button @onclick="async _ => await ShowDetails(item.Item1, item.Item4)" type="button" class="btn btn-link">@item.Item1</button>
+                                }
+                                else
+                                {
+                                    @item.Item1
+                                }
+                            </td>
+                            <td>@item.Item2</td>
+                            <td>@item.Item3</td>
+                        </tr>
+                    }
                 }
-                else
-                {
-                    <tr>
-                        <td><button @onclick="_ => ShowDetails(item.Item1)" type="button" class="btn btn-link">@item.Item1</button></td>
-                        <td>@item.Item2</td>
-                        <td>@item.Item3</td>
-                    </tr>
-                }
-            }
-        </tbody>
+            </tbody>
             <tfoot>
                 <tr>
                     <th colspan="3">
@@ -138,14 +109,8 @@
                     </th>
                 </tr>
             </tfoot>
-        </table>
-            }            
-
-            @if (RecordsIsNotFiltered)
-            {
-                <h4 style="color:blue">Фильтрация не применена</h4>
-            }
-        }
+         </table>
+    }
     </div>
 </div>
 
@@ -153,70 +118,38 @@
 @code {
     private DateTimeOffset _startDate = DateTimeOffset.Now.Date.AddDays(-14);
     private DateTimeOffset _endDate = DateTimeOffset.Now.Date.AddDays(1);
-    private ViewType _viewType;
+    private ExpensesGroupingType _viewType;
 
-    private List<ExpenseItem> _ungroupedItems;
-    private List<(string date, string value, string percent)> _groupedByDate;
-    private List<(string group, string value, string percent)> _groupedByGroup;
-    private List<(string category, string value, string percent)> _groupedByCategory;
+    private string _total = "0";
+    private bool RecordsNotFound => _actualDataSet.Count == 0;
 
-    private string _total;
-    private bool RecordsIsNotFiltered =>
-        _ungroupedItems == null &&
-        _groupedByGroup == null &&
-        _groupedByCategory == null &&
-        _groupedByDate == null;
+    private (string, string, string) _headers;
+    private List<(string, string, string, Guid?)> _actualDataSet = new List<(string, string, string, Guid?)>();
 
-    private bool RecordsNotFound =>
-        (ActualDataSet != null && ActualDataSet.Count == 0) ||
-        (_ungroupedItems != null && _ungroupedItems.Count == 0);
-
-    private List<(string, string, string)> ActualDataSet => _groupedByDate ?? _groupedByGroup ?? _groupedByCategory;
-
-    private void ShowTable()
+    private async Task ShowTable()
     {
+        _headers = Calc.GetTableHeaders(_viewType);
+
+        (_actualDataSet, _total) = await Calc.GetExpensesAsTable(_viewType, _startDate.Date, _endDate.Date, null);
+
+        _detailsListAvailable = _viewType != ExpensesGroupingType.None;
         _groupingCriteriaName = null;
-        _ungroupedItems = null;
-        _groupedByGroup = null;
-        _groupedByCategory = null;
-        _groupedByDate = null;
-
-        _total = Calc.GetTotal(_startDate, _endDate).ToString("N2");
-
-        switch (_viewType)
-        {
-            case ViewType.ByDate:
-                _groupedByDate = Calc.GetGroupedByDate(_startDate, _endDate);
-                break;
-
-            case ViewType.ByGroup:
-                _groupedByGroup = Calc.GetGroupedByGroup(_startDate, _endDate);
-                break;
-
-            case ViewType.ByCategory:
-                _groupedByCategory = Calc.GetGroupedByCategory(_startDate, _endDate);
-                break;
-
-            case ViewType.Default:
-            default:
-                _ungroupedItems = Calc.GetRange(_startDate, _endDate);
-                break;
-        }
     }
 
-    private List<ExpenseItem> _expandedSublist = null;
-    private string _groupingCriteriaName = null;
+    private List<Expense> _expandedSublist = new List<Expense>();
+    private string? _groupingCriteriaName;
+    private bool _detailsListAvailable = false;
 
-    private void ShowDetails(string groupingCriteriaName)
+    private async Task ShowDetails(string groupingCriteriaName, Guid? filterBy)
     {
         _groupingCriteriaName = groupingCriteriaName;
 
         _expandedSublist = (_viewType) switch
         {
-            ViewType.ByDate => Calc.GetRange(DateTimeOffset.Parse(groupingCriteriaName), DateTimeOffset.Parse(groupingCriteriaName)),
-            ViewType.ByGroup => Calc.GetExpensesForGroupName(groupingCriteriaName, _startDate, _endDate),
-            ViewType.ByCategory => Calc.GetExpensesForCategoryName(groupingCriteriaName, _startDate, _endDate),
-            _ => null
+            ExpensesGroupingType.ByDate => await Calc.GetFilteredExpenses(_viewType, DateTimeOffset.Parse(groupingCriteriaName), DateTimeOffset.Parse(groupingCriteriaName), filterBy),
+            ExpensesGroupingType.ByGroup => await Calc.GetFilteredExpenses(_viewType, _startDate.Date, _endDate.Date, filterBy),
+            ExpensesGroupingType.ByCategory => await Calc.GetFilteredExpenses(_viewType, _startDate.Date, _endDate.Date, filterBy),
+            _ => new List<Expense>()
         };
     }
 }

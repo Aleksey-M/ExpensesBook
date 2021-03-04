@@ -1,0 +1,200 @@
+﻿@page "/groupspage"
+
+@using ExpensesBook.Domain.Services
+@using ExpensesBook.Domain.Entities
+@inject IGroupsService GroupsService
+@inject ICategoriesService CategoriesService
+@inject IJSRuntime JSRuntime
+
+<h3>Группы расходов</h3>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Название</th>
+            <th>Связанные категории</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var group in Groups)
+        {
+            <tr>
+                @if (selectedGroup?.Id == group.group.Id)
+                {
+                    <td colspan="3">
+                        <EditForm Model="selectedGroup" OnValidSubmit="UpdateGroup">
+
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="form-row">
+                                <div class="col-lg-1 col-sm-12 mb-2">
+                                    <InputNumber class="form-control" @bind-Value="selectedGroup.Sort" />
+                                </div>
+                                <div class="col-lg-5 col-sm-12 mb-2">
+                                    <InputText class="form-control" @bind-Value="selectedGroup.Name" />
+                                </div>
+                                <div class="col-lg-6 col-sm-12 mb-2">
+                                    <p>Связанные группы:</p>
+                                    @foreach (var c in availableCategoriesForSelected)
+                                    {
+                                        <div class="form-check">
+                                            <label class="form-check-label">
+                                                <input class="form-check-input" checked="@IsOldSelectedCategory(c.Id)" type="checkbox" @onchange="_ => AddOrRemoveCategory(false, c.Id)" />
+                                                @c.Name
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="col-lg-3 col-sm-12 mb-2">
+                                    <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
+                                    <button @onclick="DeleteGroup" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                                    <button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
+                                </div>
+                            </div>
+                        </EditForm>
+                    </td>
+                }
+                else
+                {
+                    <td>@group.group.Sort</td>
+                    <td>
+                        @group.group.Name                        
+                    </td>
+                    <td>
+                        @foreach (var c in group.relatedCategories)
+                        {
+                            <i>@c.Name; </i>
+                        }
+                        <button @onclick="@(_ => EditGroup(group))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button>
+                    </td>
+                }                    
+            </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3">
+                <EditForm Model="newGroup" OnValidSubmit="AddNewGroup">
+
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-row">
+                        <div class="col-lg-1 col-sm-12 mb-2">
+                            <InputNumber class="form-control" @bind-Value="newGroup.Sort" />
+                        </div>
+                        <div class="col-lg-5 col-sm-12 mb-2">
+                            <InputText class="form-control" @bind-Value="newGroup.Name" />
+                        </div>
+                        <div class="col-lg-6 col-sm-12 mb-2">
+                            <p>Связанные группы:</p>
+                            @foreach (var c in availableCategoriesForNew)
+                            {
+                                <div class="form-check">                                    
+                                    <label class="form-check-label">
+                                        <input class="form-check-input" type="checkbox" @onchange="_ => AddOrRemoveCategory(true, c.Id)" />
+                                        @c.Name
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                        <div class="col-lg-2 col-sm-12 mb-2">
+                            <button type="submit" class="btn btn-success">Добавить</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+@code {
+    private ExpensesGroupDto newGroup = new ExpensesGroupDto();
+    private ExpensesGroupDto? selectedGroup = null;
+
+    private List<Category> availableCategoriesForNew = new List<Category>();
+    private List<Guid> selectedCategoriesForNew = new List<Guid>();
+    private List<Category> availableCategoriesForSelected = new List<Category>();
+    private List<Guid> selectedCategoriesForSelected = new List<Guid>();
+    private bool IsOldSelectedCategory(Guid categoryId) => selectedCategoriesForSelected.Contains(categoryId);
+
+    private void AddOrRemoveCategory(bool forNew, Guid categoryId)
+    {
+        var list = forNew ? selectedCategoriesForNew : selectedCategoriesForSelected;
+
+        if (list.Contains(categoryId))
+        {
+            list.Remove(categoryId);
+        }
+        else
+        {
+            list.Add(categoryId);
+        }
+    }
+
+    private async Task AddNewGroup()
+    {
+        await GroupsService.AddGroup(groupName: newGroup?.Name ?? "", sortOrder: newGroup?.Sort ?? 0, relatedCategories: selectedCategoriesForNew);
+
+        newGroup = new ExpensesGroupDto();
+        selectedCategoriesForNew = new List<Guid>();
+        availableCategoriesForNew = await GroupsService.GetFreeCategories();
+        Groups = await GroupsService.GetGroupsWithRelatedCategories();
+        selectedGroup = null;
+    }
+
+    private async Task DeleteGroup()
+    {
+        if (selectedGroup == null) return;
+
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить группу?");
+        if (!confirmed) return;
+
+        await GroupsService.DeleteGroup(selectedGroup.Id ?? Guid.Empty);
+
+        availableCategoriesForNew = await GroupsService.GetFreeCategories();
+        Groups = await GroupsService.GetGroupsWithRelatedCategories();
+
+        selectedGroup = null;
+    }
+
+    private async Task UpdateGroup()
+    {
+        if (selectedGroup == null) return;
+
+        await GroupsService.UpdateGroup(groupId: selectedGroup.Id ?? Guid.Empty, groupName: selectedGroup.Name, groupOrder: selectedGroup.Sort, selectedCategoriesForSelected);
+
+        selectedCategoriesForNew = new List<Guid>();
+        availableCategoriesForNew = await GroupsService.GetFreeCategories();
+        Groups = await GroupsService.GetGroupsWithRelatedCategories();
+        selectedGroup = null;
+    }
+
+    private void CancelEdit()
+    {
+        selectedGroup = null;
+    }
+
+    private void EditGroup((Group group, List<Category> categories) group)
+    {
+        selectedGroup = new ExpensesGroupDto
+        {
+            Id = group.group.Id,
+            Name = group.group.Name,
+            Sort = group.group.Sort
+        };
+
+        selectedCategoriesForSelected = group.categories.Select(c => c.Id).ToList();
+        availableCategoriesForSelected = availableCategoriesForNew.Union(group.categories).ToList();
+    }
+
+    private List<(Group group, List<Category> relatedCategories)> Groups { get; set; } = new List<(Group group, List<Category> relatedCategories)>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Groups = await GroupsService.GetGroupsWithRelatedCategories();
+        availableCategoriesForNew = await GroupsService.GetFreeCategories();
+    }
+}

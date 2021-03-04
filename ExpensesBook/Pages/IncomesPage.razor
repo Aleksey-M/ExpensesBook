@@ -1,0 +1,151 @@
+﻿@page "/incomespage"
+
+@using ExpensesBook.Domain.Services
+@using ExpensesBook.Domain.Entities
+@using System.Collections.Generic
+@inject IIncomesService IncomesService
+@inject IJSRuntime JSRuntime
+
+<h3>Доходы</h3>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Дата</th>
+            <th>Сумма</th>
+            <th>Описание</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var inc in Incomes)
+        {
+        <tr>
+            @if (_selectedIncome?.Id == inc.Id)
+            {
+                <td colspan="3">
+                    <EditForm Model="_selectedIncome" OnValidSubmit="UpdateIncome">
+
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="form-row">
+                            <div class="col-lg-2 col-sm-6 mb-2">
+                                <InputDate class="form-control" @bind-Value="_selectedIncome.Date" />
+                            </div>
+                            <div class="col-lg-2 col-sm-6 mb-2">
+                                <InputNumber class="form-control" step="0.01" @bind-Value="_selectedIncome.Amounth" />
+                            </div>
+                            <div class="col-lg-5 col-sm-12 mb-2">
+                                <InputText class="form-control" @bind-Value="_selectedIncome.Description" />
+                            </div>
+                            <div class="col-lg-3 col-sm-12 mb-2">
+                                <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
+                                <button @onclick="DeleteIncome" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                                <button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
+                            </div>
+                        </div>
+                    </EditForm>
+                </td>
+            }
+            else
+            {
+                <td>@inc.Date.ToString("yyyy.MM.dd")</td>
+                <td>@inc.Amounth.ToString("N2")</td>
+                <td>
+                    @inc.Description
+                    <button @onclick="@(_ => EditIncome(inc))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button>
+                </td>
+            }
+        </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="3">
+                <EditForm Model="_newIncome" OnValidSubmit="AddNewIncome">
+
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-row">
+                        <div class="col-lg-2 col-sm-6 mb-2">
+                            <InputDate class="form-control" @bind-Value="_newIncome.Date" />
+                        </div>
+                        <div class="col-lg-2 col-sm-6 mb-2">
+                            <InputNumber class="form-control" step="0.01" @bind-Value="_newIncome.Amounth" />
+                        </div>
+                        <div class="col-lg-5 col-sm-12 mb-2">
+                            <InputText class="form-control" @bind-Value="_newIncome.Description" />
+                        </div>
+                        <div class="col-lg-3 col-sm-12 mb-2">
+                            <button type="submit" class="btn btn-success">Добавить</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+@code {
+
+    private List<Income> Incomes { get; set; } = new List<Income>();
+    private IncomeDto _newIncome = new IncomeDto();
+    private IncomeDto? _selectedIncome = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Incomes = await IncomesService.GetIncomes(null, null, null);
+    }
+
+    private async Task AddNewIncome()
+    {
+        await IncomesService.AddIncome(date: _newIncome.Date, amounth: _newIncome.Amounth, description: _newIncome.Description);
+
+        Incomes = await IncomesService.GetIncomes(null, null, null);
+        _newIncome = new IncomeDto();
+    }
+
+    private async Task DeleteIncome()
+    {
+        if (_selectedIncome == null) return;
+        var incomeId = _selectedIncome?.Id ?? Guid.Empty;
+
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить запись о доходе?");
+        if (!confirmed) return;
+
+        await IncomesService.DeleteIncome(incomeId);
+
+        var i = Incomes.Single(i => i.Id == incomeId);
+        Incomes.Remove(i);
+
+        _selectedIncome = null;
+    }
+
+    private async Task UpdateIncome()
+    {
+        if (_selectedIncome == null) return;
+
+        await IncomesService.UpdateIncome(incomeId: _selectedIncome.Id, date: _selectedIncome?.Date, amounth: _selectedIncome?.Amounth, description: _selectedIncome?.Description);
+
+        Incomes = await IncomesService.GetIncomes(null, null, null);
+        _selectedIncome = null;
+    }
+
+    private void CancelEdit()
+    {
+        _selectedIncome = null;
+    }
+
+    private void EditIncome(Income income)
+    {
+        _selectedIncome = new IncomeDto
+        {
+            Id = income.Id,
+            Date = income.Date,
+            Amounth = income.Amounth,
+            Description = income.Description
+        };
+    }
+
+}

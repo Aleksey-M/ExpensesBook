@@ -9,41 +9,46 @@
     <ul class="nav flex-column">
         <li class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-book" aria-hidden="true"></span> Главная страница
+                <span class="oi oi-book" aria-hidden="true"></span> Главная
             </NavLink>
         </li>
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="expensesitems">
-                <span class="oi oi-dollar" aria-hidden="true"></span> Текущие расходы
+            <NavLink class="nav-link" href="expensesitemspage">
+                <span class="oi oi-dollar" aria-hidden="true"></span> Расходы
             </NavLink>
         </li>
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="limits">
+            <NavLink class="nav-link" href="incomespage">
+                <span class="oi oi-briefcase"></span> Доходы
+            </NavLink>
+        </li>        
+        <li class="nav-item px-3">
+            <NavLink class="nav-link" href="limitspage">
                 <span class="oi oi-vertical-align-bottom" aria-hidden="true"></span> Лимиты
             </NavLink>
         </li>
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="categories">
-                <span class="oi oi-tags" aria-hidden="true"></span> Категории расходов
+            <NavLink class="nav-link" href="categoriespage">
+                <span class="oi oi-tags" aria-hidden="true"></span> Категории
             </NavLink>
         </li>
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="groups">
-                <span class="oi oi-folder" aria-hidden="true"></span> Группы расходов
+            <NavLink class="nav-link" href="groupspage">
+                <span class="oi oi-folder" aria-hidden="true"></span> Группы
             </NavLink>
         </li>
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="savings">
-                <span class="oi oi-graph" aria-hidden="true"></span> Сбережения
+            <NavLink class="nav-link" href="savingspage">
+                <span class="oi oi-graph" aria-hidden="true"></span> Баланс
             </NavLink>
         </li>
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="inyear">
+            <NavLink class="nav-link" href="inyearpage">
                 <span class="oi oi-calendar" aria-hidden="true"></span> За год
             </NavLink>
         </li>
         <li class="nav-item px-3">
-            <NavLink class="nav-link" href="expensesfile">
+            <NavLink class="nav-link" href="expensesfilepage">
                 <span class="oi oi-hard-drive" aria-hidden="true"></span> Данные
             </NavLink>
         </li>
@@ -53,7 +58,7 @@
 @code {
     private bool collapseNavMenu = true;
 
-    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
     private void ToggleNavMenu()
     {

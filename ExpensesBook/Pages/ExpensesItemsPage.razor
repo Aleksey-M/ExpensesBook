@@ -1,0 +1,376 @@
+﻿@page "/expensesitemspage"
+
+@using ExpensesBook.Domain.Services
+@using ExpensesBook.Domain.Entities
+@using System.Collections.Generic
+@inject IExpensesService ExpensesSvc
+@inject ICategoriesService CategoriesSvc
+@inject IGroupsService GroupsSvc
+@inject IJSRuntime JSRuntime
+
+<h3>Текущие расходы</h3>
+
+<table class="table table-striped" style="font-size:small; word-wrap: break-word">
+    <thead>
+        <tr>
+            <td colspan="6">
+                <div class="form-row">
+                    <div class="offset-lg-4 col-lg-4 col-sm-12">
+                        <select class="form-control" @onchange="async e => await UpdateSelectedMonth(e)">
+                            <option value="empty" selected="selected">Не выбрано</option>
+                            @foreach (var (year, month, monthName) in _allMonths)
+                            {
+                                <option value="@($"{year}-{month}")" selected="@(year == _year && month == _month)">@($"{year} {monthName}")</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+            </td>
+        </tr>
+        <tr>
+            <td colspan="6">
+                <label><input type="checkbox" @bind="_compactMode" /> Компактный режим</label>
+            </td>
+        </tr>
+        <tr>
+            @if (_compactMode)
+            {
+                <th>Дата</th>
+                <th>Потрачено</th>
+                <th>Категория расходов</th>
+            }
+            else
+            {
+                <th>Дата</th>
+                <th>Потрачено</th>
+                <th>Описание расходов</th>
+                <th>Категория расходов</th>
+                <th>Группа расходов</th>
+                <th></th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @if (!_showFullList && CurrentExpenses.Count > 3)
+        {
+            <tr>
+                <td colspan="6">
+                    <button type="button" @onclick="@(_ => _showFullList = true)" class="btn btn-link">Показать все записи (@CurrentExpenses.Count)</button>
+                </td>
+            </tr>
+        }
+
+        @foreach (var (exp, category, group) in DisplayItems)
+        {
+    <tr>
+        @if (selectedItem?.Id == exp.Id.ToString())
+        {
+            <td colspan="6">
+                <EditForm Model="selectedItem" OnValidSubmit="UpdateItem">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-row">
+                        <div class="col-lg-3 col-sm-6 mb-2">
+                            <InputDate class="form-control" @bind-Value="selectedItem.Date" />
+                        </div>
+                        <div class="col-lg-2 col-sm-6 mb-2">
+                            <InputNumber class="form-control" step="0.01" @bind-Value="selectedItem.Amounth" />
+                        </div>
+                        <div class="col-lg-4 col-sm-12 mb-2">
+                            <InputText class="form-control" @bind-Value="selectedItem.Description" />
+                        </div>
+                        <div class="col-lg-3 col-sm-6 mb-2">
+                            <InputSelect class="form-control" @bind-Value="selectedItem.CategoryId" @oninput="async e => await CategorySelected(e, false)">
+                                @foreach (var c in Categories)
+                                        {
+                                    <option value="@c.Id.ToString()">@c.Name</option>
+                                        }
+                            </InputSelect>
+                        </div>
+                        <div class="col-lg-4 col-sm-6 mb-2">
+                            <InputSelect class="form-control" @bind-Value="selectedItem.GroupId">
+                                <option value="">группа не выбрана</option>
+                                @foreach (var g in Groups)
+                                        {
+                                    <option value="@g.Id.ToString()">@g.Name</option>
+                                        }
+                            </InputSelect>
+                        </div>
+                        <div class="offset-lg-5 col-lg-3 col-sm-12 mb-2">
+                            <div style="float:right">
+                                <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
+                                <button @onclick="DeleteItem" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
+                                <button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
+                            </div>
+                        </div>
+                    </div>
+                </EditForm>
+            </td>
+        }
+        else
+        {
+            @if (_compactMode)
+            {
+                <td>@exp.Date.ToString("yyyy.MM.dd")</td>
+                <td>@exp.Amounth.ToString("N2")</td>
+                <td>@category.Name</td>
+            }
+            else
+            {
+                <td>@exp.Date.ToString("yyyy.MM.dd")</td>
+                <td>@exp.Amounth.ToString("N2")</td>
+                <td>@exp.Description</td>
+                <td>@category.Name</td>
+                <td>@group?.Name</td>
+                <td><button @onclick="@(_ => EditItem(exp, category, group))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button></td>
+            }
+        }
+    </tr>
+        }
+    </tbody>
+    <tfoot>
+        <tr>
+            <td colspan="6">
+                <i>Всего потрачено: @AllExpensesSum грн.</i>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="6">
+                <EditForm Model="newExpense" OnValidSubmit="AddNewExpenseItem">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-row">
+                        <div class="col-lg-3 col-sm-6 mb-2">
+                            <InputDate class="form-control" @bind-Value="newExpense.Date" />
+                        </div>
+                        <div class="col-lg-2 col-sm-6 mb-2">
+                            <InputNumber class="form-control" step="0.01" @bind-Value="newExpense.Amounth" />
+                        </div>
+                        <div class="col-lg-4 col-sm-12 mb-2">
+                            <InputText class="form-control" @bind-Value="newExpense.Description" />
+                        </div>
+
+                        <div class="col-lg-3 col-sm-6 mb-2">
+                            <InputSelect class="form-control" @bind-Value="newExpense.CategoryId" @oninput="async e => await CategorySelected(e, true)">
+                                <option value=""></option>
+                                @foreach (var c in Categories)
+                                {
+                                    <option value="@c.Id.ToString()">@c.Name</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="col-lg-4 col-sm-6 mb-2">
+                            <InputSelect class="form-control" @bind-Value="newExpense.GroupId">
+                                <option value="">Группа не выбрана</option>
+                                @foreach (var g in Groups)
+                                {
+                                    <option value="@g.Id.ToString()">@g.Name</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="offset-lg-6 col-lg-2 col-sm-12 mb-2">
+                            <button type="submit" class="btn btn-success" style="float:right">Добавить</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </td>
+        </tr>
+    </tfoot>
+</table>
+
+@code {
+
+    private int _year = DateTimeOffset.Now.Year;
+    private int _month = DateTimeOffset.Now.Month;
+    private DateTimeOffset Start => new DateTimeOffset(_year, _month, 1, 0, 0, 0, TimeSpan.FromHours(0));
+    private DateTimeOffset End => new DateTimeOffset(_year, _month, DateTime.DaysInMonth(_year, _month), 0, 0, 0, TimeSpan.FromHours(0));
+
+    private List<(int year, int month, string monthName)> _allMonths = new List<(int year, int month, string monthName)>();
+    private bool _showFullList = false;
+
+    private List<(Expense item, Category category, Group? group)> CurrentExpenses = new List<(Expense item, Category category, Group? group)>();
+    private double AllExpensesSum => CurrentExpenses.Select(c => c.item.Amounth).DefaultIfEmpty().Sum();
+    private List<(Expense item, Category category, Group? group)> DisplayItems => _showFullList ? CurrentExpenses : GetThreeLastItems();
+
+    private ExpenseDto newExpense = new ExpenseDto();
+    private ExpenseDto? selectedItem;
+
+    private List<Category> Categories = new List<Category>();
+    private List<Group> Groups = new List<Group>();
+
+    private bool _compactMode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _allMonths = await ExpensesSvc.GetExpensesMonths();
+
+        if (!_allMonths.Any(m => m.year == _year && m.month == _month))
+        {
+            _year = 1;
+            _month = 1;
+        }
+
+        CurrentExpenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
+        Categories = await CategoriesSvc.GetCategories();
+        Groups = await GroupsSvc.GetGroups();
+    }
+
+    private async Task UpdateSelectedMonth(ChangeEventArgs e)
+    {
+        if (e.Value?.ToString() != "empty")
+        {
+            var values = e.Value?.ToString()?.Split("-") ?? new string[] { "1", "1" };
+            (_year, _month) = (int.Parse(values[0]), int.Parse(values[1]));
+        }
+        else
+        {
+            _year = 1;
+            _month = 1;
+            _showFullList = false;
+        }
+
+        CurrentExpenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
+    }
+
+    private async Task CategorySelected(ChangeEventArgs e, bool forNewRecord)
+    {
+        var selectedValue = e.Value?.ToString();
+
+        if (selectedValue is not null && Guid.TryParse(selectedValue, out var categoryId))
+        {
+            if(categoryId != Guid.Empty)
+            {
+                var group = await GroupsSvc.GetRelatedGroup(categoryId);
+                if (forNewRecord)
+                {
+                    newExpense.GroupId = group?.Id.ToString();
+                }
+                else if (selectedItem is not null)
+                {
+                    selectedItem.GroupId = group?.Id.ToString();
+                }
+            }
+        }
+    }
+
+    private async Task AddNewExpenseItem()
+    {
+        var category = Categories.Single(c => c.Id == Guid.Parse(newExpense.CategoryId ?? Guid.Empty.ToString()));
+        var group = Groups.SingleOrDefault(g => g.Id == (String.IsNullOrWhiteSpace(newExpense.GroupId) ? Guid.Empty : Guid.Parse(newExpense.GroupId)));
+
+        var exp = await ExpensesSvc.AddExpense(
+            date: newExpense.Date,
+            amounth: newExpense.Amounth,
+            description: newExpense.Description ?? "",
+            categoryId: category.Id,
+            groupId: group?.Id);
+
+        newExpense = new ExpenseDto();
+        selectedItem = null;
+
+        CurrentExpenses.Add((exp, category, group));
+
+        await UpdateMonthsList();
+    }
+
+    private List<(Expense item, Category category, Group? group)> GetThreeLastItems()
+    {
+        var exp = CurrentExpenses;
+        int count = exp.Count;
+
+        var lastItems = count > 3 ? exp.Skip(count - 3).ToList() : exp;
+
+        return lastItems;
+    }
+
+    private void EditItem(Expense item, Category catecory, Group? group)
+    {
+        selectedItem = new ExpenseDto
+        {
+            Id = item.Id.ToString(),
+            Description = item.Description,
+            Date = item.Date,
+            Amounth = item.Amounth,
+            CategoryId = catecory.Id.ToString(),
+            GroupId = group is null ? null : group.Id.ToString()
+        };
+    }
+
+    private async Task UpdateItem()
+    {
+        if (selectedItem == null) return;
+
+        var id = Guid.Parse(selectedItem.Id ?? Guid.Empty.ToString());
+        var categoryId = Guid.Parse(selectedItem.CategoryId ?? Guid.Empty.ToString());
+        var groupId = string.IsNullOrWhiteSpace(selectedItem.GroupId) ? (Guid?)null : Guid.Parse(selectedItem.GroupId);
+
+        var oldDate = CurrentExpenses.Single(e => e.item.Id == id).item.Date;
+
+        await ExpensesSvc.UpdateExpense(
+            expenseId: id,
+            date: selectedItem.Date,
+            oldDate: oldDate,
+            amounth: selectedItem.Amounth,
+            description: selectedItem.Description,
+            categoryId: categoryId,
+            groupId: groupId);
+
+        selectedItem = null;
+
+        CurrentExpenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
+
+        await UpdateMonthsList();
+    }
+
+    public async Task DeleteItem()
+    {
+        if (selectedItem == null) return;
+
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить запись?");
+        if (!confirmed) return;
+
+        var id = Guid.Parse(selectedItem.Id ?? Guid.Empty.ToString());
+        var oldDate = CurrentExpenses.Single(e => e.item.Id == id).item.Date;
+
+        await ExpensesSvc.DeleteExpense(id, oldDate);
+        selectedItem = null;
+
+        var exp = CurrentExpenses.Single(i => i.item.Id == id);
+        CurrentExpenses.Remove(exp);
+
+        await UpdateMonthsList();
+    }
+
+    private void CancelEdit()
+    {
+        selectedItem = null;
+    }
+
+    private async Task UpdateMonthsList()
+    {
+        _allMonths = await ExpensesSvc.GetExpensesMonths();
+        if (!_allMonths.Any(m => m.year == _year && m.month == _month))
+        {
+            _year = 1;
+            _month = 1;
+            return;
+        }
+
+        if (_year == 1)
+        {
+            int y0 = DateTimeOffset.Now.Year;
+            int m0 = DateTimeOffset.Now.Month;
+
+            if (_allMonths.Any(m => m.year == y0 && m.month == m0))
+            {
+                _year = y0;
+                _month = m0;
+            }
+
+        }
+    }
+}

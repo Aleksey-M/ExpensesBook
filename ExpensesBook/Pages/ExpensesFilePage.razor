@@ -1,0 +1,91 @@
+﻿@page "/expensesfilepage"
+
+@using ExpensesBook.Data
+@inject IJsonData JData
+@inject IJSRuntime JSRuntime
+
+<div id="expensesFileForm">
+
+    <h3 style="color: green; margin-top:5px;">@message</h3>
+    <hr />
+
+    <div>
+        <h4>Сохранить данные в файл</h4>
+        <button @onclick="SaveToFile" class="btn btn-lg btn-success"><span class="oi oi-cloud-download" aria-hidden="true"></span> Сохранить</button>
+    </div>
+        
+    <hr />
+
+    @*<h4>Загрузить данные из файла</h4>
+        <h6 class="text-danger">(текущие несохраненные данные будут перезаписаны)</h6>
+        <div>
+            <InputFile OnChange="UploadDataFile" accept=".json" />
+            <p style="color: green; margin-top:5px;">@message</p>
+        </div>*@
+    <div>
+        <h4>Загрузить данные из файла</h4>
+        <ul style="list-style-type:none">
+            <li><label><input type="checkbox" @bind-value="mergeData" /> Слияние данных</label></li>
+            <li><label><input type="checkbox" @bind-value="migrateData" /> Формат предыдущей версии программы</label></li>
+        </ul>
+       
+        <div>
+            <label for="sFile" class="btn btn-lg btn-warning"><span class="oi oi-cloud-upload" aria-hidden="true"></span> Загрузить</label>
+            <input type="file" accept=".json" id="sFile" style="visibility:hidden;" onchange="uploadFileJS(this)" />            
+        </div>
+        <input type="hidden" id="tempField" @onchange="@(async e => await ParseJson(e))" />
+    </div>
+
+    <hr />
+
+    <div>
+        <h4 class="text-danger">Удалить данные из Local Storage</h4>
+        <button @onclick="ClearData" class="btn btn-lg btn-danger"><span class="oi oi-x" aria-hidden="true"></span> Удалить</button>
+    </div>
+
+</div>
+@code {
+
+    private string message = "";
+    private bool mergeData;
+    private bool migrateData;
+
+    private async Task SaveToFile()
+    {
+        var str = await JData.ExportToJson();
+        var fileName = "exp." + DateTime.Now.ToString("yyyy.MM.dd") + ".json";
+        await JSRuntime.InvokeAsync<object>("fileSaveAs", fileName, str);
+    }
+
+    private async Task UploadDataFile(InputFileChangeEventArgs e)
+    {
+        bool saved = await JSRuntime.InvokeAsync<bool>("getSavedValue");
+        if (!saved)
+        {
+            bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Загрузка перезапишет несохраненные изменения. Продолжить?");
+            if (!confirmed) return;
+        }
+
+        var stream = e.File.OpenReadStream();
+        using var reader = new StreamReader(stream);
+        var text = await reader.ReadToEndAsync();
+
+        await JData.ImportFromJson(text, mergeData, migrateData ? JsonDataVersion.V1 : JsonDataVersion.V2);
+
+        message = "Файл загружен";
+    }
+
+    private async Task ParseJson(ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString() ?? "";
+        await JData.ImportFromJson(text, mergeData, migrateData ? JsonDataVersion.V1 : JsonDataVersion.V2);
+
+        message = "Файл загружен";
+    }
+
+    private async Task ClearData()
+    {
+        await JData.ClearData();
+        message = "Данные удалены";
+    }
+}

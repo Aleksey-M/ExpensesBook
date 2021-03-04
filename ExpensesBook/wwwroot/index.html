@@ -10,7 +10,6 @@
     <link href="css/app.css" rel="stylesheet" />
     <link href="manifest.json" rel="manifest" />
     <link rel="apple-touch-icon" sizes="512x512" href="icon.png" />
-    <script src="SaveFile.js"></script>
 </head>
 
 <body>
@@ -28,31 +27,29 @@
     <input type="hidden" id="changesSaved" value="true" />
     <script>
 
-        function setSaved() {
-            document.getElementById("changesSaved").value = "true";
+        function fileSaveAs(filename, fileContent) {
+            var link = document.createElement('a');
+            link.download = filename;
+            link.href = "data:text/plain;charset=utf-8," + encodeURIComponent(fileContent)
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
-        function setUnsaved() {
-            document.getElementById("changesSaved").value = "false";
-        }
+        function uploadFileJS(element) {
 
-        function getSavedValue() {
-            return document.getElementById("changesSaved").value === "true";
-        }
+            let file = element.files[0];
+            let reader = new FileReader();
 
-        (function () {
+            reader.addEventListener("loadend", function () {
+                let tmpField = document.getElementById('tempField');
+                tmpField.value = reader.result;
+                tmpField.dispatchEvent(new Event('change'));
+            });
 
-            window.onbeforeunload = function () {
-                let saved = document.getElementById("changesSaved").value;
-                if (saved === "true") {
-                    return null;
-                }
-                else {
-                    return 'Are you sure you want to leave?';
-                }
-            };
+            reader.readAsText(file);
+        } 
 
-        })();
     </script>
 </body>
 

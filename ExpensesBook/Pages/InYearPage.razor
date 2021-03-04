@@ -1,0 +1,99 @@
+﻿@page "/inyearpage"
+
+@using ExpensesBook.Domain.Calculators
+@inject YearExpensesCalculator YearExpCalc
+
+<h3>Расходы за год</h3>
+<hr />
+
+<div class="form-row">
+    <div class="offset-lg-3 col-lg-2 col-sm-3 mb-2">
+        <select class="form-control" @bind="_year">
+            @foreach (int y in _allYears)
+            {
+                <option value="@y">@y</option>
+            }
+        </select>
+    </div>
+    <div class="col-lg-2 col-sm-7 mb-2">
+        <select id="viewType" class="form-control" @bind="_viewType">
+            <option value="@ExpensesGroupingType.ByGroup">По группe</option>
+            <option value="@ExpensesGroupingType.ByCategory">По категории</option>
+        </select>
+    </div>
+    <div class="col-lg-2 col-sm-2 mb-2">
+        <button type="button" class="btn btn-info" @onclick="ShowTable">Показать</button>
+    </div>
+</div>
+
+@if (_yearPivotTable != null)
+{
+    <table class="table table-striped small">
+        <thead>
+            <tr>
+                <th>@_yearPivotTable.GroupingParameterName</th>
+                @foreach (var m in _yearPivotTable.MonthsNames)
+                {
+                    <th colspan="2" class="text-center">@m</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in _yearPivotTable.Rows)
+            {
+                <tr>
+                    <th>@r.rowName</th>
+                    @foreach (var c in r.Item2)
+                    {
+                        <td class="text-center">@c.value</td>
+                        <td class="text-center" style="color:darkgrey"><i>@c.percent</i></td>
+                    }
+                </tr>
+            }
+        </tbody>
+        <tfoot style="background-color:lightgoldenrodyellow">
+            <tr style="color:darkblue">
+                <th>Всего</th>
+                @foreach (var m in _yearPivotTable.MonthsTotals)
+                {
+                    <td class="text-center">@m.total</td>
+                    <td class="text-center" style="color:darkgrey"><i>@m.percent</i></td>
+                }
+            </tr>
+            <tr style="color:darkred">
+                <th>Всего за год</th>
+                <td class="text-center">@_yearPivotTable.Total</td>
+                <td colspan="@(_yearPivotTable.MonthsTotals.Count * 2 - 1)"></td>
+            </tr>
+        </tfoot>
+    </table>
+}
+else
+{
+    <h2>Нет данных</h2>
+}
+
+
+@code{
+
+    private int _year;
+    private ExpensesGroupingType _viewType = ExpensesGroupingType.ByGroup;
+    private List<int> _allYears = new List<int>();
+
+    private YearPivotTable? _yearPivotTable;
+
+    private async Task ShowTable()
+    {
+        _yearPivotTable = await YearExpCalc.GetYearExpenses(_year, _viewType);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _allYears = await YearExpCalc.GetYears();
+        var y = DateTimeOffset.Now.Year;
+        if (_allYears.Contains(y))
+        {
+            _year = y;
+        }
+    }
+}

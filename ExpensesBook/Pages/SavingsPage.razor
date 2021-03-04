@@ -1,0 +1,111 @@
+﻿@page "/savingspage"
+
+@using ExpensesBook.Domain.Calculators
+@inject CashBalanceCalculator BalanceCalculator
+@inject IJSRuntime JSRuntime
+
+<h3 style="color:blue" class="mb-3">Денежный баланс (помесячно)</h3>
+@if (_total is null)
+{
+    <button class="btn btn-success" @onclick="async _ => await ShowMonthlyBalance()">Показать</button>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Месяц</th>
+                <th>Доходы</th>
+                <th>Расходы</th>
+                <th>Сбережения</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var cb in _rows)
+            {
+                <tr>
+                    <td>@cb.yearAndMonth</td>
+                    <td style="color:darkblue">@cb.monthBalance.Incomes</td>
+                    <td style="color:darkred">@cb.monthBalance.Expenses</td>
+                    <td style="@cb.monthBalance.SavingsCSSStyle">@cb.monthBalance.Savings <small><i>@cb.monthBalance.SavingsPercent</i></small></td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Всего:</th>
+                <th style="color:darkblue">@_total?.Incomes</th>
+                <th style="color:darkred">@_total?.Expenses</th>
+                <th style="@_total?.SavingsCSSStyle">@_total?.Savings <small><i>@_total?.SavingsPercent</i></small></th>
+            </tr>
+        </tfoot>
+    </table>
+}
+
+<hr class="mt-3 mb-3" />
+
+<h3 style="color:blue" class="mb-3">Денежный баланс (произвольный период)</h3>
+
+<div class="row mb-3">
+    <div class="col-lg-5 col-sm-12 mt-2">
+        <input type="date" class="form-control" @bind="_from" />
+    </div>
+    <div class="col-lg-5 col-sm-12 mt-2">
+        <input type="date" class="form-control" @bind="_to" />
+    </div>
+    <div class="col-lg-2 col-sm-4 mt-2">
+        <button class="btn btn-success" @onclick="async _ => await ShowBalance()">Показать</button>
+    </div>
+</div>
+
+@if (_forSelectedPeriod is not null)
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Доходы</th>
+                <th>Расходы</th>
+                <th>Сбережения</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="color:darkblue">@_forSelectedPeriod.Incomes</td>
+                <td style="color:darkred">@_forSelectedPeriod.Expenses</td>
+                <td style="@_forSelectedPeriod.SavingsCSSStyle">@_forSelectedPeriod.Savings <small><i>@_forSelectedPeriod.SavingsPercent</i></small></td>
+            </tr>
+        </tbody>
+    </table>
+}
+
+
+@code
+{
+
+    private List<(string yearAndMonth, CashBalance monthBalance)> _rows = new List<(string yearAndMonth, CashBalance monthBalance)>();
+    private CashBalance? _total = null;
+    private CashBalance? _forSelectedPeriod = null;
+
+    private DateTimeOffset _from = DateTimeOffset.Now.Date;
+    private DateTimeOffset _to = DateTimeOffset.Now.Date;
+
+    private async Task ShowBalance()
+    {
+        if (_from.Date > _to.Date)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Начальная дата периода не может быть больше конечной");
+            return;
+        }
+
+        _forSelectedPeriod = await BalanceCalculator.GetCashBalance(_from, _to);
+    }
+
+    private async Task ShowMonthlyBalance()
+    {
+        (_rows, _total) = await BalanceCalculator.GetMonthlyCashBalance();
+        if(_total is null)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Нет данных для отображения");
+        }
+    }
+}
