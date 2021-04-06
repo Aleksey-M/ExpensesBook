@@ -8,207 +8,190 @@
 @inject ILimitsService LimitsSvc
 @inject IJSRuntime JSRuntime
 
-<h3>Лимиты</h3>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Период</th>
-            <th>Описание</th>
-            <th>Лимит</th>
-            <th>Расходы</th>
-            <th>Остаток</th>
-            <th>Превышение</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @if (_onlyActual)
-        {
-            <tr>
-                <td colspan="7"><button class="btn btn-link" @onclick="async _ => await ShowAllLimits()">Показать неактуальные</button></td>
-            </tr>
-        }
+    <MudCard>
+        <MudCardContent>
 
-        @foreach (var calcLimit in AllLimits)
-        {
-            @if (selectedLimit?.Id != calcLimit.LimitId.ToString())
-            {
-                <tr style="@calcLimit.RowColorCSSStyle">
-                    <td>@calcLimit.DatesRange</td>
-                    <td>@calcLimit.Description</td>
-                    <td>@calcLimit.LimitAmounth</td>
-                    <td>@calcLimit.Spent</td>
-                    <td>@calcLimit.Left</td>
-                    <td>@calcLimit.Deficite</td>
-                    <td><button @onclick="@(_ => EditLimit(calcLimit))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button></td>
-                </tr>
-            }
-            else
-            {
-                <tr>
-                    <td colspan="7">
-                        <EditForm Model="selectedLimit" OnValidSubmit="UpdateLimit">
-                            <DataAnnotationsValidator />
-                            <ValidationSummary />
+            <MudTable Items="Limits" Breakpoint="Breakpoint.Xs" Striped="true" FixedHeader="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h5" GutterBottom="true">Лимиты</MudText>
+                    <MudToolBarSpacer />
+                    @if (_onlyActual) 
+                    { 
+                        <MudButton Variant="Variant.Filled" OnClick="_ => _onlyActual = false" Color="Color.Default" StartIcon="@Icons.Material.Filled.Alarm" Class="mt-0 mr-2">Неактуальные</MudButton>
+                    }                    
+                    <MudButton Variant="Variant.Filled" OnClick="_ => OpenAddNewLimitPopup()" Color="Color.Default" StartIcon="@Icons.Material.Filled.AddCircle" Class="mt-0">Добавить</MudButton>
+                </ToolBarContent>
 
-                            <div class="form-row">
-                                <div class="col-lg-2 col-md-6 col-sm-12 mb-2">
-                                    <InputDate class="form-control" @bind-Value="selectedLimit.StartDate" />
-                                </div>
-                                <div class="col-lg-2 col-md-6 col-sm-12 mb-2">
-                                    <InputDate class="form-control" @bind-Value="selectedLimit.EndDate" />
-                                </div>
-                                <div class="col-lg-4 col-md-12 col-sm-12 mb-2">
-                                    <InputText class="form-control" @bind-Value="selectedLimit.Description" />
-                                </div>
-                                <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
-                                    <InputNumber class="form-control" step="0.01" @bind-Value="selectedLimit.LimitAmounth" />
-                                </div>
-                                <div class="col-lg-2 col-md-8 col-sm-6 mb-2">
-                                    <div style="float:right">
-                                        <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
-                                        <button @onclick="DeleteLimit" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
-                                        <button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
-                                    </div>
-                                </div>
-                            </div>
-                        </EditForm>
-                    </td>
-                </tr>
-            }
+                <HeaderContent>
+                    <MudTh>Период</MudTh>
+                    <MudTh>Описание</MudTh>
+                    <MudTh>Лимит</MudTh>
+                    <MudTh>Расходы</MudTh>
+                    <MudTh>Остаток</MudTh>
+                    <MudTh>Превышение</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
 
-        }
-    </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="7">
-                <EditForm Model="newLimit" OnValidSubmit="AddNewLimit">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+                <RowTemplate>
+                    <MudTd DataLabel="Период" Style="@context.RowColorCSSStyle">@context.DatesRange</MudTd>
+                    <MudTd DataLabel="Описание" Style="@context.RowColorCSSStyle">@context.Description</MudTd>
+                    <MudTd DataLabel="Лимит" Style="@context.RowColorCSSStyle">@context.LimitAmounth</MudTd>
+                    <MudTd DataLabel="Расходы" Style="@context.RowColorCSSStyle">@context.Spent</MudTd>
+                    <MudTd DataLabel="Остаток" Style="@context.RowColorCSSStyle">@context.Left</MudTd>
+                    <MudTd DataLabel="Превышение" Style="@context.RowColorCSSStyle">@context.Deficite</MudTd>
+                    <MudTd DataLabel="Действия" Style="text-align:right">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="_ => OpenEditLimitPopup(context)"></MudIconButton>
+                        <MudIconButton Icon="@Icons.Material.Filled.DeleteForever" Color="Color.Error" Class="ml-2" OnClick="async _ => await DeleteLimit(context.LimitId)"></MudIconButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
 
-                    <div class="form-row">
-                        <div class="col-lg-2 col-md-6 col-sm-12 mb-2">
-                            <InputDate class="form-control" @bind-Value="newLimit.StartDate" />
-                        </div>
-                        <div class="col-lg-2 col-md-6 col-sm-12 mb-2">
-                            <InputDate class="form-control" @bind-Value="newLimit.EndDate" />
-                        </div>
-                        <div class="col-lg-4 col-md-12 col-sm-12 mb-2">
-                            <InputText class="form-control" @bind-Value="newLimit.Description" />
-                        </div>
-                        <div class="col-lg-2 col-md-4 col-sm-6 mb-2">
-                            <InputNumber class="form-control" step="0.01" @bind-Value="newLimit.LimitAmounth" />
-                        </div>
-                        <div class="col-lg-2 col-md-8 col-sm-6 mb-2">
-                            <button type="submit" class="btn btn-success" style="float:right">Добавить</button>
-                        </div>
-                    </div>
-                </EditForm>
-            </td>
-        </tr>
-    </tfoot>
-</table>
+    <div style="display: block; position: absolute; bottom: 0; left: 0;">
+        <MudPopover Open="@(_state == PageState.Edit || _state == PageState.Add)" Class="pa-4" Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+            <EditForm Model="@_limit" OnValidSubmit="async _ => await SaveLimit()">
+                <DataAnnotationsValidator />
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6" Color="Color.Info">Добавление категории</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudIconButton Class="ml-auto mb-1" OnClick="_ => _state = PageState.List" Icon="@Icons.Material.Filled.Close"></MudIconButton>
+                        </CardHeaderActions>
+                    </MudCardHeader>
 
-<p style="color: blue">*Лимиты с актуальным временным диапазоном</p>
-<p style="color: red">*Превышенные лимиты</p>
-<p style="color: indianred">*Превышенные лимиты с неактуальным временным диапазоном</p>
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudDatePicker Label="Начало (включительно)" @bind-Date="_limit.StartDate" />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudDatePicker Label="Конец (включительно)" @bind-Date="_limit.EndDate" />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="3" md="4">
+                                <MudTextField Label="Сумма" InputType="InputType.Number" step=".01" @bind-Value="_limit.LimitAmounth" For="@(() => _limit.LimitAmounth)" />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="9" md="12">
+                                <MudTextField Label="Описание" InputType="InputType.Text" @bind-Value="_limit.Description" For="@(() => _limit.Description)" />
+                            </MudItem>
+                        </MudGrid>
+
+                    </MudCardContent>
+
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">@_state.SaveActionName()</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+        </MudPopover>
+    </div>
+
+    <MudCard Class="mt-4">
+        <MudCardContent>
+                <p style="color: blue">*Лимиты с актуальным временным диапазоном</p>
+                <p style="color: red">*Превышенные лимиты</p>
+                <p style="color: indianred">*Превышенные лимиты с неактуальным временным диапазоном</p>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
 
 @code {
 
     private bool _onlyActual = true;
-
-    private List<CalculatedLimit> AllLimits { get; set; } = new List<CalculatedLimit>();
-    private LimitDto newLimit = new LimitDto();
-    private LimitDto? selectedLimit;
+    private List<CalculatedLimit> _allLimits = new List<CalculatedLimit>();
+    private List<CalculatedLimit> Limits => _onlyActual
+        ? _allLimits.Where(l => l.StartDate.Date <= DateTime.Now.Date && l.EndDate.Date >= DateTime.Now.Date).ToList()
+        : _allLimits;
 
     protected override async Task OnInitializedAsync()
     {
-        AllLimits = await LimitsCalc.GetCalculatedLimits(_onlyActual);
+        _allLimits = await LimitsCalc.GetCalculatedLimits(false);
     }
 
-    private async Task ShowAllLimits()
+    private void ShowAllLimits()
     {
         _onlyActual = false;
-        AllLimits = await LimitsCalc.GetCalculatedLimits(_onlyActual);
     }
 
-    private async Task AddNewLimit()
+    private LimitDto _limit = new LimitDto();
+    private PageState _state = PageState.List;
+
+    private void OpenAddNewLimitPopup()
     {
-        if (newLimit.StartDate.Date > newLimit.EndDate.Date)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "Дата начала периода не может быть больше даты окончания периода");
-            return;
-        }
-
-        var lim = await LimitsSvc.AddLimit(
-            startDate: newLimit.StartDate,
-            endDate: newLimit.EndDate,
-            description: newLimit.Description ?? "empty",
-            newLimit.LimitAmounth);
-
-        var calcLim = await LimitsCalc.GetCalculatedLimit(lim);
-        AllLimits.Add(calcLim);
-        newLimit = new LimitDto();
+        _limit = new LimitDto { Id = Guid.Empty, LimitAmounth = 30000 };
+        _state = PageState.Add;
     }
 
-    private void EditLimit(CalculatedLimit limit)
+    private void OpenEditLimitPopup(CalculatedLimit calcLimit)
     {
-        selectedLimit = new LimitDto
+        _limit = new LimitDto
         {
-            Id = limit.LimitId.ToString(),
-            Description = limit.Description,
-            StartDate = limit.StartDate,
-            EndDate = limit.EndDate,
-            LimitAmounth = limit.LimitAmounthNum
+            Id = calcLimit.LimitId,
+            LimitAmounth = calcLimit.LimitAmounthNum,
+            StartDate = calcLimit.StartDate.Date,
+            EndDate = calcLimit.EndDate.Date,
+            Description = calcLimit.Description
         };
+
+        _state = PageState.Edit;
     }
 
-    private void CancelEdit()
+    private async Task SaveLimit()
     {
-        selectedLimit = null;
-    }
+        if (_limit is null) return;
 
-    private async Task UpdateLimit()
-    {
-        if (selectedLimit == null) return;
-
-        if (selectedLimit.StartDate.Date > selectedLimit.EndDate.Date)
+        if (_limit.StartDate?.Date > _limit.EndDate?.Date)
         {
             await JSRuntime.InvokeVoidAsync("alert", "Дата начала периода не может быть больше даты окончания периода");
             return;
         }
 
-        var limId = Guid.Parse(selectedLimit.Id ?? Guid.Empty.ToString());
+        if (_limit.Id == Guid.Empty)
+        {
+            var lim = await LimitsSvc.AddLimit(
+                startDate: _limit.StartDate ?? DateTime.Now,
+                endDate: _limit.EndDate ?? DateTime.Now,
+                description: _limit.Description ?? "empty",
+                _limit.LimitAmounth);
 
-        await LimitsSvc.UpdateLimit(
-            limitId: limId,
-            startDate: selectedLimit.StartDate,
-            endDate: selectedLimit.EndDate,
-            description: selectedLimit.Description ?? "empty",
-            selectedLimit.LimitAmounth);
+            var calcLim = await LimitsCalc.GetCalculatedLimit(lim);
+            _allLimits.Add(calcLim);
+        }
+        else
+        {
+            var limId = _limit.Id ?? Guid.Empty;
 
-        var lim = (await LimitsSvc.GetLimits()).Single(l => l.Id == limId);
-        var calcLim = await LimitsCalc.GetCalculatedLimit(lim);
+            await LimitsSvc.UpdateLimit(
+                limitId: limId,
+                startDate: _limit.StartDate,
+                endDate: _limit.EndDate,
+                description: _limit.Description ?? "empty",
+                _limit.LimitAmounth);
 
-        AllLimits.Remove(AllLimits.Single(l => l.LimitId == limId));
-        AllLimits.Add(calcLim);
+            var lim = (await LimitsSvc.GetLimits()).Single(l => l.Id == limId);
+            var calcLim = await LimitsCalc.GetCalculatedLimit(lim);
 
-        selectedLimit = null;
+            _allLimits.Remove(_allLimits.Single(l => l.LimitId == limId));
+            _allLimits.Add(calcLim);
+        }
+
+        _state = PageState.List;
     }
 
-    public async Task DeleteLimit()
+    public async Task DeleteLimit(Guid limitId)
     {
-        if (selectedLimit == null) return;
-
         bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Удалить лимит?");
         if (!confirmed) return;
 
-        var limId = Guid.Parse(selectedLimit.Id ?? Guid.Empty.ToString());
-        await LimitsSvc.DeleteLimit(limId);
-        AllLimits.Remove(AllLimits.Single(l => l.LimitId == limId));
-
-        selectedLimit = null;
+        await LimitsSvc.DeleteLimit(limitId);
+        _allLimits.Remove(_allLimits.Single(l => l.LimitId == limitId));
     }
 
 }

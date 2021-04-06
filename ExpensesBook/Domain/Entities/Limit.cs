@@ -19,13 +19,13 @@ namespace ExpensesBook.Domain.Entities
 
     internal class LimitDto
     {
-        public string? Id { get; set; }
+        public Guid? Id { get; set; }
         [Required, StringLength(200)]
         public string? Description { get; set; }
         [Required]
-        public DateTimeOffset StartDate { get; set; } = DateTimeOffset.Now;
+        public DateTime? StartDate { get; set; } = DateTime.Now;
         [Required]
-        public DateTimeOffset EndDate { get; set; } = DateTimeOffset.Now.AddMonths(1);
+        public DateTime? EndDate { get; set; } = DateTime.Now.AddMonths(1);
         [Required, Range(1, 100000)]
         public double LimitAmounth { get; set; } = 40000.00;
     }

@@ -7,6 +7,7 @@ using ExpensesBook.Domain.Services;
 using ExpensesBook.LocalStorageRepositories;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor.Services;
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -18,9 +19,14 @@ namespace ExpensesBook
         public static async Task Main(string[] args)
         {
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
-            builder.RootComponents.Add<App>("app");
+            builder.RootComponents.Add<App>("#app");
+
+            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
             builder.Services.AddBlazoredLocalStorage();
+            builder.Services.AddMudServices();
+
+            #region register services
 
             builder.Services.AddTransient<ICategoriesRepository, CategoriesRepository>();
             builder.Services.AddTransient<ILocalStorageGenericRepository<Category>, CategoriesRepository>();
@@ -51,8 +57,8 @@ namespace ExpensesBook
             builder.Services.AddTransient<LimitsCalculator>();
             builder.Services.AddTransient<YearExpensesCalculator>();
 
-            builder.Services.AddTransient(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-
+            #endregion
+            
             await builder.Build().RunAsync();
         }
     }

@@ -5,151 +5,171 @@
 @using System.Collections.Generic
 @inject PeriodExpenseCalculator Calc
 
-<h3>Книга расходов</h3>
-<hr />
-<div class="form-row">
-    <div class="col-sm-6 col-lg-3 mb-2">
-        <input type="date" id="startDate" class="form-control" @bind-value="_startDate" />
-    </div>
-    <div class="col-lg-3 col-sm-6 mb-2">
-        <input type="date" id="endDate" class="form-control" @bind-value="_endDate" />
-    </div>
-    <div class="col-lg-4 col-sm-9 mb-2">
-        <select id="viewType" class="form-control" @bind="_viewType">
-            <option selected value="@ExpensesGroupingType.None">Без группировки</option>
-            <option value="@ExpensesGroupingType.ByDate">По дате</option>
-            <option value="@ExpensesGroupingType.ByGroup">По группе</option>
-            <option value="@ExpensesGroupingType.ByCategory">По категории</option>
-        </select>
-    </div>
-    <div class="col-lg-2 col-sm-3 mb-2">
-        <button type="button" class="btn btn-info" style="float:right" @onclick="ShowTable">Показать</button>
-    </div>
-</div>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <MudCard>
+        <MudCardContent>
+            <MudGrid>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudDatePicker Label="Начало" @bind-Date="_startDate" />
+                </MudItem>
 
-<br />
+                <MudItem xs="12" sm="6" md="3">
+                    <MudDatePicker Label="Конец" @bind-Date="_endDate" />
+                </MudItem>
 
-<div class="row" style="word-wrap: break-word">
-    <div class="col-12">
+                <MudItem xs="12" sm="8" md="4">
+                    <MudSelect T="ExpensesGroupingType" Label="Группировка" @bind-value="_viewType">
+                        <MudSelectItem Value="ExpensesGroupingType.None">Без группировки</MudSelectItem>
+                        <MudSelectItem Value="ExpensesGroupingType.ByDate">По дате</MudSelectItem>
+                        <MudSelectItem Value="ExpensesGroupingType.ByGroup">По группе</MudSelectItem>
+                        <MudSelectItem Value="ExpensesGroupingType.ByCategory">По категории</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
 
-    @if (RecordsNotFound)
+                <MudItem xs="12" sm="4" md="2">
+                    <MudButton Variant="Variant.Filled" Class="mt-2" Color="Color.Success" StartIcon="@Icons.Material.Filled.TableChart" OnClick="ShowTable">Показать</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+
+    @if (_actualDataSet is not null)
     {
-        <h4 style="color:darkorange">Нет записей для указанного диапазона дат</h4>
-    }
-    else
-    {       
-        <table class="table table-striped table-sm">
-            <thead>
-                <tr>
-                    <th>@_headers.Item1</th>
-                    <th>@_headers.Item2</th>
-                    <th>@_headers.Item3</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in _actualDataSet)
-                {
-                    @if (_detailsListAvailable && _groupingCriteriaName == item.Item1)
-                    {
-                        <tr>
-                            <td colspan="3">
-                                <h5 style="color:navy"><i>@item.Item1 (@item.Item2 грн)</i></h5>
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Дата</th>
-                                            <th>Описание</th>
-                                            <th>Потрачено</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach (var expandedItem in _expandedSublist)
-                                        {
-                                            <tr>
-                                                <td>@expandedItem.Date.ToString("yyyy.MM.dd")</td>
-                                                <td>@expandedItem.Description</td>
-                                                <td>@expandedItem.Amounth.ToString("N2")</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <th colspan="3">
-                                                <button type="button" class="btn btn-link" @onclick="_ => _groupingCriteriaName = null">Свернуть</button>
-                                            </th>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        <tr>
-                            <td>
-                                @if (_detailsListAvailable)
-                                {
-                                    <button @onclick="async _ => await ShowDetails(item.Item1, item.Item4)" type="button" class="btn btn-link">@item.Item1</button>
-                                }
-                                else
-                                {
-                                    @item.Item1
-                                }
-                            </td>
-                            <td>@item.Item2</td>
-                            <td>@item.Item3</td>
-                        </tr>
-                    }
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th colspan="3">
-                        Всего: @_total
-                    </th>
-                </tr>
-            </tfoot>
-         </table>
-    }
-    </div>
-</div>
-
-
-@code {
-    private DateTimeOffset _startDate = DateTimeOffset.Now.Date.AddDays(-14);
-    private DateTimeOffset _endDate = DateTimeOffset.Now.Date.AddDays(1);
-    private ExpensesGroupingType _viewType;
-
-    private string _total = "0";
-    private bool RecordsNotFound => _actualDataSet.Count == 0;
-
-    private (string, string, string) _headers;
-    private List<(string, string, string, Guid?)> _actualDataSet = new List<(string, string, string, Guid?)>();
-
-    private async Task ShowTable()
-    {
-        _headers = Calc.GetTableHeaders(_viewType);
-
-        (_actualDataSet, _total) = await Calc.GetExpensesAsTable(_viewType, _startDate.Date, _endDate.Date, null);
-
-        _detailsListAvailable = _viewType != ExpensesGroupingType.None;
-        _groupingCriteriaName = null;
-    }
-
-    private List<Expense> _expandedSublist = new List<Expense>();
-    private string? _groupingCriteriaName;
-    private bool _detailsListAvailable = false;
-
-    private async Task ShowDetails(string groupingCriteriaName, Guid? filterBy)
-    {
-        _groupingCriteriaName = groupingCriteriaName;
-
-        _expandedSublist = (_viewType) switch
+        @if (_actualDataSet is { Count: 0 })
         {
-            ExpensesGroupingType.ByDate => await Calc.GetFilteredExpenses(_viewType, DateTimeOffset.Parse(groupingCriteriaName), DateTimeOffset.Parse(groupingCriteriaName), filterBy),
-            ExpensesGroupingType.ByGroup => await Calc.GetFilteredExpenses(_viewType, _startDate.Date, _endDate.Date, filterBy),
-            ExpensesGroupingType.ByCategory => await Calc.GetFilteredExpenses(_viewType, _startDate.Date, _endDate.Date, filterBy),
-            _ => new List<Expense>()
-        };
+            <MudCard Class="mt-5">
+                <MudCardContent>
+                    <MudText Typo="Typo.h5">Нет данных</MudText>
+                </MudCardContent>
+            </MudCard>
+        }
+        else
+        {
+            <MudCard Class="mt-5">
+                <MudCardContent>
+                    <MudTable Items="_actualDataSet" Hover="true" Breakpoint="Breakpoint.None" Striped="true">
+                        <HeaderContent>
+                            <MudTh>@_headers.Item1</MudTh>
+                            <MudTh>@_headers.Item2</MudTh>
+                            <MudTh>@_headers.Item3</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                @if (_detailsListAvailable)
+                                 {
+                                    <MudButton Variant="Variant.Text" OnClick="async _ => await ShowDetails(context.Item1, context.Item4)">@context.Item1</MudButton>
+                                 }
+                                 else
+                                 {
+                                    @context.Item1
+                                 }
+                            </MudTd>
+                            <MudTd>@context.Item2</MudTd>
+                            <MudTd>@context.Item3</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                    <MudText Color="Color.Info" Typo="Typo.h6" Class="mt-5 ml-5">Всего: @_total</MudText>
+
+                    <div style="display: block; position: absolute; bottom: 0; left: 0;">
+                        <MudPopover Open="@(_groupingCriteriaName is not null)" Class="pa-4" Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+                            <MudCard>
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6" Color="Color.Info">@_groupingCriteriaName</MudText>
+                                    </CardHeaderContent>
+
+                                    <CardHeaderActions>
+                                        <MudIconButton OnClick="HideDetails" Class="ml-auto mb-1" Icon="@Icons.Material.Filled.Close"></MudIconButton>
+                                    </CardHeaderActions>  
+                                </MudCardHeader>
+
+                                <MudCardContent>
+                                    <MudTable Items="_expandedSublist" Hover="false" Breakpoint="Breakpoint.None" FixedHeader="true" Striped="true" Dense="true">
+                                        <HeaderContent>
+                                            <MudTh>Дата</MudTh>
+                                            <MudTh>Описание</MudTh>
+                                            <MudTh>Потрачено</MudTh>
+                                        </HeaderContent>
+                                        <RowTemplate>
+                                            <MudTd>@context.Date.ToString("yyyy.MM.dd")</MudTd>
+                                            <MudTd>@context.Description</MudTd>
+                                            <MudTd>@context.Amounth.ToString("N2")</MudTd>
+                                        </RowTemplate>
+                                    </MudTable>
+                                </MudCardContent>
+                            </MudCard>                           
+                            
+                        </MudPopover>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+
+            if(_viewType == ExpensesGroupingType.ByCategory || _viewType == ExpensesGroupingType.ByGroup)
+            {
+                <MudPaper Class="pa-4 mt-3">
+                    <MudChart ChartType="ChartType.Pie" InputData="@_data" InputLabels="@_labels" Width="400px" Height="400px" />
+                </MudPaper>
+            }
+        }
     }
-}
+</MudContainer>
+
+    @code {
+        private DateTime? _startDate = DateTimeOffset.Now.Date.AddDays(-14);
+        private DateTime? _endDate = DateTimeOffset.Now.Date.AddDays(1);
+        private ExpensesGroupingType _viewType;
+
+        private string _total = "0";
+        private bool RecordsNotFound => (_actualDataSet?.Count ?? 0) == 0;
+
+        private (string, string, string) _headers;
+        private List<(string, string, string, Guid?)>? _actualDataSet;
+
+        private double[] _data = Array.Empty<double>();
+        private string[] _labels = Array.Empty<string>();
+
+        private async Task ShowTable()
+        {
+            if (_startDate is null || _endDate is null) return;
+            var start = new DateTimeOffset(_startDate.Value);
+            var end = new DateTimeOffset(_endDate.Value);
+
+            _headers = Calc.GetTableHeaders(_viewType);
+
+            (_actualDataSet, _total) = await Calc.GetExpensesAsTable(_viewType, start, end, null);
+
+            _detailsListAvailable = _viewType != ExpensesGroupingType.None;
+            _groupingCriteriaName = null;
+
+            if(_viewType == ExpensesGroupingType.ByGroup || _viewType == ExpensesGroupingType.ByCategory)
+            {
+                _data = _actualDataSet.OrderBy(d => d.Item1).Select(d => double.Parse(d.Item2)).ToArray();
+                _labels = _actualDataSet.OrderBy(d => d.Item1).Select(d => d.Item1).ToArray();
+            }
+        }
+
+        private List<Expense> _expandedSublist = new List<Expense>();
+        private string? _groupingCriteriaName;
+        private bool _detailsListAvailable = false;
+
+        private async Task ShowDetails(string groupingCriteriaName, Guid? filterBy)
+        {
+            _groupingCriteriaName = groupingCriteriaName;
+            if (_startDate is null || _endDate is null) return;
+            var start = new DateTimeOffset(_startDate.Value);
+            var end = new DateTimeOffset(_endDate.Value);
+
+            _expandedSublist = (_viewType) switch
+            {
+                ExpensesGroupingType.ByDate => await Calc.GetFilteredExpenses(_viewType, DateTimeOffset.Parse(groupingCriteriaName), DateTimeOffset.Parse(groupingCriteriaName), filterBy),
+                ExpensesGroupingType.ByGroup => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy),
+                ExpensesGroupingType.ByCategory => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy),
+                _ => new List<Expense>()
+            };
+        }
+
+        private void HideDetails()
+        {
+            _groupingCriteriaName = null;
+        }
+    }

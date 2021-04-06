@@ -3,88 +3,137 @@
 @using ExpensesBook.Domain.Calculators
 @inject YearExpensesCalculator YearExpCalc
 
-<h3>Расходы за год</h3>
-<hr />
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <MudCard>
+        <MudCardContent>
+            <MudGrid>
 
-<div class="form-row">
-    <div class="offset-lg-3 col-lg-2 col-sm-3 mb-2">
-        <select class="form-control" @bind="_year">
-            @foreach (int y in _allYears)
-            {
-                <option value="@y">@y</option>
-            }
-        </select>
-    </div>
-    <div class="col-lg-2 col-sm-7 mb-2">
-        <select id="viewType" class="form-control" @bind="_viewType">
-            <option value="@ExpensesGroupingType.ByGroup">По группe</option>
-            <option value="@ExpensesGroupingType.ByCategory">По категории</option>
-        </select>
-    </div>
-    <div class="col-lg-2 col-sm-2 mb-2">
-        <button type="button" class="btn btn-info" @onclick="ShowTable">Показать</button>
-    </div>
-</div>
+                <MudItem xs="12" sm="4" md="2">
+                    <MudSelect T="int" Label="Год" @bind-value="_year">
+                        @foreach (int y in _allYears)
+                        {
+                            <MudSelectItem Value="@y">@y</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
 
-@if (_yearPivotTable != null)
-{
-    <table class="table table-striped small">
-        <thead>
-            <tr>
-                <th>@_yearPivotTable.GroupingParameterName</th>
-                @foreach (var m in _yearPivotTable.MonthsNames)
-                {
-                    <th colspan="2" class="text-center">@m</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var r in _yearPivotTable.Rows)
-            {
-                <tr>
-                    <th>@r.rowName</th>
-                    @foreach (var c in r.Item2)
-                    {
-                        <td class="text-center">@c.value</td>
-                        <td class="text-center" style="color:darkgrey"><i>@c.percent</i></td>
-                    }
-                </tr>
-            }
-        </tbody>
-        <tfoot style="background-color:lightgoldenrodyellow">
-            <tr style="color:darkblue">
-                <th>Всего</th>
-                @foreach (var m in _yearPivotTable.MonthsTotals)
-                {
-                    <td class="text-center">@m.total</td>
-                    <td class="text-center" style="color:darkgrey"><i>@m.percent</i></td>
-                }
-            </tr>
-            <tr style="color:darkred">
-                <th>Всего за год</th>
-                <td class="text-center">@_yearPivotTable.Total</td>
-                <td colspan="@(_yearPivotTable.MonthsTotals.Count * 2 - 1)"></td>
-            </tr>
-        </tfoot>
-    </table>
-}
-else
-{
-    <h2>Нет данных</h2>
-}
+                <MudItem xs="12" sm="4" md="7">
+                    <MudSelect T="ExpensesGroupingType" Label="Группировка" @bind-value="_viewType">
+                        <MudSelectItem Value="ExpensesGroupingType.ByGroup">По группе</MudSelectItem>
+                        <MudSelectItem Value="ExpensesGroupingType.ByCategory">По категории</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
 
+                <MudItem xs="12" sm="4" md="3">
+                    <MudButton Variant="Variant.Filled" Class="mt-2" Color="Color.Success" StartIcon="@Icons.Material.Filled.TableChart" OnClick="ShowTable">Показать</MudButton>
+                </MudItem>
+
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+
+    @if (_yearPivotTable is not null)
+    {
+            <MudCard Class="mt-5">
+                <MudCardContent>
+                    <MudTable Items="_yearPivotTable.Rows" Breakpoint="Breakpoint.None" Striped="true" MultiSelection="true" SelectedItems="_selectedItems" T="(string rowName, List<(string value, string percent)>)" SelectedItemsChanged="items => OnSelectedChanged(items)">
+                        <HeaderContent>
+                            <MudTh>@_yearPivotTable.GroupingParameterName</MudTh>
+                            @foreach (var m in _yearPivotTable.MonthsNames)
+                            {
+                                <MudTh Style="text-align:center">@m</MudTh>
+                            }
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTh>@context.rowName</MudTh>
+                            @foreach (var c in context.Item2)
+                                {
+                                <MudTd Style="text-align:center">@c.value <i style="color:darkgrey">@c.percent</i></MudTd>
+                                }
+                        </RowTemplate>
+                    </MudTable>
+
+                    <MudText Class="mt-4 mb-2" Color="Color.Warning">Расходы за год: @_yearPivotTable.Total</MudText>
+                </MudCardContent>                
+            </MudCard>
+
+            <MudPaper Class="mt-3 mb-3">
+                <MudChart ChartOptions="Options" ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="100%" Height="350px"></MudChart>
+            </MudPaper>
+               
+    }
+    else
+    {
+        <MudText Class="mt-4 mb-2" Color="Color.Warning">Нет данных</MudText>
+    }
+</MudContainer>
 
 @code{
 
     private int _year;
     private ExpensesGroupingType _viewType = ExpensesGroupingType.ByGroup;
     private List<int> _allYears = new List<int>();
+    private HashSet<(string rowName, List<(string value, string percent)>)> _selectedItems = new HashSet<(string rowName, List<(string value, string percent)>)>();
 
     private YearPivotTable? _yearPivotTable;
+
+    private List<ChartSeries> Series = new List<ChartSeries>();
+    private string[] XAxisLabels = Array.Empty<string>();
+    private ChartOptions Options = new ChartOptions { YAxisTicks = 10000 };
+
+    private void UpdateChart()
+    {
+        if (_yearPivotTable is null) return;
+
+        XAxisLabels = _yearPivotTable.MonthsNames.ToArray();
+
+        Series = _selectedItems
+            .Where(i => i.rowName != "За месяц")
+            .Select(r =>
+            new ChartSeries
+            {
+                Name = r.rowName,
+                Data = r.Item2.Select(i => double.Parse(i.value)).ToArray()
+            })
+            .ToList();
+
+        double max = 0;
+        foreach (var s in _selectedItems.Where(i => i.rowName != "За месяц"))
+        {
+            var m = s.Item2.Select(i => double.Parse(i.value)).Max();
+            if (m > max) max = m;
+        }
+
+        Options.YAxisTicks = max switch
+        {
+            0 => 10,
+            < 1000 => 200,
+            < 2000 => 250,
+            < 3000 => 300,
+            < 5000 => 500,
+            < 10_000 => 1000,
+            _ => 20_000
+        };
+    }
+
+    private void OnSelectedChanged(HashSet<(string rowName, List<(string value, string percent)>)> items)
+    {
+        UpdateChart();
+    }
 
     private async Task ShowTable()
     {
         _yearPivotTable = await YearExpCalc.GetYearExpenses(_year, _viewType);
+
+        if (_yearPivotTable is not null)
+        {
+            _selectedItems = new HashSet<(string rowName, List<(string value, string percent)>)>(_yearPivotTable.Rows);
+
+            UpdateChart();
+
+            var total = _yearPivotTable.MonthsTotals.OrderBy(t => t.month).Select(t => (t.total, t.percent)).ToList();
+            _yearPivotTable.Rows.Add(("За месяц", total));
+        }
     }
 
     protected override async Task OnInitializedAsync()

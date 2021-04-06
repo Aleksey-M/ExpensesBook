@@ -8,201 +8,179 @@
 @inject IGroupsService GroupsSvc
 @inject IJSRuntime JSRuntime
 
-<h3>Текущие расходы</h3>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <MudCard>
+        <MudCardContent>
 
-<table class="table table-striped" style="font-size:small; word-wrap: break-word">
-    <thead>
-        <tr>
-            <td colspan="6">
-                <div class="form-row">
-                    <div class="offset-lg-4 col-lg-4 col-sm-12">
-                        <select class="form-control" @onchange="async e => await UpdateSelectedMonth(e)">
-                            <option value="empty" selected="selected">Не выбрано</option>
+                <MudGrid Class="mb-3">
+                    <MudItem xs="12" sm="6">
+                        <MudSelect T="string" Label="Текущий месяц" Class="mt-0" Value="SelectedMonth" ValueChanged="async value => await UpdateSelectedMonth(value)">
+                            <MudSelectItem Value=@("empty")>Не выбрано</MudSelectItem>
                             @foreach (var (year, month, monthName) in _allMonths)
                             {
-                                <option value="@($"{year}-{month}")" selected="@(year == _year && month == _month)">@($"{year} {monthName}")</option>
+                                <MudSelectItem Value=@($"{year}-{month}")>@($"{year} {monthName}")</MudSelectItem>
                             }
-                        </select>
-                    </div>
-                </div>
+                        </MudSelect>
+                    </MudItem>
 
-            </td>
-        </tr>
-        <tr>
-            <td colspan="6">
-                <label><input type="checkbox" @bind="_compactMode" /> Компактный режим</label>
-            </td>
-        </tr>
-        <tr>
-            @if (_compactMode)
-            {
-                <th>Дата</th>
-                <th>Потрачено</th>
-                <th>Категория расходов</th>
-            }
-            else
-            {
-                <th>Дата</th>
-                <th>Потрачено</th>
-                <th>Описание расходов</th>
-                <th>Категория расходов</th>
-                <th>Группа расходов</th>
-                <th></th>
-            }
-        </tr>
-    </thead>
-    <tbody>
-        @if (!_showFullList && CurrentExpenses.Count > 3)
-        {
-            <tr>
-                <td colspan="6">
-                    <button type="button" @onclick="@(_ => _showFullList = true)" class="btn btn-link">Показать все записи (@CurrentExpenses.Count)</button>
-                </td>
-            </tr>
-        }
+                    <MudItem xs="12" sm="6">
+                        <MudCheckBox @bind-Checked="_compactMode">Компактный вид таблицы</MudCheckBox>
+                    </MudItem>
+                </MudGrid>
 
-        @foreach (var (exp, category, group) in DisplayItems)
-        {
-    <tr>
-        @if (selectedItem?.Id == exp.Id.ToString())
-        {
-            <td colspan="6">
-                <EditForm Model="selectedItem" OnValidSubmit="UpdateItem">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+                <MudTable Items="DisplayExpenses" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h5" GutterBottom="true">Расходы</MudText>
+                        <MudToolBarSpacer />
+                        @if (!_showFullList && _expenses.Count > 3)
+                        {
+                            <MudButton Variant="Variant.Filled" OnClick="_ => _showFullList = true" Color="Color.Default" StartIcon="@Icons.Material.Filled.Expand" Class="mt-0 mr-2">Показать все (@_expenses.Count)</MudButton>
+                        }
+                        <MudButton Variant="Variant.Filled" OnClick="_ => OpenAddNewExpensePopup()" Color="Color.Default" StartIcon="@Icons.Material.Filled.AddCircle" Class="mt-0">Добавить</MudButton>
+                    </ToolBarContent>
 
-                    <div class="form-row">
-                        <div class="col-lg-3 col-sm-6 mb-2">
-                            <InputDate class="form-control" @bind-Value="selectedItem.Date" />
-                        </div>
-                        <div class="col-lg-2 col-sm-6 mb-2">
-                            <InputNumber class="form-control" step="0.01" @bind-Value="selectedItem.Amounth" />
-                        </div>
-                        <div class="col-lg-4 col-sm-12 mb-2">
-                            <InputText class="form-control" @bind-Value="selectedItem.Description" />
-                        </div>
-                        <div class="col-lg-3 col-sm-6 mb-2">
-                            <InputSelect class="form-control" @bind-Value="selectedItem.CategoryId" @oninput="async e => await CategorySelected(e, false)">
-                                @foreach (var c in Categories)
-                                        {
-                                    <option value="@c.Id.ToString()">@c.Name</option>
-                                        }
-                            </InputSelect>
-                        </div>
-                        <div class="col-lg-4 col-sm-6 mb-2">
-                            <InputSelect class="form-control" @bind-Value="selectedItem.GroupId">
-                                <option value="">группа не выбрана</option>
-                                @foreach (var g in Groups)
-                                        {
-                                    <option value="@g.Id.ToString()">@g.Name</option>
-                                        }
-                            </InputSelect>
-                        </div>
-                        <div class="offset-lg-5 col-lg-3 col-sm-12 mb-2">
-                            <div style="float:right">
-                                <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
-                                <button @onclick="DeleteItem" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
-                                <button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
-                            </div>
-                        </div>
-                    </div>
-                </EditForm>
-            </td>
-        }
-        else
-        {
-            @if (_compactMode)
-            {
-                <td>@exp.Date.ToString("yyyy.MM.dd")</td>
-                <td>@exp.Amounth.ToString("N2")</td>
-                <td>@category.Name</td>
-            }
-            else
-            {
-                <td>@exp.Date.ToString("yyyy.MM.dd")</td>
-                <td>@exp.Amounth.ToString("N2")</td>
-                <td>@exp.Description</td>
-                <td>@category.Name</td>
-                <td>@group?.Name</td>
-                <td><button @onclick="@(_ => EditItem(exp, category, group))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button></td>
-            }
-        }
-    </tr>
-        }
-    </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="6">
-                <i>Всего потрачено: @AllExpensesSum грн.</i>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="6">
-                <EditForm Model="newExpense" OnValidSubmit="AddNewExpenseItem">
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+                    <HeaderContent>
+                        @if (_compactMode)
+                        {
+                            <MudTd>Дата</MudTd>
+                            <MudTd>Потрачено</MudTd>
+                            <MudTd>Категория расходов</MudTd>
+                        }
+                        else
+                        {
+                            <MudTd>Дата</MudTd>
+                            <MudTd>Потрачено</MudTd>
+                            <MudTd>Описание расходов</MudTd>
+                            <MudTd>Категория расходов</MudTd>
+                            <MudTd>Группа расходов</MudTd>
+                            <MudTd></MudTd>
+                        }
+                    </HeaderContent>
 
-                    <div class="form-row">
-                        <div class="col-lg-3 col-sm-6 mb-2">
-                            <InputDate class="form-control" @bind-Value="newExpense.Date" />
-                        </div>
-                        <div class="col-lg-2 col-sm-6 mb-2">
-                            <InputNumber class="form-control" step="0.01" @bind-Value="newExpense.Amounth" />
-                        </div>
-                        <div class="col-lg-4 col-sm-12 mb-2">
-                            <InputText class="form-control" @bind-Value="newExpense.Description" />
-                        </div>
+                    <RowTemplate>
+                        @if (_compactMode)
+                        {
+                            <MudTd>@context.item.Date.ToString("yyyy.MM.dd")</MudTd>
+                            <MudTd>@context.item.Amounth.ToString("N2")</MudTd>
+                            <MudTd>@context.category.Name</MudTd>
+                        }
+                        else
+                        {
+                            <MudTd>@context.item.Date.ToString("yyyy.MM.dd")</MudTd>
+                            <MudTd>@context.item.Amounth.ToString("N2")</MudTd>
+                            <MudTd>@context.item.Description</MudTd>
+                            <MudTd>@context.category.Name</MudTd>
+                            <MudTd>@context.group?.Name</MudTd>
+                            <MudTh Style="text-align:right">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="_ => OpenEditExpensePopup(context.item)"></MudIconButton>
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteForever" Color="Color.Error" Class="ml-2" OnClick="async _ => await DeleteExpense(context.item.Id)"></MudIconButton>
+                            </MudTh>
+                        }
+                    </RowTemplate>
+                </MudTable>
 
-                        <div class="col-lg-3 col-sm-6 mb-2">
-                            <InputSelect class="form-control" @bind-Value="newExpense.CategoryId" @oninput="async e => await CategorySelected(e, true)">
-                                <option value=""></option>
-                                @foreach (var c in Categories)
-                                {
-                                    <option value="@c.Id.ToString()">@c.Name</option>
-                                }
-                            </InputSelect>
-                        </div>
+                <MudText Typo="Typo.h6" Color="Color.Info" Class="mt-4 ml-3"><i>Всего потрачено: @AllExpensesSum.ToString("N2") грн.</i></MudText>
+            </MudCardContent>
+        </MudCard>
 
-                        <div class="col-lg-4 col-sm-6 mb-2">
-                            <InputSelect class="form-control" @bind-Value="newExpense.GroupId">
-                                <option value="">Группа не выбрана</option>
-                                @foreach (var g in Groups)
-                                {
-                                    <option value="@g.Id.ToString()">@g.Name</option>
-                                }
-                            </InputSelect>
-                        </div>
-                        <div class="offset-lg-6 col-lg-2 col-sm-12 mb-2">
-                            <button type="submit" class="btn btn-success" style="float:right">Добавить</button>
-                        </div>
-                    </div>
-                </EditForm>
-            </td>
-        </tr>
-    </tfoot>
-</table>
+    <div style="display: block; position: absolute; bottom: 0; left: 0;">
+        <MudPopover Open="@(_state == PageState.Edit || _state == PageState.Add)" Class="pa-4" Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+            <EditForm Model="@_expense" OnValidSubmit="async _ => await SaveExpense()">
+                <DataAnnotationsValidator />
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6" Color="Color.Info">Добавление записи</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudIconButton Class="ml-auto mb-1" OnClick="_ => _state = PageState.List" Icon="@Icons.Material.Filled.Close"></MudIconButton>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+
+                    <MudCardContent>
+
+                        <MudGrid>
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudDatePicker Label="Дата" @bind-Date="_expense.Date" />
+                            </MudItem>
+                            
+                            <MudItem xs="12" sm="6" md="2">
+                                <MudTextField Label="Сумма" InputType="InputType.Number" step=".01" @bind-Value="_expense.Amounth" For="@(() => _expense.Amounth)" />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="12" md="6">
+                                <MudTextField Label="Описание" InputType="InputType.Text" @bind-Value="_expense.Description" For="@(() => _expense.Description)" />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6" md="6">
+                                <MudSelect T="Guid?" Label="Категория" Class="mt-0" Value="_expense.CategoryId" ValueChanged="async value => await CategorySelected(value)">
+                                    @foreach (var c in Categories)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@c.Id">@c.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6" md="6">
+                                <MudSelect T="Guid?" Label="Группа" Class="mt-0" @bind-Value="_expense.GroupId">
+                                    <MudSelectItem T="Guid?" Value=@((Guid?)null)>Группа не выбрана</MudSelectItem>
+                                    @foreach (var g in Groups)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@g.Id">@g.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+
+                    </MudCardContent>
+
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">@_state.SaveActionName()</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+        </MudPopover>
+    </div>
+
+</MudContainer>
 
 @code {
 
     private int _year = DateTimeOffset.Now.Year;
     private int _month = DateTimeOffset.Now.Month;
+    private string SelectedMonth => (_year, _month) switch
+    {
+        (1, 1) => "empty",
+        (_, _) => $"{_year}-{_month}"
+    };
+
     private DateTimeOffset Start => new DateTimeOffset(_year, _month, 1, 0, 0, 0, TimeSpan.FromHours(0));
     private DateTimeOffset End => new DateTimeOffset(_year, _month, DateTime.DaysInMonth(_year, _month), 0, 0, 0, TimeSpan.FromHours(0));
 
     private List<(int year, int month, string monthName)> _allMonths = new List<(int year, int month, string monthName)>();
     private bool _showFullList = false;
 
-    private List<(Expense item, Category category, Group? group)> CurrentExpenses = new List<(Expense item, Category category, Group? group)>();
-    private double AllExpensesSum => CurrentExpenses.Select(c => c.item.Amounth).DefaultIfEmpty().Sum();
-    private List<(Expense item, Category category, Group? group)> DisplayItems => _showFullList ? CurrentExpenses : GetThreeLastItems();
+    private List<(Expense item, Category category, Group? group)> _expenses = new List<(Expense item, Category category, Group? group)>();
+    private double AllExpensesSum => _expenses.Select(c => c.item.Amounth).DefaultIfEmpty().Sum();
+    private List<(Expense item, Category category, Group? group)> DisplayExpenses => _showFullList ? _expenses : GetThreeLastItems();
 
-    private ExpenseDto newExpense = new ExpenseDto();
-    private ExpenseDto? selectedItem;
+    private List<(Expense item, Category category, Group? group)> GetThreeLastItems()
+    {
+        var exp = _expenses;
+        int count = exp.Count;
+
+        var lastItems = count > 3 ? exp.Skip(count - 3).ToList() : exp;
+
+        return lastItems;
+    }
 
     private List<Category> Categories = new List<Category>();
     private List<Group> Groups = new List<Group>();
 
-    private bool _compactMode;
+    private ExpenseDto _expense = new ExpenseDto();
+    private PageState _state = PageState.List;
+
+    private bool _compactMode = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -214,16 +192,40 @@
             _month = 1;
         }
 
-        CurrentExpenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
+        _expenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
         Categories = await CategoriesSvc.GetCategories();
         Groups = await GroupsSvc.GetGroups();
     }
 
-    private async Task UpdateSelectedMonth(ChangeEventArgs e)
+    private async Task CategorySelected(Guid? value)
     {
-        if (e.Value?.ToString() != "empty")
+        _expense.CategoryId = value;
+
+        if (value is null) return;
+        var group = await GroupsSvc.GetRelatedGroup(value.Value);
+        _expense.GroupId = group?.Id;
+    }
+
+    private async Task DeleteExpense(Guid expenseId)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить запись?");
+        if (!confirmed) return;
+
+        var oldDate = _expenses.Single(e => e.item.Id == expenseId).item.Date;
+
+        await ExpensesSvc.DeleteExpense(expenseId, oldDate);
+
+        var exp = _expenses.Single(i => i.item.Id == expenseId);
+        _expenses.Remove(exp);
+
+        await UpdateMonthsList();
+    }
+
+    private async Task UpdateSelectedMonth(string value)
+    {
+        if (value != "empty")
         {
-            var values = e.Value?.ToString()?.Split("-") ?? new string[] { "1", "1" };
+            var values = value.Split("-") ?? new string[] { "1", "1" };
             (_year, _month) = (int.Parse(values[0]), int.Parse(values[1]));
         }
         else
@@ -233,121 +235,7 @@
             _showFullList = false;
         }
 
-        CurrentExpenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
-    }
-
-    private async Task CategorySelected(ChangeEventArgs e, bool forNewRecord)
-    {
-        var selectedValue = e.Value?.ToString();
-
-        if (selectedValue is not null && Guid.TryParse(selectedValue, out var categoryId))
-        {
-            if(categoryId != Guid.Empty)
-            {
-                var group = await GroupsSvc.GetRelatedGroup(categoryId);
-                if (forNewRecord)
-                {
-                    newExpense.GroupId = group?.Id.ToString();
-                }
-                else if (selectedItem is not null)
-                {
-                    selectedItem.GroupId = group?.Id.ToString();
-                }
-            }
-        }
-    }
-
-    private async Task AddNewExpenseItem()
-    {
-        var category = Categories.Single(c => c.Id == Guid.Parse(newExpense.CategoryId ?? Guid.Empty.ToString()));
-        var group = Groups.SingleOrDefault(g => g.Id == (String.IsNullOrWhiteSpace(newExpense.GroupId) ? Guid.Empty : Guid.Parse(newExpense.GroupId)));
-
-        var exp = await ExpensesSvc.AddExpense(
-            date: newExpense.Date,
-            amounth: newExpense.Amounth,
-            description: newExpense.Description ?? "",
-            categoryId: category.Id,
-            groupId: group?.Id);
-
-        newExpense = new ExpenseDto();
-        selectedItem = null;
-
-        CurrentExpenses.Add((exp, category, group));
-
-        await UpdateMonthsList();
-    }
-
-    private List<(Expense item, Category category, Group? group)> GetThreeLastItems()
-    {
-        var exp = CurrentExpenses;
-        int count = exp.Count;
-
-        var lastItems = count > 3 ? exp.Skip(count - 3).ToList() : exp;
-
-        return lastItems;
-    }
-
-    private void EditItem(Expense item, Category catecory, Group? group)
-    {
-        selectedItem = new ExpenseDto
-        {
-            Id = item.Id.ToString(),
-            Description = item.Description,
-            Date = item.Date,
-            Amounth = item.Amounth,
-            CategoryId = catecory.Id.ToString(),
-            GroupId = group is null ? null : group.Id.ToString()
-        };
-    }
-
-    private async Task UpdateItem()
-    {
-        if (selectedItem == null) return;
-
-        var id = Guid.Parse(selectedItem.Id ?? Guid.Empty.ToString());
-        var categoryId = Guid.Parse(selectedItem.CategoryId ?? Guid.Empty.ToString());
-        var groupId = string.IsNullOrWhiteSpace(selectedItem.GroupId) ? (Guid?)null : Guid.Parse(selectedItem.GroupId);
-
-        var oldDate = CurrentExpenses.Single(e => e.item.Id == id).item.Date;
-
-        await ExpensesSvc.UpdateExpense(
-            expenseId: id,
-            date: selectedItem.Date,
-            oldDate: oldDate,
-            amounth: selectedItem.Amounth,
-            description: selectedItem.Description,
-            categoryId: categoryId,
-            groupId: groupId);
-
-        selectedItem = null;
-
-        CurrentExpenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
-
-        await UpdateMonthsList();
-    }
-
-    public async Task DeleteItem()
-    {
-        if (selectedItem == null) return;
-
-        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить запись?");
-        if (!confirmed) return;
-
-        var id = Guid.Parse(selectedItem.Id ?? Guid.Empty.ToString());
-        var oldDate = CurrentExpenses.Single(e => e.item.Id == id).item.Date;
-
-        await ExpensesSvc.DeleteExpense(id, oldDate);
-        selectedItem = null;
-
-        var exp = CurrentExpenses.Single(i => i.item.Id == id);
-        CurrentExpenses.Remove(exp);
-
-        await UpdateMonthsList();
-    }
-
-    private void CancelEdit()
-    {
-        selectedItem = null;
+        _expenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
     }
 
     private async Task UpdateMonthsList()
@@ -373,4 +261,70 @@
 
         }
     }
+
+    private void OpenAddNewExpensePopup()
+    {
+        _expense = new ExpenseDto();
+        _state = PageState.Add;
+    }
+
+    private void OpenEditExpensePopup(Expense expense)
+    {
+        _expense = new ExpenseDto
+        {
+            Id = expense.Id,
+            Date = expense.Date.Date,
+            Description = expense.Description,
+            Amounth = expense.Amounth,
+            CategoryId = expense.CategoryId,
+            GroupId = expense.GroupId
+        };
+
+        _state = PageState.Edit;
+    }
+
+    private async Task SaveExpense()
+    {
+        if (_expense is null) return;
+
+        var category = Categories.Single(c => c.Id == (_expense.CategoryId ?? Guid.Empty));
+        var group = Groups.SingleOrDefault(g => g.Id == (_expense.GroupId ?? Guid.Empty));
+
+        if (_expense.Id == Guid.Empty)
+        {
+            var exp = await ExpensesSvc.AddExpense(
+                date: _expense.Date ?? DateTime.Now,
+                amounth: _expense.Amounth,
+                description: _expense.Description ?? "",
+                categoryId: category.Id,
+                groupId: group?.Id);
+
+            _expense = new ExpenseDto() { Date = _expense.Date };
+
+            _expenses.Add((exp, category, group));
+        }
+        else
+        {
+            var oldDate = _expenses.Single(e => e.item.Id == _expense.Id).item.Date;
+
+            await ExpensesSvc.UpdateExpense(
+                expenseId: _expense.Id,
+                date: _expense.Date,
+                oldDate: oldDate,
+                amounth: _expense.Amounth,
+                description: _expense.Description,
+                categoryId: _expense.CategoryId,
+                groupId: _expense.GroupId);
+
+            _expenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
+        }
+
+        await UpdateMonthsList();
+
+        if (_state == PageState.Edit)
+        {
+            _state = PageState.List;
+        }
+    }
+
 }

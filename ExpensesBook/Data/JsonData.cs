@@ -1,18 +1,15 @@
 ﻿using ExpensesBook.Domain.Entities;
 using ExpensesBook.LocalStorageRepositories;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace ExpensesBook.Data
 {
-    internal enum JsonDataVersion { V1, V2 }
-
     internal interface IJsonData
     {
         ValueTask<string> ExportToJson();
-        ValueTask ImportFromJson(string data, bool dataMerge, JsonDataVersion jsonDataVersion);
+        ValueTask ImportFromJson(string data, bool dataMerge);
         ValueTask ClearData();
     }
 
@@ -65,30 +62,7 @@ namespace ExpensesBook.Data
             return json;
         }
 
-#pragma warning disable CA1822 // Mark members as static
-
-        private ExpensesDataSerializable DeserializeV2(string data) => ExpensesDataSerializable.DeserializeFromJson(data);
-
-        private ExpensesDataSerializable DeserializeV1(string data)
-        {
-            var imported = V1.ExpensesDataSerializable.DeserializeFromJson(data);
-
-            var converted = new ExpensesDataSerializable
-            {
-                Categories = imported.Categories.Select(c => new Category { Id = c.Id, Name = c.Name, Sort = c.Sort }).ToList(),
-                Expenses = imported.Expenses.Select(e => new Expense { Id = e.Id, Amounth = e.Amounth, Date = e.Date, Description = e.Description, CategoryId = e.CategoryId, GroupId = e.GroupId }).ToList(),
-                Groups = imported.Groups.Select(g => new Group { Id = g.Id, Name = g.Name, Sort = g.Sort }).ToList(),
-                GroupsDefaultCategories = new List<GroupDefaultCategory>(),
-                Incomes = imported.Savings.Select(s => new Income { Id = s.Id, Date = new DateTimeOffset(s.Year, s.Month, 10, 0, 0, 0, TimeSpan.Zero), Amounth = s.Income, Description = s.Description }).ToList(),
-                Limits = imported.Limits.Select(l => new Limit { Id = l.Id, StartDate = l.StartIncluded, EndDate = l.EndExcluded.AddDays(-1), Description = l.Description, LimitAmounth = l.LimitAmounth }).ToList()
-            };
-
-            return converted;
-        }
-
-#pragma warning restore CA1822 // Mark members as static
-
-        public async ValueTask ImportFromJson(string data, bool dataMerge, JsonDataVersion jsonDataVersion)
+        public async ValueTask ImportFromJson(string data, bool dataMerge)
         {
             var expenses = dataMerge ? await _expensesRepo.GetCollection() : new List<Expense>();
             var categories = dataMerge ? await _categoriesRepo.GetCollection() : new List<Category>();
@@ -99,12 +73,7 @@ namespace ExpensesBook.Data
 
             if (!string.IsNullOrWhiteSpace(data))
             {
-                var imported = jsonDataVersion switch
-                {
-                    JsonDataVersion.V1 => DeserializeV1(data),
-                    JsonDataVersion.V2 => DeserializeV2(data),
-                    _ => throw new Exception("Unknown data format version")
-                };
+                var imported = ExpensesDataSerializable.DeserializeFromJson(data);
 
                 if (dataMerge)
                 {

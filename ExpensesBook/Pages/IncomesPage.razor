@@ -6,111 +6,131 @@
 @inject IIncomesService IncomesService
 @inject IJSRuntime JSRuntime
 
-<h3>Доходы</h3>
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Дата</th>
-            <th>Сумма</th>
-            <th>Описание</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var inc in Incomes)
-        {
-        <tr>
-            @if (_selectedIncome?.Id == inc.Id)
-            {
-                <td colspan="3">
-                    <EditForm Model="_selectedIncome" OnValidSubmit="UpdateIncome">
+    <MudCard>
+        <MudCardContent>
 
-                        <DataAnnotationsValidator />
-                        <ValidationSummary />
+            <MudTable Items="Incomes" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h5" GutterBottom="true">Доходы</MudText>
+                    <MudToolBarSpacer />
+                    <MudButton Variant="Variant.Filled" OnClick="_ => OpenAddNewIncomePopup()" Color="Color.Default" StartIcon="@Icons.Material.Filled.AddCircle" Class="mt-0">Добавить</MudButton>
+                </ToolBarContent>
 
-                        <div class="form-row">
-                            <div class="col-lg-2 col-sm-6 mb-2">
-                                <InputDate class="form-control" @bind-Value="_selectedIncome.Date" />
-                            </div>
-                            <div class="col-lg-2 col-sm-6 mb-2">
-                                <InputNumber class="form-control" step="0.01" @bind-Value="_selectedIncome.Amounth" />
-                            </div>
-                            <div class="col-lg-5 col-sm-12 mb-2">
-                                <InputText class="form-control" @bind-Value="_selectedIncome.Description" />
-                            </div>
-                            <div class="col-lg-3 col-sm-12 mb-2">
-                                <button type="submit" class="btn btn-sm btn-success" title="Сохранить"><span class="oi oi-check" aria-hidden="true"></span></button>
-                                <button @onclick="DeleteIncome" class="btn btn-sm btn-danger" title="Удалить"><span class="oi oi-trash" aria-hidden="true"></span></button>
-                                <button @onclick="CancelEdit" class="btn btn-sm btn-secondary" title="Закрыть"><span class="oi oi-x" aria-hidden="true"></span></button>
-                            </div>
-                        </div>
-                    </EditForm>
-                </td>
-            }
-            else
-            {
-                <td>@inc.Date.ToString("yyyy.MM.dd")</td>
-                <td>@inc.Amounth.ToString("N2")</td>
-                <td>
-                    @inc.Description
-                    <button @onclick="@(_ => EditIncome(inc))" style="float:right" class="btn btn-sm btn-secondary" title="Редактировать"><span class="oi oi-pencil" aria-hidden="true"></span></button>
-                </td>
-            }
-        </tr>
-        }
-    </tbody>
-    <tfoot>
-        <tr>
-            <td colspan="3">
-                <EditForm Model="_newIncome" OnValidSubmit="AddNewIncome">
+                <HeaderContent>
+                    <MudTh>Дата</MudTh>
+                    <MudTh>Сумма</MudTh>
+                    <MudTh>Описание</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
 
-                    <DataAnnotationsValidator />
-                    <ValidationSummary />
+                <RowTemplate>
+                    <MudTd>@context.Date.ToString("yyyy.MM.dd")</MudTd>
+                    <MudTd>@context.Amounth.ToString("N2")</MudTd>
+                    <MudTd>@context.Description</MudTd>
+                    <MudTh Style="text-align:right">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="_ => OpenEditIncomePopup(context)"></MudIconButton>
+                        <MudIconButton Icon="@Icons.Material.Filled.DeleteForever" Color="Color.Error" Class="ml-2" OnClick="async _ => await DeleteIncome(context.Id)"></MudIconButton>
+                    </MudTh>
+                </RowTemplate>
+            </MudTable>
+        </MudCardContent>
+    </MudCard>
 
-                    <div class="form-row">
-                        <div class="col-lg-2 col-sm-6 mb-2">
-                            <InputDate class="form-control" @bind-Value="_newIncome.Date" />
-                        </div>
-                        <div class="col-lg-2 col-sm-6 mb-2">
-                            <InputNumber class="form-control" step="0.01" @bind-Value="_newIncome.Amounth" />
-                        </div>
-                        <div class="col-lg-5 col-sm-12 mb-2">
-                            <InputText class="form-control" @bind-Value="_newIncome.Description" />
-                        </div>
-                        <div class="col-lg-3 col-sm-12 mb-2">
-                            <button type="submit" class="btn btn-success">Добавить</button>
-                        </div>
-                    </div>
-                </EditForm>
-            </td>
-        </tr>
-    </tfoot>
-</table>
+    <div style="display: block; position: absolute; bottom: 0; left: 0;">
+        <MudPopover Open="@(_state == PageState.Edit || _state == PageState.Add)" Class="pa-4" Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+            <EditForm Model="@_income" OnValidSubmit="async _ => await SaveIncome()">
+                <DataAnnotationsValidator />
+                <MudCard>
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6" Color="Color.Info">Добавление категории</MudText>
+                        </CardHeaderContent>
+                        <CardHeaderActions>
+                            <MudIconButton Class="ml-auto mb-1" OnClick="_ => _state = PageState.List" Icon="@Icons.Material.Filled.Close"></MudIconButton>
+                        </CardHeaderActions>
+                    </MudCardHeader>
+
+                    <MudCardContent>
+                        <MudGrid>
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudDatePicker Label="Дата" @bind-Date="_income.Date" />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="6" md="2">
+                                <MudTextField Label="Сумма" InputType="InputType.Number" step=".01" @bind-Value="_income.Amounth" For="@(() => _income.Amounth)" />
+                            </MudItem>
+
+                            <MudItem xs="12" sm="12" md="6">
+                                <MudTextField Label="Описание" InputType="InputType.Text" @bind-Value="_income.Description" For="@(() => _income.Description)" />
+                            </MudItem>
+                        </MudGrid>
+
+                    </MudCardContent>
+
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">@_state.SaveActionName()</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </EditForm>
+        </MudPopover>
+    </div>
+
+</MudContainer>
+
 
 @code {
 
     private List<Income> Incomes { get; set; } = new List<Income>();
-    private IncomeDto _newIncome = new IncomeDto();
-    private IncomeDto? _selectedIncome = null;
 
     protected override async Task OnInitializedAsync()
     {
         Incomes = await IncomesService.GetIncomes(null, null, null);
     }
 
-    private async Task AddNewIncome()
-    {
-        await IncomesService.AddIncome(date: _newIncome.Date, amounth: _newIncome.Amounth, description: _newIncome.Description);
+    private IncomeDto _income = new IncomeDto();
+    private PageState _state = PageState.List;
 
-        Incomes = await IncomesService.GetIncomes(null, null, null);
-        _newIncome = new IncomeDto();
+    private void OpenAddNewIncomePopup()
+    {
+        _income = new IncomeDto() { Id = Guid.Empty, Date = DateTime.Now.Date };
+        _state = PageState.Add;
     }
 
-    private async Task DeleteIncome()
+    private void OpenEditIncomePopup(Income income)
     {
-        if (_selectedIncome == null) return;
-        var incomeId = _selectedIncome?.Id ?? Guid.Empty;
+        _income = new IncomeDto
+        {
 
+            Id = income.Id,
+            Date = income.Date.Date,
+            Description = income.Description,
+            Amounth = income.Amounth
+        };
+
+        _state = PageState.Edit;
+    }
+
+    private async Task SaveIncome()
+    {
+        if (_income is null) return;
+
+        if (_income.Id == Guid.Empty)
+        {
+            await IncomesService.AddIncome(date: _income?.Date ?? DateTime.Now.Date, amounth: _income?.Amounth ?? 0, description: _income?.Description ?? "");
+        }
+        else
+        {
+            await IncomesService.UpdateIncome(incomeId: _income.Id, date: _income?.Date, amounth: _income?.Amounth, description: _income?.Description);
+        }
+
+        Incomes = await IncomesService.GetIncomes(null, null, null);
+        _state = PageState.List;
+    }
+
+    private async Task DeleteIncome(Guid incomeId)
+    {
         bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить запись о доходе?");
         if (!confirmed) return;
 
@@ -118,34 +138,6 @@
 
         var i = Incomes.Single(i => i.Id == incomeId);
         Incomes.Remove(i);
-
-        _selectedIncome = null;
-    }
-
-    private async Task UpdateIncome()
-    {
-        if (_selectedIncome == null) return;
-
-        await IncomesService.UpdateIncome(incomeId: _selectedIncome.Id, date: _selectedIncome?.Date, amounth: _selectedIncome?.Amounth, description: _selectedIncome?.Description);
-
-        Incomes = await IncomesService.GetIncomes(null, null, null);
-        _selectedIncome = null;
-    }
-
-    private void CancelEdit()
-    {
-        _selectedIncome = null;
-    }
-
-    private void EditIncome(Income income)
-    {
-        _selectedIncome = new IncomeDto
-        {
-            Id = income.Id,
-            Date = income.Date,
-            Amounth = income.Amounth,
-            Description = income.Description
-        };
-    }
+    }        
 
 }

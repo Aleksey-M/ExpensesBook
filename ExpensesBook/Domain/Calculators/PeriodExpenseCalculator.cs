@@ -55,12 +55,13 @@ namespace ExpensesBook.Domain.Calculators
                 .Where(e => e.group is not null)
                 .GroupBy(e => e.group)
                 .OrderBy(g => g.Key?.Name)
-                .Select(g => (g.Key?.Name, g.Key?.Id, g.Select(e => e.item.Amounth).DefaultIfEmpty().Sum()))
+                .Select(g => (g.Key?.Name ?? "[empty]", g.Key?.Id, g.Select(e => e.item.Amounth).DefaultIfEmpty().Sum()))
                 .Where(i => i.Item3 > 0)
-                .Select(i => (i.Name, i.Item3.ToString("N2"), (i.Item3 * 100 / total).ToString("N2") + " %", (Guid?)i.Id))
+                .Select(i => (i.Item1, i.Item3.ToString("N2"), (i.Item3 * 100 / total).ToString("N2") + " %", (Guid?)i.Id))
                 .ToList();
 
             var withoutGroup = expenses.Where(e => e.group is null).Select(e => e.item.Amounth).DefaultIfEmpty().Sum();
+
             if(withoutGroup > 0)
             {
                 result.Add(("Без группы", withoutGroup.ToString("N2"), (withoutGroup * 100 / total).ToString("N2") + " %", (Guid?)null));

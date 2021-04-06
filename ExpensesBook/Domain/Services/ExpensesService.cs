@@ -52,7 +52,7 @@ namespace ExpensesBook.Domain.Services
         public async ValueTask<List<Expense>> GetExpenses(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter)
         {
             filter ??= "";
-            Func<string, bool> descriptionFilter = filter == "" ? desc => true : desc => desc.Contains(filter, StringComparison.OrdinalIgnoreCase);
+            Func<string, bool> descriptionFilter = filter == "" ? _ => true : desc => desc.Contains(filter, StringComparison.OrdinalIgnoreCase);
 
             var fullList = await _expensesRepo.GetExpenses(startDate, endDate);
 

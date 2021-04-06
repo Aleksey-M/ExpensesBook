@@ -91,8 +91,10 @@ namespace ExpensesBook.LocalStorageRepositories
                 (null, null) => i => true
             };
 
+            var allKeys = await (this as ILocalStorageGenericRepository<Expense>).GetKeys();
             var filteredKeys = new List<string>();
-            var keys = (await (this as ILocalStorageGenericRepository<Expense>).GetKeys())
+
+            var keys = allKeys
                 .Where(k => k.StartsWith("ExpListPart", StringComparison.OrdinalIgnoreCase))
                 .Select(s => (key: s, dateVal: PartKeyToComparableInt(s)))
                 .Where(d => filter(d.dateVal))
@@ -100,11 +102,18 @@ namespace ExpensesBook.LocalStorageRepositories
                 .ToList();
 
             var expenses = new List<Expense>();
+            Func<DateTimeOffset, bool> datesFilter = (fromDate, toDate) switch
+            {
+                (not null, not null) => d => d.Date >= fromDate && d.Date <= toDate,
+                (null, not null) => d => d <= toDate,
+                (not null, null) => d => d >= fromDate,
+                (null, null) => d => true
+            };
 
             foreach (var k in keys)
             {
                 var part = await LocalStorage.GetItemAsync<List<Expense>>(k);
-                expenses.AddRange(part);
+                expenses.AddRange(part.Where(e => datesFilter(e.Date)).ToList());
             }
 
             return expenses;
