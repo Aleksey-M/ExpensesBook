@@ -6,16 +6,16 @@
 @inject ICategoriesService CategoriesService
 @inject IJSRuntime JSRuntime
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
 
     <MudCard>
         <MudCardContent>
 
-            <MudTable Items="Groups" Breakpoint="Breakpoint.None" Striped="true">
+            <MudTable Items="Groups" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
                 <ToolBarContent>
-                    <MudText Typo="Typo.h5" GutterBottom="true">Группы расходов</MudText>
+                    <MudText Typo="Typo.h5" GutterBottom="true">Группы</MudText>
                     <MudToolBarSpacer />
-                    <MudButton Variant="Variant.Filled" OnClick="_ => OpenAddNewGroupPopup()" Color="Color.Default" StartIcon="@Icons.Material.Filled.AddCircle" Class="mt-0">Добавить</MudButton>
+                    <MudFab OnClick="_ => OpenAddNewGroupPopup()" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" Class="ma-2" DisableElevation="true" />                   
                 </ToolBarContent>
 
                 <HeaderContent>
@@ -53,7 +53,7 @@
                 <MudCard>
                     <MudCardHeader>
                         <CardHeaderContent>
-                            <MudText Typo="Typo.h6" Color="Color.Info">Добавление группы</MudText>
+                            <MudText Typo="Typo.h6" Color="Color.Info">Группа</MudText>
                         </CardHeaderContent>
                         <CardHeaderActions>
                             <MudIconButton Class="ml-auto mb-1" OnClick="_ => _state = PageState.List" Icon="@Icons.Material.Filled.Close"></MudIconButton>
@@ -71,7 +71,7 @@
                             </MudItem>
 
                             <MudItem xs="12" md="12">
-                                <MudSelect T="Category" Label="Категории" HelperText="Связать категории с группой для автозаполнения" MultiSelection="true" @bind-SelectedValues="_selectedOptions" Dense="true">
+                                <MudSelect T="Category" Label="Категории" HelperText="Связать категории с группой для автозаполнения" MultiSelection="true" @bind-SelectedValues="_selectedOptions" Dense="true" Direction="Direction.Top">
                                     @foreach (var category in AvailableCategories)
                                     {
                                         <MudSelectItem T="Category" Value="@category">@category.Name</MudSelectItem>

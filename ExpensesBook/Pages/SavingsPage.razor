@@ -4,7 +4,7 @@
 @inject CashBalanceCalculator BalanceCalculator
 @inject IJSRuntime JSRuntime
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
 
     <MudCard>
         <MudCardContent>
@@ -16,7 +16,7 @@
             }
             else
             {
-                <MudTable Items="_rows" Breakpoint="Breakpoint.None" Striped="true">
+                <MudTable Items="_rows" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
                     <HeaderContent>
                         <MudTh>Месяц</MudTh>
                         <MudTh>Доходы</MudTh>
@@ -32,7 +32,7 @@
                 </MudTable>
 
                 <MudPaper Class="mt-3 mb-3">
-                        <MudChart ChartOptions="Options" ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="100%" Height="350px"></MudChart>
+                        <MudChart ChartOptions="Options" ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="100%" Height="370px" Style="margin-left:25px"></MudChart>
                 </MudPaper>
             }
 
@@ -81,7 +81,7 @@
         @if (_displayChart) 
         {
             <MudPaper Class="pa-4 mt-3">
-                <MudChart ChartType="ChartType.Pie" InputData="@_data" InputLabels="@_labels" Width="350px" Height="350px" />
+                <MudChart ChartType="ChartType.Pie" InputData="@_data" InputLabels="@_labels" Width="300px" Height="300px" />
             </MudPaper>
         }
      }

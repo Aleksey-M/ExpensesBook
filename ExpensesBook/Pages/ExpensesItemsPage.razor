@@ -8,7 +8,7 @@
 @inject IGroupsService GroupsSvc
 @inject IJSRuntime JSRuntime
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
     <MudCard>
         <MudCardContent>
 
@@ -32,11 +32,13 @@
                     <ToolBarContent>
                         <MudText Typo="Typo.h5" GutterBottom="true">Расходы</MudText>
                         <MudToolBarSpacer />
+
                         @if (!_showFullList && _expenses.Count > 3)
                         {
-                            <MudButton Variant="Variant.Filled" OnClick="_ => _showFullList = true" Color="Color.Default" StartIcon="@Icons.Material.Filled.Expand" Class="mt-0 mr-2">Показать все (@_expenses.Count)</MudButton>
+                            <MudFab OnClick="_ => _showFullList = true" Icon="@Icons.Material.Filled.Expand" Size="Size.Small" IconSize="Size.Small" Class="ma-2" Label="@_expenses.Count().ToString()" DisableElevation="true" />                            
                         }
-                        <MudButton Variant="Variant.Filled" OnClick="_ => OpenAddNewExpensePopup()" Color="Color.Default" StartIcon="@Icons.Material.Filled.AddCircle" Class="mt-0">Добавить</MudButton>
+                        <MudFab OnClick="_ => OpenAddNewExpensePopup()" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" Class="ma-2" DisableElevation="true" />
+                                               
                     </ToolBarContent>
 
                     <HeaderContent>
@@ -90,7 +92,7 @@
                 <MudCard>
                     <MudCardHeader>
                         <CardHeaderContent>
-                            <MudText Typo="Typo.h6" Color="Color.Info">Добавление записи</MudText>
+                            <MudText Typo="Typo.h6" Color="Color.Info">Расходы</MudText>
                         </CardHeaderContent>
                         <CardHeaderActions>
                             <MudIconButton Class="ml-auto mb-1" OnClick="_ => _state = PageState.List" Icon="@Icons.Material.Filled.Close"></MudIconButton>
@@ -113,7 +115,7 @@
                             </MudItem>
 
                             <MudItem xs="12" sm="6" md="6">
-                                <MudSelect T="Guid?" Label="Категория" Class="mt-0" Value="_expense.CategoryId" ValueChanged="async value => await CategorySelected(value)">
+                                <MudSelect T="Guid?" Label="Категория" Class="mt-0" Direction="Direction.Top" Value="_expense.CategoryId" ValueChanged="async value => await CategorySelected(value)">
                                     @foreach (var c in Categories)
                                     {
                                         <MudSelectItem T="Guid?" Value="@c.Id">@c.Name</MudSelectItem>
@@ -122,7 +124,7 @@
                             </MudItem>
 
                             <MudItem xs="12" sm="6" md="6">
-                                <MudSelect T="Guid?" Label="Группа" Class="mt-0" @bind-Value="_expense.GroupId">
+                                <MudSelect T="Guid?" Label="Группа" Class="mt-0" @bind-Value="_expense.GroupId" Direction="Direction.Top">
                                     <MudSelectItem T="Guid?" Value=@((Guid?)null)>Группа не выбрана</MudSelectItem>
                                     @foreach (var g in Groups)
                                     {

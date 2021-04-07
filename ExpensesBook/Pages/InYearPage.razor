@@ -3,7 +3,7 @@
 @using ExpensesBook.Domain.Calculators
 @inject YearExpensesCalculator YearExpCalc
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
     <MudCard>
         <MudCardContent>
             <MudGrid>
@@ -36,7 +36,7 @@
     {
             <MudCard Class="mt-5">
                 <MudCardContent>
-                    <MudTable Items="_yearPivotTable.Rows" Breakpoint="Breakpoint.None" Striped="true" MultiSelection="true" SelectedItems="_selectedItems" T="(string rowName, List<(string value, string percent)>)" SelectedItemsChanged="items => OnSelectedChanged(items)">
+                    <MudTable Items="_yearPivotTable.Rows" Breakpoint="Breakpoint.None" Striped="true" MultiSelection="true" SelectedItems="_selectedItems" T="(string rowName, List<(string value, string percent)>)" SelectedItemsChanged="items => OnSelectedChanged(items)" FixedHeader="true">
                         <HeaderContent>
                             <MudTh>@_yearPivotTable.GroupingParameterName</MudTh>
                             @foreach (var m in _yearPivotTable.MonthsNames)

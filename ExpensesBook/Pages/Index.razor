@@ -5,7 +5,7 @@
 @using System.Collections.Generic
 @inject PeriodExpenseCalculator Calc
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
     <MudCard>
         <MudCardContent>
             <MudGrid>
@@ -47,7 +47,7 @@
         {
             <MudCard Class="mt-5">
                 <MudCardContent>
-                    <MudTable Items="_actualDataSet" Hover="true" Breakpoint="Breakpoint.None" Striped="true">
+                    <MudTable Items="_actualDataSet" Hover="true" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
                         <HeaderContent>
                             <MudTh>@_headers.Item1</MudTh>
                             <MudTh>@_headers.Item2</MudTh>
@@ -107,7 +107,7 @@
             if(_viewType == ExpensesGroupingType.ByCategory || _viewType == ExpensesGroupingType.ByGroup)
             {
                 <MudPaper Class="pa-4 mt-3">
-                    <MudChart ChartType="ChartType.Pie" InputData="@_data" InputLabels="@_labels" Width="400px" Height="400px" />
+                    <MudChart ChartType="ChartType.Pie" InputData="@_data" InputLabels="@_labels" Width="300px" Height="300px" />
                 </MudPaper>
             }
         }

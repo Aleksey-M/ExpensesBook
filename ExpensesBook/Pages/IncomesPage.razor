@@ -6,7 +6,7 @@
 @inject IIncomesService IncomesService
 @inject IJSRuntime JSRuntime
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
 
     <MudCard>
         <MudCardContent>
@@ -15,7 +15,7 @@
                 <ToolBarContent>
                     <MudText Typo="Typo.h5" GutterBottom="true">Доходы</MudText>
                     <MudToolBarSpacer />
-                    <MudButton Variant="Variant.Filled" OnClick="_ => OpenAddNewIncomePopup()" Color="Color.Default" StartIcon="@Icons.Material.Filled.AddCircle" Class="mt-0">Добавить</MudButton>
+                    <MudFab OnClick="_ => OpenAddNewIncomePopup()" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" Class="ma-2" DisableElevation="true" />
                 </ToolBarContent>
 
                 <HeaderContent>
@@ -45,7 +45,7 @@
                 <MudCard>
                     <MudCardHeader>
                         <CardHeaderContent>
-                            <MudText Typo="Typo.h6" Color="Color.Info">Добавление категории</MudText>
+                            <MudText Typo="Typo.h6" Color="Color.Info">Доход</MudText>
                         </CardHeaderContent>
                         <CardHeaderActions>
                             <MudIconButton Class="ml-auto mb-1" OnClick="_ => _state = PageState.List" Icon="@Icons.Material.Filled.Close"></MudIconButton>
