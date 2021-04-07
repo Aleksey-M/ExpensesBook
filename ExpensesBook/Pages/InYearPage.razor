@@ -93,14 +93,14 @@
             new ChartSeries
             {
                 Name = r.rowName,
-                Data = r.Item2.Select(i => double.Parse(i.value)).ToArray()
+                Data = r.Item2.Select(i => double.TryParse(i.value, out _) ? double.Parse(i.value) : 0).ToArray()
             })
             .ToList();
 
         double max = 0;
         foreach (var s in _selectedItems.Where(i => i.rowName != "За месяц"))
         {
-            var m = s.Item2.Select(i => double.Parse(i.value)).Max();
+            var m = s.Item2.Select(i => double.TryParse(i.value, out _) ? double.Parse(i.value) : 0).Max();
             if (m > max) max = m;
         }
 
