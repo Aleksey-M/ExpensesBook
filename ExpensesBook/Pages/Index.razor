@@ -3,6 +3,7 @@
 @using ExpensesBook.Domain.Calculators
 @using ExpensesBook.Domain.Entities
 @using System.Collections.Generic
+
 @inject PeriodExpenseCalculator Calc
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
@@ -27,7 +28,14 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="4" md="2">
-                    <MudButton Variant="Variant.Filled" Class="mt-2" Color="Color.Success" StartIcon="@Icons.Material.Filled.TableChart" OnClick="ShowTable">Показать</MudButton>
+                    <MudButton
+                        Variant="Variant.Filled"
+                        Class="mt-2"
+                        Color="Color.Success"
+                        StartIcon="@Icons.Material.Filled.TableChart"
+                        OnClick="ShowTable">
+                            Показать
+                    </MudButton>
                 </MudItem>
             </MudGrid>
         </MudCardContent>
@@ -47,17 +55,28 @@
         {
             <MudCard Class="mt-5">
                 <MudCardContent>
-                    <MudTable Items="_actualDataSet" Hover="true" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
+                    <MudTable
+                        Items="_actualDataSet"
+                        Hover="true"
+                        Breakpoint="Breakpoint.None"
+                        Striped="true"
+                        FixedHeader="true">
+
                         <HeaderContent>
                             <MudTh>@_headers.Item1</MudTh>
                             <MudTh>@_headers.Item2</MudTh>
                             <MudTh>@_headers.Item3</MudTh>
                         </HeaderContent>
+
                         <RowTemplate>
                             <MudTd>
                                 @if (_detailsListAvailable)
                                  {
-                                    <MudButton Variant="Variant.Text" OnClick="async _ => await ShowDetails(context.Item1, context.Item4)">@context.Item1</MudButton>
+                                    <MudButton
+                                        Variant="Variant.Text"
+                                        OnClick="async _ => await ShowDetails(context.Item1, context.Item4)">
+                                            @context.Item1
+                                    </MudButton>
                                  }
                                  else
                                  {
@@ -71,7 +90,11 @@
                     <MudText Color="Color.Info" Typo="Typo.h6" Class="mt-5 ml-5">Всего: @_total</MudText>
 
                     <div style="display: block; position: absolute; bottom: 0; left: 0;">
-                        <MudPopover Open="@(_groupingCriteriaName is not null)" Class="pa-4" Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+                        <MudPopover
+                            Open="@(_groupingCriteriaName is not null)"
+                            Class="pa-4"
+                            Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+
                             <MudCard>
                                 <MudCardHeader>
                                     <CardHeaderContent>
@@ -79,17 +102,29 @@
                                     </CardHeaderContent>
 
                                     <CardHeaderActions>
-                                        <MudIconButton OnClick="HideDetails" Class="ml-auto mb-1" Icon="@Icons.Material.Filled.Close"></MudIconButton>
+                                        <MudIconButton
+                                            OnClick="HideDetails"
+                                            Class="ml-auto mb-1"
+                                            Icon="@Icons.Material.Filled.Close">
+                                        </MudIconButton>
                                     </CardHeaderActions>  
                                 </MudCardHeader>
 
                                 <MudCardContent>
-                                    <MudTable Items="_expandedSublist" Hover="false" Breakpoint="Breakpoint.None" FixedHeader="true" Striped="true" Dense="true">
+                                    <MudTable
+                                        Items="_expandedSublist"
+                                        Hover="false"
+                                        Breakpoint="Breakpoint.None"
+                                        FixedHeader="true"
+                                        Striped="true"
+                                        Dense="true">
+
                                         <HeaderContent>
                                             <MudTh>Дата</MudTh>
                                             <MudTh>Описание</MudTh>
                                             <MudTh>Потрачено</MudTh>
                                         </HeaderContent>
+
                                         <RowTemplate>
                                             <MudTd>@context.Date.ToString("yyyy.MM.dd")</MudTd>
                                             <MudTd>@context.Description</MudTd>
@@ -114,62 +149,66 @@
     }
 </MudContainer>
 
-    @code {
-        private DateTime? _startDate = DateTimeOffset.Now.Date.AddDays(-14);
-        private DateTime? _endDate = DateTimeOffset.Now.Date.AddDays(1);
-        private ExpensesGroupingType _viewType;
+@code {
+    private DateTime? _startDate = DateTimeOffset.Now.Date.AddDays(-14);
+    private DateTime? _endDate = DateTimeOffset.Now.Date.AddDays(1);
+    private ExpensesGroupingType _viewType;
 
-        private string _total = "0";
-        private bool RecordsNotFound => (_actualDataSet?.Count ?? 0) == 0;
+    private string _total = "0";
+    private bool RecordsNotFound => (_actualDataSet?.Count ?? 0) == 0;
 
-        private (string, string, string) _headers;
-        private List<(string, string, string, Guid?)>? _actualDataSet;
+    private (string, string, string) _headers;
+    private List<(string, string, string, Guid?)>? _actualDataSet;
 
-        private double[] _data = Array.Empty<double>();
-        private string[] _labels = Array.Empty<string>();
+    private double[] _data = Array.Empty<double>();
+    private string[] _labels = Array.Empty<string>();
 
-        private async Task ShowTable()
+    private async Task ShowTable()
+    {
+        if (_startDate is null || _endDate is null) return;
+        var start = new DateTimeOffset(_startDate.Value);
+        var end = new DateTimeOffset(_endDate.Value);
+
+        _headers = Calc.GetTableHeaders(_viewType);
+
+        (_actualDataSet, _total) = await Calc.GetExpensesAsTable(_viewType, start, end, null);
+
+        _detailsListAvailable = _viewType != ExpensesGroupingType.None;
+        _groupingCriteriaName = null;
+
+        if(_viewType == ExpensesGroupingType.ByGroup || _viewType == ExpensesGroupingType.ByCategory)
         {
-            if (_startDate is null || _endDate is null) return;
-            var start = new DateTimeOffset(_startDate.Value);
-            var end = new DateTimeOffset(_endDate.Value);
-
-            _headers = Calc.GetTableHeaders(_viewType);
-
-            (_actualDataSet, _total) = await Calc.GetExpensesAsTable(_viewType, start, end, null);
-
-            _detailsListAvailable = _viewType != ExpensesGroupingType.None;
-            _groupingCriteriaName = null;
-
-            if(_viewType == ExpensesGroupingType.ByGroup || _viewType == ExpensesGroupingType.ByCategory)
-            {
-                _data = _actualDataSet.OrderBy(d => d.Item1).Select(d => double.Parse(d.Item2)).ToArray();
-                _labels = _actualDataSet.OrderBy(d => d.Item1).Select(d => d.Item1).ToArray();
-            }
-        }
-
-        private List<Expense> _expandedSublist = new List<Expense>();
-        private string? _groupingCriteriaName;
-        private bool _detailsListAvailable = false;
-
-        private async Task ShowDetails(string groupingCriteriaName, Guid? filterBy)
-        {
-            _groupingCriteriaName = groupingCriteriaName;
-            if (_startDate is null || _endDate is null) return;
-            var start = new DateTimeOffset(_startDate.Value);
-            var end = new DateTimeOffset(_endDate.Value);
-
-            _expandedSublist = (_viewType) switch
-            {
-                ExpensesGroupingType.ByDate => await Calc.GetFilteredExpenses(_viewType, DateTimeOffset.Parse(groupingCriteriaName), DateTimeOffset.Parse(groupingCriteriaName), filterBy),
-                ExpensesGroupingType.ByGroup => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy),
-                ExpensesGroupingType.ByCategory => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy),
-                _ => new List<Expense>()
-            };
-        }
-
-        private void HideDetails()
-        {
-            _groupingCriteriaName = null;
+            _data = _actualDataSet.OrderBy(d => d.Item1).Select(d => double.Parse(d.Item2)).ToArray();
+            _labels = _actualDataSet.OrderBy(d => d.Item1).Select(d => d.Item1).ToArray();
         }
     }
+
+    private List<Expense> _expandedSublist = new();
+    private string? _groupingCriteriaName;
+    private bool _detailsListAvailable = false;
+
+    private async Task ShowDetails(string groupingCriteriaName, Guid? filterBy)
+    {
+        _groupingCriteriaName = groupingCriteriaName;
+        if (_startDate is null || _endDate is null) return;
+        var start = new DateTimeOffset(_startDate.Value);
+        var end = new DateTimeOffset(_endDate.Value);
+
+        _expandedSublist = (_viewType) switch
+        {
+            ExpensesGroupingType.ByDate => await Calc.GetFilteredExpenses(
+                _viewType,
+                DateTimeOffset.Parse(groupingCriteriaName),
+                DateTimeOffset.Parse(groupingCriteriaName),
+                filterBy),
+            ExpensesGroupingType.ByGroup => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy),
+            ExpensesGroupingType.ByCategory => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy),
+            _ => new List<Expense>()
+        };
+    }
+
+    private void HideDetails()
+    {
+        _groupingCriteriaName = null;
+    }
+}

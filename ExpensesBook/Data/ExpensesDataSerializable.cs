@@ -1,31 +1,36 @@
-﻿using ExpensesBook.Domain.Entities;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Text.Json;
+using ExpensesBook.Domain.Entities;
 
-namespace ExpensesBook.Data
+namespace ExpensesBook.Data;
+
+internal class ExpensesDataSerializable
 {
-    internal class ExpensesDataSerializable
+    public List<Category> Categories { get; set; } = null!;
+
+    public List<Group> Groups { get; set; } = null!;
+
+    public List<GroupDefaultCategory> GroupsDefaultCategories { get; set; } = null!;
+
+    public List<Expense> Expenses { get; set; } = null!;
+
+    public List<Limit> Limits { get; set; } = null!;
+
+    public List<Income> Incomes { get; set; } = null!;
+
+    internal static string SerializeToJson(ExpensesDataSerializable data) => JsonSerializer.Serialize(data);
+
+    internal static ExpensesDataSerializable DeserializeFromJson(string json)
     {
-        public List<Category> Categories { get; set; } = null!;
-        public List<Group> Groups { get; set; } = null!;
-        public List<GroupDefaultCategory> GroupsDefaultCategories { get; set; } = null!;
-        public List<Expense> Expenses { get; set; } = null!;
-        public List<Limit> Limits { get; set; } = null!;
-        public List<Income> Incomes { get; set; } = null!;
+        var deserializedData = JsonSerializer.Deserialize<ExpensesDataSerializable>(json) ?? new();
 
-        internal static string SerializeToJson(ExpensesDataSerializable data) => System.Text.Json.JsonSerializer.Serialize(data);
+        deserializedData.Categories ??= new();
+        deserializedData.Expenses ??= new();
+        deserializedData.GroupsDefaultCategories ??= new();
+        deserializedData.Groups ??= new();
+        deserializedData.Limits ??= new();
+        deserializedData.Incomes ??= new();
 
-        internal static ExpensesDataSerializable DeserializeFromJson(string json)
-        {
-            var deserializedData = System.Text.Json.JsonSerializer.Deserialize<ExpensesDataSerializable>(json) ?? new ExpensesDataSerializable();
-
-            deserializedData.Categories ??= new List<Category>();
-            deserializedData.Expenses ??= new List<Expense>();
-            deserializedData.GroupsDefaultCategories ??= new List<GroupDefaultCategory>();
-            deserializedData.Groups ??= new List<Group>();
-            deserializedData.Limits ??= new List<Limit>();
-            deserializedData.Incomes ??= new List<Income>();
-
-            return deserializedData;
-        }
+        return deserializedData;
     }
 }

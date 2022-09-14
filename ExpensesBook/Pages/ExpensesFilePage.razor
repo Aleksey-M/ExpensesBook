@@ -1,6 +1,7 @@
 ﻿@page "/expensesfilepage"
 
 @using ExpensesBook.Data
+
 @inject IJsonData JData
 @inject IJSRuntime JSRuntime
 
@@ -8,7 +9,15 @@
     <MudCard>
         <MudCardContent>
             <MudText Typo="Typo.h5" GutterBottom="true">Сохранить данные в файл</MudText>
-            <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.CloudDownload" OnClick="SaveToFile">Сохранить</MudButton>
+
+            <MudButton
+                Class="mt-3"
+                Variant="Variant.Filled"
+                Color="Color.Success"
+                StartIcon="@Icons.Material.Filled.CloudDownload"
+                OnClick="SaveToFile">
+                    Сохранить
+            </MudButton>
         </MudCardContent>
     </MudCard>
 </MudContainer>
@@ -27,10 +36,15 @@
                 <MudCheckBox @bind-Checked="mergeData">Слияние данных</MudCheckBox>
             </MudContainer>
 
-            <InputFile id="fileInput"  OnChange="UploadDataFile" hidden="hidden" accept=".json"/>
+            <InputFile id="fileInput" OnChange="UploadDataFile" hidden="hidden" accept=".json"/>
 
-            <MudButton HtmlTag="label" Class="mt-3" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Filled.CloudUpload" for="fileInput">
-                Загрузить
+            <MudButton
+                HtmlTag="label"
+                Class="mt-3"
+                Variant="Variant.Filled"
+                Color="Color.Primary"
+                StartIcon="@Icons.Filled.CloudUpload" for="fileInput">
+                    Загрузить
             </MudButton>
         </MudCardContent>
     </MudCard>
@@ -45,7 +59,15 @@
             {
                 <MudAlert Severity="Severity.Warning">@clearMessage</MudAlert>
             }
-            <MudButton Variant="Variant.Filled" Color="Color.Warning" Class="mt-3" StartIcon="@Icons.Material.Filled.Cancel" OnClick="ClearData">Удалить</MudButton>
+
+            <MudButton
+                Variant="Variant.Filled"
+                Color="Color.Warning"
+                Class="mt-3"
+                StartIcon="@Icons.Material.Filled.Cancel"
+                OnClick="ClearData">
+                    Удалить
+            </MudButton>
         </MudCardContent>
     </MudCard>
 </MudContainer>

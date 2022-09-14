@@ -1,15 +1,17 @@
-﻿using ExpensesBook.Domain.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ExpensesBook.Domain.Entities;
 
-namespace ExpensesBook.Domain.Repositories
+namespace ExpensesBook.Domain.Repositories;
+
+internal interface IGroupsRepository
 {
-    internal interface IGroupsRepository
-    {
-        ValueTask AddGroup(Group group);
-        ValueTask<List<Group>> GetGroups();
-        ValueTask UpdateGroup(Group group);
-        ValueTask DeleteGroup(Guid groupId);
-    }
+    ValueTask AddGroup(Group group);
+
+    ValueTask<List<Group>> GetGroups();
+
+    ValueTask UpdateGroup(Group group);
+
+    ValueTask DeleteGroup(Guid groupId);
 }

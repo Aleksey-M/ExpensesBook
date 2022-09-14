@@ -3,6 +3,7 @@
 @using ExpensesBook.Domain.Services
 @using ExpensesBook.Domain.Entities
 @using System.Collections.Generic
+
 @inject IIncomesService IncomesService
 @inject IJSRuntime JSRuntime
 
@@ -14,8 +15,16 @@
             <MudTable Items="Incomes" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
                 <ToolBarContent>
                     <MudText Typo="Typo.h5" GutterBottom="true">Доходы</MudText>
+
                     <MudToolBarSpacer />
-                    <MudFab OnClick="_ => OpenAddNewIncomePopup()" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" Class="ma-2" DisableElevation="true" />
+
+                    <MudFab
+                        OnClick="_ => OpenAddNewIncomePopup()"
+                        Icon="@Icons.Material.Filled.Add"
+                        Size="Size.Small"
+                        IconSize="Size.Small"
+                        Class="ma-2"
+                        DisableElevation="true" />
                 </ToolBarContent>
 
                 <HeaderContent>
@@ -30,8 +39,17 @@
                     <MudTd>@context.Amounth.ToString("N2")</MudTd>
                     <MudTd>@context.Description</MudTd>
                     <MudTh Style="text-align:right">
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="_ => OpenEditIncomePopup(context)"></MudIconButton>
-                        <MudIconButton Icon="@Icons.Material.Filled.DeleteForever" Color="Color.Error" Class="ml-2" OnClick="async _ => await DeleteIncome(context.Id)"></MudIconButton>
+                        <MudIconButton
+                            Icon="@Icons.Material.Filled.Edit"
+                            OnClick="_ => OpenEditIncomePopup(context)">
+                        </MudIconButton>
+
+                        <MudIconButton
+                            Icon="@Icons.Material.Filled.DeleteForever"
+                            Color="Color.Error"
+                            Class="ml-2"
+                            OnClick="async _ => await DeleteIncome(context.Id)">
+                        </MudIconButton>
                     </MudTh>
                 </RowTemplate>
             </MudTable>
@@ -39,16 +57,27 @@
     </MudCard>
 
     <div style="display: block; position: absolute; bottom: 0; left: 0;">
-        <MudPopover Open="@(_state == PageState.Edit || _state == PageState.Add)" Class="pa-4" Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+        <MudPopover
+            Open="@(_state == PageState.Edit || _state == PageState.Add)"
+            Class="pa-4"
+            Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+
             <EditForm Model="@_income" OnValidSubmit="async _ => await SaveIncome()">
+
                 <DataAnnotationsValidator />
+
                 <MudCard>
                     <MudCardHeader>
                         <CardHeaderContent>
                             <MudText Typo="Typo.h6" Color="Color.Info">Доход</MudText>
                         </CardHeaderContent>
+
                         <CardHeaderActions>
-                            <MudIconButton Class="ml-auto mb-1" OnClick="_ => _state = PageState.List" Icon="@Icons.Material.Filled.Close"></MudIconButton>
+                            <MudIconButton
+                                Class="ml-auto mb-1"
+                                OnClick="_ => _state = PageState.List"
+                                Icon="@Icons.Material.Filled.Close">
+                            </MudIconButton>
                         </CardHeaderActions>
                     </MudCardHeader>
 
@@ -59,18 +88,33 @@
                             </MudItem>
 
                             <MudItem xs="12" sm="6" md="2">
-                                <MudTextField Label="Сумма" InputType="InputType.Number" step=".01" @bind-Value="_income.Amounth" For="@(() => _income.Amounth)" />
+                                <MudTextField
+                                    Label="Сумма"
+                                    InputType="InputType.Number"
+                                    step=".01"
+                                    @bind-Value="_income.Amounth"
+                                    For="@(() => _income.Amounth)" />
                             </MudItem>
 
                             <MudItem xs="12" sm="12" md="6">
-                                <MudTextField Label="Описание" InputType="InputType.Text" @bind-Value="_income.Description" For="@(() => _income.Description)" />
+                                <MudTextField
+                                    Label="Описание"
+                                    InputType="InputType.Text"
+                                    @bind-Value="_income.Description"
+                                    For="@(() => _income.Description)" />
                             </MudItem>
                         </MudGrid>
 
                     </MudCardContent>
 
                     <MudCardActions>
-                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">@_state.SaveActionName()</MudButton>
+                        <MudButton
+                            ButtonType="ButtonType.Submit"
+                            Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            Class="ml-auto">
+                                @_state.SaveActionName()
+                        </MudButton>
                     </MudCardActions>
                 </MudCard>
             </EditForm>
@@ -82,14 +126,14 @@
 
 @code {
 
-    private List<Income> Incomes { get; set; } = new List<Income>();
+    private List<Income> Incomes { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         Incomes = await IncomesService.GetIncomes(null, null, null);
     }
 
-    private IncomeDto _income = new IncomeDto();
+    private IncomeDto _income = new();
     private PageState _state = PageState.List;
 
     private void OpenAddNewIncomePopup()
@@ -102,7 +146,6 @@
     {
         _income = new IncomeDto
         {
-
             Id = income.Id,
             Date = income.Date.Date,
             Description = income.Description,
@@ -118,11 +161,18 @@
 
         if (_income.Id == Guid.Empty)
         {
-            await IncomesService.AddIncome(date: _income?.Date ?? DateTime.Now.Date, amounth: _income?.Amounth ?? 0, description: _income?.Description ?? "");
+            await IncomesService.AddIncome(
+                date: _income?.Date ?? DateTime.Now.Date,
+                amounth: _income?.Amounth ?? 0,
+                description: _income?.Description ?? "");
         }
         else
         {
-            await IncomesService.UpdateIncome(incomeId: _income.Id, date: _income?.Date, amounth: _income?.Amounth, description: _income?.Description);
+            await IncomesService.UpdateIncome(
+                incomeId: _income.Id,
+                date: _income?.Date,
+                amounth: _income?.Amounth,
+                description: _income?.Description);
         }
 
         Incomes = await IncomesService.GetIncomes(null, null, null);

@@ -1,15 +1,17 @@
-﻿using ExpensesBook.Domain.Entities;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using ExpensesBook.Domain.Entities;
 
-namespace ExpensesBook.Domain.Repositories
+namespace ExpensesBook.Domain.Repositories;
+
+internal interface ILimitsRepository
 {
-    internal interface ILimitsRepository
-    {
-        ValueTask AddLimit(Limit limit);
-        ValueTask<List<Limit>> GetLimits();
-        ValueTask UpdateLimit(Limit limit);
-        ValueTask DeleteLimit(Guid limitId);
-    }
+    ValueTask AddLimit(Limit limit);
+
+    ValueTask<List<Limit>> GetLimits();
+
+    ValueTask UpdateLimit(Limit limit);
+
+    ValueTask DeleteLimit(Guid limitId);
 }

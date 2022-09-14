@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace ExpensesBook.Domain.Entities
+namespace ExpensesBook.Domain.Entities;
+
+internal interface IEntity
 {
-    internal interface IEntity
-    {
-        public Guid Id { get; set; }
-    }
+    public Guid Id { get; set; }
 }

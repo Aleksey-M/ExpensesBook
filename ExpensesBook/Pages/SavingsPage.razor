@@ -1,18 +1,25 @@
 ﻿@page "/savingspage"
 
 @using ExpensesBook.Domain.Calculators
+
 @inject CashBalanceCalculator BalanceCalculator
 @inject IJSRuntime JSRuntime
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
-
     <MudCard>
         <MudCardContent>
             <MudText Typo="Typo.h5" GutterBottom="true">Денежный баланс (помесячно)</MudText>
 
             @if (_rows is { Count: 0 })
             {
-                <MudButton Class="mt-3" Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.MonetizationOn" OnClick="async _ => await ShowMonthlyBalance()">Показать</MudButton>
+                <MudButton
+                    Class="mt-3"
+                    Variant="Variant.Filled"
+                    Color="Color.Success"
+                    StartIcon="@Icons.Material.Filled.MonetizationOn"
+                    OnClick="async _ => await ShowMonthlyBalance()">
+                        Показать
+                </MudButton>
             }
             else
             {
@@ -23,16 +30,27 @@
                         <MudTh>Расходы</MudTh>
                         <MudTh>Сбережения</MudTh>
                     </HeaderContent>
+
                     <RowTemplate>
                         <MudTd>@context.yearAndMonth</MudTd>
                         <MudTd style="color:darkblue">@context.monthBalance.Incomes</MudTd>
                         <MudTd style="color:darkred">@context.monthBalance.Expenses</MudTd>
-                        <MudTd style="@context.monthBalance.SavingsCSSStyle">@context.monthBalance.Savings <small><i>@context.monthBalance.SavingsPercent</i></small></MudTd>
+                        <MudTd style="@context.monthBalance.SavingsCSSStyle">
+                            @context.monthBalance.Savings <small><i>@context.monthBalance.SavingsPercent</i></small>
+                        </MudTd>
                     </RowTemplate>
                 </MudTable>
 
                 <MudPaper Class="mt-3 mb-3">
-                        <MudChart ChartOptions="Options" ChartType="ChartType.Line" ChartSeries="@Series" XAxisLabels="@XAxisLabels" Width="100%" Height="370px" Style="margin-left:25px"></MudChart>
+                        <MudChart
+                            ChartOptions="Options"
+                            ChartType="ChartType.Line"
+                            ChartSeries="@Series"
+                            XAxisLabels="@XAxisLabels"
+                            Width="100%"
+                            Height="370px"
+                            Style="margin-left:25px">
+                        </MudChart>
                 </MudPaper>
             }
 
@@ -53,7 +71,14 @@
                 </MudItem>
 
                 <MudItem xs="12" sm="4" md="2">
-                    <MudButton Variant="Variant.Filled" Class="mt-2" Color="Color.Success" StartIcon="@Icons.Material.Filled.MonetizationOn" OnClick="async _ => await ShowBalance()">Показать</MudButton>
+                    <MudButton
+                        Variant="Variant.Filled"
+                        Class="mt-2"
+                        Color="Color.Success"
+                        StartIcon="@Icons.Material.Filled.MonetizationOn"
+                        OnClick="async _ => await ShowBalance()">
+                            Показать
+                    </MudButton>
                 </MudItem>
             </MudGrid>
         </MudCardContent>
@@ -69,10 +94,13 @@
                         <MudTh>Расходы</MudTh>
                         <MudTh>Сбережения</MudTh>
                     </HeaderContent>
+
                     <RowTemplate>
                         <MudTd DataLabel="Доходы" style="color:darkblue">@context.Incomes</MudTd>
                         <MudTd DataLabel="Расходы" style="color:darkred">@context.Expenses</MudTd>
-                        <MudTd DataLabel="Сбережения" style="@context.SavingsCSSStyle">@context.Savings <small><i>@context.SavingsPercent</i></small></MudTd>
+                        <MudTd DataLabel="Сбережения" style="@context.SavingsCSSStyle">
+                            @context.Savings <small><i>@context.SavingsPercent</i></small>
+                        </MudTd>
                     </RowTemplate>
                 </MudTable>
             </MudCardContent>
@@ -85,14 +113,13 @@
             </MudPaper>
         }
      }
-
 </MudContainer>
 
 @code
 {
 
-    private List<(string yearAndMonth, CashBalance monthBalance)> _rows = new List<(string yearAndMonth, CashBalance monthBalance)>();
-    private List<CashBalance> _singleRowForPeriod = new List<CashBalance>();
+    private List<(string yearAndMonth, CashBalance monthBalance)> _rows = new();
+    private List<CashBalance> _singleRowForPeriod = new();
 
     private DateTime? _from = DateTime.Now.Date;
     private DateTime? _to = DateTime.Now.Date;
@@ -109,14 +136,22 @@
             return;
         }
 
-        var forSelectedPeriod = await BalanceCalculator.GetCashBalance(new DateTimeOffset(_from ?? DateTime.Now), new DateTimeOffset(_to ?? DateTime.Now));
+        var forSelectedPeriod = await BalanceCalculator.GetCashBalance(
+            new DateTimeOffset(_from ?? DateTime.Now),
+            new DateTimeOffset(_to ?? DateTime.Now));
+
         _singleRowForPeriod = new List<CashBalance> { forSelectedPeriod };
 
-        _data = new double[] { _singleRowForPeriod[0].ExpensesNum, _singleRowForPeriod[0].SavingsNum <= 0 ? 0 : _singleRowForPeriod[0].SavingsNum };
+        _data = new double[] 
+        { 
+            _singleRowForPeriod[0].ExpensesNum,
+            _singleRowForPeriod[0].SavingsNum <= 0 ? 0 : _singleRowForPeriod[0].SavingsNum
+        };
+
         _displayChart = !(_singleRowForPeriod[0].ExpensesNum == 0 && _singleRowForPeriod[0].SavingsNum == 0);
     }
 
-    private List<ChartSeries> Series = new List<ChartSeries>();
+    private List<ChartSeries> Series = new();
     private string[] XAxisLabels = Array.Empty<string>();
     private ChartOptions Options = new ChartOptions { YAxisTicks = 10000 };
 
@@ -135,9 +170,21 @@
 
             Series = new List<ChartSeries>
             {
-                new ChartSeries{ Name = "Доходы", Data = _rows.Select(r => r.monthBalance.IncomesNum).ToArray() },
-                new ChartSeries{ Name = "Расходы", Data = _rows.Select(r => r.monthBalance.ExpensesNum).ToArray() },
-                new ChartSeries{ Name = "Сбережения", Data = _rows.Select(r => r.monthBalance.SavingsNum >= 0 ? r.monthBalance.SavingsNum : 0).ToArray() }
+                new ChartSeries
+                {
+                    Name = "Доходы",
+                    Data = _rows.Select(r => r.monthBalance.IncomesNum).ToArray()
+                },
+                new ChartSeries
+                {
+                    Name = "Расходы",
+                    Data = _rows.Select(r => r.monthBalance.ExpensesNum).ToArray()
+                },
+                new ChartSeries
+                {
+                    Name = "Сбережения",
+                    Data = _rows.Select(r => r.monthBalance.SavingsNum >= 0 ? r.monthBalance.SavingsNum : 0).ToArray()
+                }
             };
 
             double totalSavings = 0;
@@ -146,7 +193,9 @@
             foreach(var r in _rows)
             {
                 totalSavings += r.monthBalance.SavingsNum;
+
                 if (totalSavings < 0) totalSavings = 0;
+
                 data.Add(totalSavings);
             }
 

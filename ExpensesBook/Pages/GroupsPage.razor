@@ -2,6 +2,7 @@
 
 @using ExpensesBook.Domain.Services
 @using ExpensesBook.Domain.Entities
+
 @inject IGroupsService GroupsService
 @inject ICategoriesService CategoriesService
 @inject IJSRuntime JSRuntime
@@ -14,8 +15,16 @@
             <MudTable Items="Groups" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
                 <ToolBarContent>
                     <MudText Typo="Typo.h5" GutterBottom="true">Группы</MudText>
+
                     <MudToolBarSpacer />
-                    <MudFab OnClick="_ => OpenAddNewGroupPopup()" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" Class="ma-2" DisableElevation="true" />                   
+
+                    <MudFab
+                        OnClick="_ => OpenAddNewGroupPopup()"
+                        Icon="@Icons.Material.Filled.Add"
+                        Size="Size.Small"
+                        IconSize="Size.Small"
+                        Class="ma-2"
+                        DisableElevation="true" />                   
                 </ToolBarContent>
 
                 <HeaderContent>
@@ -37,8 +46,17 @@
                         </div>
                     </MudTd>
                     <MudTh Style="text-align:right">
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="_ => OpenEditGroupPopup(context)"></MudIconButton>
-                        <MudIconButton Icon="@Icons.Material.Filled.DeleteForever" Color="Color.Error" Class="ml-2" OnClick="async _ => await DeleteGroup(context.group.Id)"></MudIconButton>
+                        <MudIconButton
+                            Icon="@Icons.Material.Filled.Edit"
+                            OnClick="_ => OpenEditGroupPopup(context)">
+                        </MudIconButton>
+
+                        <MudIconButton
+                            Icon="@Icons.Material.Filled.DeleteForever"
+                            Color="Color.Error"
+                            Class="ml-2"
+                            OnClick="async _ => await DeleteGroup(context.group.Id)">
+                        </MudIconButton>
                     </MudTh>
                 </RowTemplate>
             </MudTable>
@@ -47,23 +65,37 @@
     </MudCard>
 
     <div style="display: block; position: absolute; bottom: 0; left: 0;">
-        <MudPopover Open="@(_state == PageState.Edit || _state == PageState.Add)" Class="pa-4" Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+        <MudPopover
+            Open="@(_state == PageState.Edit || _state == PageState.Add)"
+            Class="pa-4"
+            Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+
             <EditForm Model="@_group" OnValidSubmit="async _ => await SaveGroup()">
+
                 <DataAnnotationsValidator />
+
                 <MudCard>
                     <MudCardHeader>
                         <CardHeaderContent>
                             <MudText Typo="Typo.h6" Color="Color.Info">Группа</MudText>
                         </CardHeaderContent>
+
                         <CardHeaderActions>
-                            <MudIconButton Class="ml-auto mb-1" OnClick="_ => _state = PageState.List" Icon="@Icons.Material.Filled.Close"></MudIconButton>
+                            <MudIconButton
+                                Class="ml-auto mb-1"
+                                OnClick="_ => _state = PageState.List"
+                                Icon="@Icons.Material.Filled.Close">
+                            </MudIconButton>
                         </CardHeaderActions>
                     </MudCardHeader>
 
                     <MudCardContent>
                         <MudGrid>
                             <MudItem xs="12" sm="6">
-                                <MudTextField Label="Сортировка" InputType="InputType.Number" @bind-Value="_group.Sort" For="@(() => _group.Sort)" />
+                                <MudTextField
+                                    Label="Сортировка"
+                                    InputType="InputType.Number" @bind-Value="_group.Sort"
+                                    For="@(() => _group.Sort)" />
                             </MudItem>
 
                             <MudItem xs="12" sm="6">
@@ -71,18 +103,31 @@
                             </MudItem>
 
                             <MudItem xs="12" md="12">
-                                <MudSelect T="Category" Label="Категории" HelperText="Связать категории с группой для автозаполнения" MultiSelection="true" @bind-SelectedValues="_selectedOptions" Dense="true" Direction="Direction.Top">
-                                    @foreach (var category in AvailableCategories)
-                                    {
-                                        <MudSelectItem T="Category" Value="@category">@category.Name</MudSelectItem>
-                                    }
+                                <MudSelect
+                                    T="Category"
+                                    Label="Категории"
+                                    HelperText="Связать категории с группой для автозаполнения"
+                                    MultiSelection="true"
+                                    @bind-SelectedValues="_selectedOptions"
+                                    Dense="true"
+                                    Direction="Direction.Top">
+                                        @foreach (var category in AvailableCategories)
+                                        {
+                                            <MudSelectItem T="Category" Value="@category">@category.Name</MudSelectItem>
+                                        }
                                 </MudSelect>
                             </MudItem>
                         </MudGrid>
                     </MudCardContent>
 
                     <MudCardActions>
-                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">@_state.SaveActionName()</MudButton>
+                        <MudButton
+                            ButtonType="ButtonType.Submit"
+                            Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            Class="ml-auto">
+                                @_state.SaveActionName()
+                        </MudButton>
                     </MudCardActions>
                 </MudCard>
             </EditForm>
@@ -93,12 +138,20 @@
 
 @code {
 
-    private GroupDto _group = new GroupDto();
+    private GroupDto _group = new();
     private PageState _state = PageState.List;
 
-    private List<Category> _freeCategories = new List<Category>();
-    private List<Category> _alreadySelectedCategories = new List<Category>();
-    private HashSet<Category> _selectedOptions = new HashSet<Category>();
+    private List<Category> _freeCategories = new();
+    private List<Category> _alreadySelectedCategories = new();
+    private HashSet<Category> _selectedOptions = new();
+
+    private List<(Group group, List<Category> relatedCategories)> Groups { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Groups = await GroupsService.GetGroupsWithRelatedCategories();
+        _freeCategories = await GroupsService.GetFreeCategories();
+    }
 
     private List<Category> AvailableCategories => _state switch
     {
@@ -109,10 +162,15 @@
 
     private async Task OpenAddNewGroupPopup()
     {
-        _group = new GroupDto() { Id = Guid.Empty, Sort = Groups is { Count: > 0 } ? Groups.Max(c => c.group.Sort) + 1 : 1 };
+        _group = new GroupDto() 
+        {
+            Id = Guid.Empty,
+            Sort = Groups is { Count: > 0 } ? Groups.Max(c => c.group.Sort) + 1 : 1 
+        };
+
         _freeCategories = await GroupsService.GetFreeCategories();
-        _selectedOptions = new HashSet<Category>();
-        _alreadySelectedCategories = new List<Category>();
+        _selectedOptions = new();
+        _alreadySelectedCategories = new();
         _state = PageState.Add;
     }
 
@@ -127,7 +185,7 @@
 
         _freeCategories = await GroupsService.GetFreeCategories();
         _alreadySelectedCategories = group.categories;
-        _selectedOptions = new HashSet<Category>(group.categories);
+        _selectedOptions = new(group.categories);
         _state = PageState.Edit;
     }
 
@@ -137,14 +195,22 @@
 
         if (_group.Id == Guid.Empty)
         {
-            await GroupsService.AddGroup(groupName: _group.GetName(), sortOrder: _group.GetSort(), relatedCategories: _selectedOptions.Select(c => c.Id));
+            await GroupsService.AddGroup(
+                groupName: _group.GetName(),
+                sortOrder: _group.GetSort(),
+                relatedCategories: _selectedOptions.Select(c => c.Id));
         }
         else
         {
-            await GroupsService.UpdateGroup(groupId: _group.GetId(), groupName: _group.GetName(), groupOrder: _group.GetSort(), _selectedOptions.Select(c => c.Id));
+            await GroupsService.UpdateGroup(
+                groupId: _group.GetId(),
+                groupName: _group.GetName(),
+                groupOrder: _group.GetSort(),
+                _selectedOptions.Select(c => c.Id));
         }
 
         Groups = await GroupsService.GetGroupsWithRelatedCategories();
+
         _freeCategories = await GroupsService.GetFreeCategories();
         _state = PageState.List;
     }
@@ -158,13 +224,5 @@
 
         Groups = await GroupsService.GetGroupsWithRelatedCategories();
         _freeCategories = await GroupsService.GetFreeCategories();
-    }
-
-    private List<(Group group, List<Category> relatedCategories)> Groups { get; set; } = new List<(Group group, List<Category> relatedCategories)>();
-
-    protected override async Task OnInitializedAsync()
-    {
-        Groups = await GroupsService.GetGroupsWithRelatedCategories();
-        _freeCategories = await GroupsService.GetFreeCategories();
-    }
+    }    
 }
