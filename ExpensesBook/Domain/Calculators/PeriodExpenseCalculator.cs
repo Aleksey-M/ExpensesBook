@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
@@ -8,7 +9,7 @@ using ExpensesBook.Domain.Services;
 namespace ExpensesBook.Domain.Calculators;
 
 #pragma warning disable CA1822 // Mark members as static
-internal class PeriodExpenseCalculator
+internal sealed class PeriodExpenseCalculator
 {
     private readonly IExpensesService _expensesService;
 
@@ -17,39 +18,30 @@ internal class PeriodExpenseCalculator
         _expensesService = expensesService;
     }
 
-    public (string, string, string) GetTableHeaders(ExpensesGroupingType groupingType) => groupingType switch
-    {
-        ExpensesGroupingType.None => ("Дата", "Описание", "Потрачено"),
-        ExpensesGroupingType.ByDate => ("Дата", "Потрачено", "%"),
-        ExpensesGroupingType.ByCategory => ("Категория", "Потрачено", "%"),
-        ExpensesGroupingType.ByGroup => ("Группа", "Потрачено", "%"),
-        _ => throw new ArgumentException("Unknown grouping type")
-    };
-
-
-    public List<(string date, string description, string amount, Guid? expenseId)> GetExpensesList(
+    private TableRow[] GetExpensesList(
         List<(Expense item, Category category, Group? group)> expenses) => expenses
-            .Select(exp =>
-                (exp.item.Date.ToString("yyyy.MM.dd"),
+            .Select(exp => new TableRow(
+                 exp.item.Date.ToString("yyyy.MM.dd"),
                  exp.item.Description,
                  exp.item.Amounth.ToString("N2"),
-                 (Guid?)exp.item.Id)).ToList();
+                 (Guid?)exp.item.Id))
+            .ToArray();
 
-    public List<(string date, string amount, string percent, Guid? id)> GetExpensesListByDate(
+    private TableRow[] GetExpensesListByDate(
         List<(Expense item, Category category, Group? group)> expenses, double total) => expenses
             .GroupBy(e => e.item.Date.Date)
             .Select(g => (
                 g.Key.ToString("yyyy.MM.dd"),
                 g.Select(e => e.item.Amounth).DefaultIfEmpty().Sum()))
             .Where(i => i.Item2 > 0)
-            .Select(i => (
-                date: i.Item1,
-                amount: i.Item2.ToString("N2"),
-                percent: (i.Item2 * 100 / total).ToString("N2") + " %",
-                id: (Guid?)null))
-            .ToList();
+            .Select(i => new TableRow(
+                i.Item1,
+                i.Item2.ToString("N2"),
+                (i.Item2 * 100 / total).ToString("N2") + " %",
+                null))
+            .ToArray();
 
-    public List<(string category, string amount, string percent, Guid? categoryId)> GetExpensesListByCategory(
+    private TableRow[] GetExpensesListByCategory(
         List<(Expense item, Category category, Group? group)> expenses, double total) => expenses
             .GroupBy(exp => exp.category)
             .OrderBy(g => g.Key.Name)
@@ -58,15 +50,14 @@ internal class PeriodExpenseCalculator
                 g.Key.Id,
                 g.Select(e => e.item.Amounth).DefaultIfEmpty().Sum()))
             .Where(i => i.Item3 > 0)
-            .Select(i => (
-                category: i.Name,
-                amount: i.Item3.ToString("N2"),
-                percent: (i.Item3 * 100 / total).ToString("N2") + " %",
-                categoryId: (Guid?)i.Id))
-            .ToList();
+            .Select(i => new TableRow(
+                i.Name,
+                i.Item3.ToString("N2"),
+                (i.Item3 * 100 / total).ToString("N2") + " %",
+                (Guid?)i.Id))
+            .ToArray();
 
-    public List<(string group, string amount, string percent, Guid? groupId)> GetExpensesListByGroup(
-        List<(Expense item, Category category, Group? group)> expenses, double total)
+    private TableRow[] GetExpensesListByGroup(List<(Expense item, Category category, Group? group)> expenses, double total)
     {
         var result = expenses
             .Where(e => e.group is not null)
@@ -77,12 +68,12 @@ internal class PeriodExpenseCalculator
                 g.Key?.Id,
                 g.Select(e => e.item.Amounth).DefaultIfEmpty().Sum()))
             .Where(i => i.Item3 > 0)
-            .Select(i => (
-                group: i.Item1,
-                amount: i.Item3.ToString("N2"),
-                percent: (i.Item3 * 100 / total).ToString("N2") + " %",
-                groupId: i.Id))
-            .ToList();
+            .Select(i => new TableRow(
+                i.Item1,
+                i.Item3.ToString("N2"),
+                (i.Item3 * 100 / total).ToString("N2") + " %",
+                i.Id))
+            .ToArray();
 
         var withoutGroup = expenses
             .Where(e => e.group is null)
@@ -92,17 +83,14 @@ internal class PeriodExpenseCalculator
 
         if (withoutGroup > 0)
         {
-            result.Add((
-                group: "Без группы",
-                amount: withoutGroup.ToString("N2"),
-                percent: (withoutGroup * 100 / total).ToString("N2") + " %",
-                groupId: null));
+            result = result.Append(new TableRow("Без группы", withoutGroup.ToString("N2"),
+                (withoutGroup * 100 / total).ToString("N2") + " %", null)).ToArray();
         }
 
         return result;
     }
 
-    public async ValueTask<(List<(string, string, string, Guid?)> rows, string total)> GetExpensesAsTable(
+    public async ValueTask<PeriodExpensesTableData> GetExpensesAsTable(
         ExpensesGroupingType groupingType, DateTimeOffset fromDate, DateTimeOffset toDate, string? filter)
     {
         var periodExpenses = await _expensesService.GetExpensesWithRelatedData(startDate: fromDate, endDate: toDate, filter);
@@ -121,7 +109,7 @@ internal class PeriodExpenseCalculator
             _ => throw new ArgumentException("Unknown grouping type")
         };
 
-        return (rows, total.ToString("N2"));
+        return new PeriodExpensesTableData(groupingType, rows, total);
     }
 
     public async ValueTask<List<Expense>> GetFilteredExpenses(
@@ -166,4 +154,47 @@ internal class PeriodExpenseCalculator
 
         throw new Exception("Unknown grouping type");
     }
+}
+
+internal sealed record TableRow(string Value1, string Value2, string Value3, Guid? RelatedId);
+
+internal sealed class PeriodExpensesTableData
+{
+    private readonly ExpensesGroupingType _expensesGroupingType;
+    private readonly TableRow[] _rows;
+    private readonly double _total;
+
+    public PeriodExpensesTableData(ExpensesGroupingType expensesGroupingType, TableRow[] rows, double total)
+    {
+        _expensesGroupingType = expensesGroupingType;
+        _rows = rows;
+        _total = total;
+    }
+
+    public ExpensesGroupingType ExpensesGroupingType => _expensesGroupingType;
+
+    public ReadOnlyCollection<TableRow> Rows => new(_rows);
+
+    public string Total => _total.ToString("N2");
+
+    public string[] Headers => ExpensesGroupingType switch
+    {
+        ExpensesGroupingType.None => new string[] { "Дата", "Описание", "Потрачено" },
+        ExpensesGroupingType.ByDate => new string[] { "Дата", "Потрачено", "%" },
+        ExpensesGroupingType.ByCategory => new string[] { "Категория", "Потрачено", "%" },
+        ExpensesGroupingType.ByGroup => new string[] { "Группа", "Потрачено", "%" },
+        _ => throw new ArgumentException("Unknown grouping type")
+    };
+
+    public string[] ChartLabels =>
+        ExpensesGroupingType == ExpensesGroupingType.ByGroup || ExpensesGroupingType == ExpensesGroupingType.ByCategory
+            ? Rows.OrderBy(x => x.Value1).Select(x => x.Value1).ToArray()
+            : Array.Empty<string>();
+
+    public double[] ChartData =>
+         ExpensesGroupingType == ExpensesGroupingType.ByGroup || ExpensesGroupingType == ExpensesGroupingType.ByCategory
+            ? Rows.OrderBy(x => x.Value1).Select(x => double.Parse(x.Value2)).ToArray()
+            : Array.Empty<double>();
+
+    public bool IsEmpty => _rows.Length == 0;
 }

@@ -24,7 +24,7 @@ internal interface IGroupsService
     ValueTask<Group?> GetRelatedGroup(Guid categoryId);
 }
 
-internal class GroupsService : IGroupsService
+internal sealed class GroupsService : IGroupsService
 {
     private readonly IGroupsRepository _groupsRepo;
     private readonly ICategoriesRepository _categoriesRepo;

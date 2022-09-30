@@ -8,7 +8,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal class GroupDefaultCategoryRepository : IGroupDefaultCategoryRepository, ILocalStorageGenericRepository<GroupDefaultCategory>
+internal sealed class GroupDefaultCategoryRepository : IGroupDefaultCategoryRepository, ILocalStorageGenericRepository<GroupDefaultCategory>
 {
     public GroupDefaultCategoryRepository(ILocalStorageService localStorageService)
     {

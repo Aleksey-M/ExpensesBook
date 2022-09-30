@@ -4,7 +4,7 @@ using ExpensesBook.Domain.Entities;
 
 namespace ExpensesBook.Data;
 
-internal class ExpensesDataSerializable
+internal sealed class ExpensesDataSerializable
 {
     public List<Category> Categories { get; set; } = null!;
 

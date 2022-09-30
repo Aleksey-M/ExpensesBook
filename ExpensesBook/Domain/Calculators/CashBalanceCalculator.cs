@@ -7,7 +7,7 @@ using ExpensesBook.Domain.Services;
 
 namespace ExpensesBook.Domain.Calculators;
 
-internal class CashBalanceCalculator
+internal sealed class CashBalanceCalculator
 {
     private readonly IIncomesService _incomesService;
     private readonly IExpensesService _expensesService;
@@ -31,7 +31,7 @@ internal class CashBalanceCalculator
         return new CashBalance(fromDate: fromDate, toDate: toDate, expenses: expenses, incomes: incomes);
     }
 
-    public async ValueTask<(List<(string yearAndMonth, CashBalance monthBalance)> rows, CashBalance? total)> GetMonthlyCashBalance()
+    public async ValueTask<(List<CashBalance> rows, CashBalance? total)> GetMonthlyCashBalance()
     {
         var allExpenses = await _expensesService.GetExpenses(startDate: null, endDate: null, filter: null);
         var allIncomes = await _incomesService.GetIncomes(startDate: null, endDate: null, filter: null);
@@ -58,7 +58,7 @@ internal class CashBalanceCalculator
 
         if (allMonths is { Count: 0 })
         {
-            return (new List<(string yearAndMonth, CashBalance monthBalance)>(), null);
+            return (new List<CashBalance>(), null);
         }
 
         var start = allMonths.First();
@@ -66,8 +66,14 @@ internal class CashBalanceCalculator
         var end = allMonths.Last();
         var endDate = new DateTimeOffset(end.Year, end.Month, 1, 0, 0, 0, TimeSpan.Zero);
 
-        var total = new CashBalance(fromDate: startDate, toDate: endDate, expenses: totalExpenses, incomes: totalIncomes);
-        var rows = new List<(string yearAndMonth, CashBalance monthBalance)>();
+        var total = new CashBalance(
+            fromDate: startDate,
+            toDate: endDate,
+            expenses: totalExpenses,
+            incomes: totalIncomes,
+            periodName: "Всего:");
+
+        var rows = new List<CashBalance>();
 
         foreach (var (Year, Month) in allMonths)
         {
@@ -77,36 +83,37 @@ internal class CashBalanceCalculator
             var lastDay = new DateTimeOffset(Year, Month, DateTime.DaysInMonth(Year, Month), 0, 0, 0, TimeSpan.Zero);
             var yearAndMonth = firstDay.ToString("MMMM yyyy", CultureInfo.CreateSpecificCulture("ru-RU"));
 
-            rows.Add((yearAndMonth, new CashBalance(firstDay, lastDay, exp.total, inc.total)));
+            rows.Add(new CashBalance(firstDay, lastDay, exp.total, inc.total, yearAndMonth));
         }
 
         return (rows, total);
     }
 }
 
-internal class CashBalance
+internal sealed class CashBalance
 {
-    public CashBalance(DateTimeOffset fromDate, DateTimeOffset toDate, double expenses, double incomes)
+    public CashBalance(DateTimeOffset fromDate, DateTimeOffset toDate, double expenses, double incomes, string periodName = "")
     {
         FromDate = fromDate;
         ToDate = toDate;
         ExpensesNum = expenses;
         IncomesNum = incomes;
+        PeriodName = periodName;
     }
 
     public DateTimeOffset FromDate { get; }
 
-    public string From => FromDate.ToString("yyyy.MM.dd");
-
     public DateTimeOffset ToDate { get; }
-
-    public string To => ToDate.ToString("yyyy.MM.dd");
 
     public double ExpensesNum { get; }
 
+    public double IncomesNum { get; }
+
+    public string PeriodName { get; }
+
     public string Expenses => ExpensesNum.ToString("N2", CultureInfo.InvariantCulture);
 
-    public double IncomesNum { get; }
+    public string StartPeriodMonth => FromDate.ToString("yyyy-MM");
 
     public string Incomes => IncomesNum.ToString("N2", CultureInfo.InvariantCulture);
 

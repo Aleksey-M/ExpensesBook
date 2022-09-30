@@ -7,7 +7,7 @@ using ExpensesBook.Domain.Services;
 
 namespace ExpensesBook.Domain.Calculators;
 
-internal class LimitsCalculator
+internal sealed class LimitsCalculator
 {
     private readonly ILimitsService _limitsService;
     private readonly IExpensesService _expensesService;
@@ -52,8 +52,32 @@ internal class LimitsCalculator
     }
 }
 
-internal class CalculatedLimit
+internal sealed class CalculatedLimit
 {
+    public CalculatedLimit(Limit limit, IEnumerable<Expense> allExpenses, DateTimeOffset currentDate)
+    {
+        LimitId = limit.Id;
+        Description = limit.Description;
+        StartDate = limit.StartDate.Date;
+        EndDate = limit.EndDate.Date;
+        CurrentDate = currentDate.Date;
+        LimitAmounthNum = limit.LimitAmounth;
+
+        var expensesFromRange = allExpenses.Where(e => e.Date.Date >= StartDate && e.Date.Date <= EndDate).ToList();
+        SpentNum = expensesFromRange.Select(e => e.Amounth).DefaultIfEmpty().Sum();
+
+        LeftNum = LimitAmounthNum - SpentNum;
+        if (LeftNum < 0)
+        {
+            DeficiteNum = -LeftNum;
+            LeftNum = 0;
+        }
+        else
+        {
+            DeficiteNum = 0;
+        }
+    }
+
     public Guid LimitId { get; }
 
     public string Description { get; }
@@ -91,29 +115,4 @@ internal class CalculatedLimit
         (false, true) => "color: blue",
         (false, false) => ""
     };
-
-
-    public CalculatedLimit(Limit limit, IEnumerable<Expense> allExpenses, DateTimeOffset currentDate)
-    {
-        LimitId = limit.Id;
-        Description = limit.Description;
-        StartDate = limit.StartDate.Date;
-        EndDate = limit.EndDate.Date;
-        CurrentDate = currentDate.Date;
-        LimitAmounthNum = limit.LimitAmounth;
-
-        var expensesFromRange = allExpenses.Where(e => e.Date.Date >= StartDate && e.Date.Date <= EndDate).ToList();
-        SpentNum = expensesFromRange.Select(e => e.Amounth).DefaultIfEmpty().Sum();
-
-        LeftNum = LimitAmounthNum - SpentNum;
-        if (LeftNum < 0)
-        {
-            DeficiteNum = -LeftNum;
-            LeftNum = 0;
-        }
-        else
-        {
-            DeficiteNum = 0;
-        }
-    }
 }

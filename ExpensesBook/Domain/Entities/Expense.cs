@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ExpensesBook.Domain.Entities;
 
-internal class Expense : IEntity
+internal sealed class Expense : IEntity
 {
     [Key]
     public Guid Id { get; set; }
@@ -20,6 +20,7 @@ internal class Expense : IEntity
     public double Amounth { get; set; }
 
     public Guid? GroupId { get; set; }
+
     [Required(ErrorMessage = "Значение обязательно")]
     public Guid CategoryId { get; set; }
 
@@ -30,7 +31,7 @@ internal class Expense : IEntity
     public override int GetHashCode() => Id.GetHashCode();
 }
 
-internal class ExpenseDto
+internal sealed class ExpenseDto
 {
     public Guid Id { get; set; } = Guid.Empty;
 

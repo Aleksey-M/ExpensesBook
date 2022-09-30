@@ -18,7 +18,7 @@ internal interface ILimitsService
     ValueTask DeleteLimit(Guid limitId);
 }
 
-internal class LimitsService : ILimitsService
+internal sealed class LimitsService : ILimitsService
 {
     private readonly ILimitsRepository _limitsRepo;
 

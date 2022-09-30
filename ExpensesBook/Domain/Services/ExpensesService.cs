@@ -23,7 +23,7 @@ internal interface IExpensesService
     ValueTask<List<(Expense item, Category category, Group? group)>> GetExpensesWithRelatedData(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
 }
 
-internal class ExpensesService : IExpensesService
+internal sealed class ExpensesService : IExpensesService
 {
     private readonly IExpensesRepository _expensesRepo;
     private readonly ICategoriesRepository _categoriesRepo;

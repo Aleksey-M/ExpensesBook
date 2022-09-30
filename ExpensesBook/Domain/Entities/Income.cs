@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ExpensesBook.Domain.Entities;
 
-internal class Income : IEntity
+internal sealed class Income : IEntity
 {
     [Key]
     public Guid Id { get; set; }
@@ -20,7 +20,7 @@ internal class Income : IEntity
     public double Amounth { get; set; }
 }
 
-internal class IncomeDto
+internal sealed class IncomeDto
 {
     public Guid Id { get; set; }
 

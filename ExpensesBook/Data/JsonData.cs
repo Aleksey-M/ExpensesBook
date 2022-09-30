@@ -14,7 +14,7 @@ internal interface IJsonData
     ValueTask ClearData();
 }
 
-internal class JsonData : IJsonData
+internal sealed class JsonData : IJsonData
 {
     private readonly ILocalStorageGenericRepository<Expense> _expensesRepo;
     private readonly ILocalStorageGenericRepository<Category> _categoriesRepo;

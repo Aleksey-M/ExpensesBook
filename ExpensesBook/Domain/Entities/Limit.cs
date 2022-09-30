@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ExpensesBook.Domain.Entities;
 
-internal class Limit : IEntity
+internal sealed class Limit : IEntity
 {
     [Key]
     public Guid Id { get; set; }
@@ -21,7 +21,7 @@ internal class Limit : IEntity
     public double LimitAmounth { get; set; }
 }
 
-internal class LimitDto
+internal sealed class LimitDto
 {
     public Guid? Id { get; set; }
 

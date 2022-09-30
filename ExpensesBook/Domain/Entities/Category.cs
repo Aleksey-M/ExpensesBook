@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ExpensesBook.Domain.Entities;
 
-internal class Category : IEntity
+internal sealed class Category : IEntity
 {
     [Key]
     public Guid Id { get; set; }
@@ -16,7 +16,7 @@ internal class Category : IEntity
     public override string ToString() => Name;
 }
 
-internal class CategoryDto
+internal sealed class CategoryDto
 {
     public Guid? Id { get; set; }
 

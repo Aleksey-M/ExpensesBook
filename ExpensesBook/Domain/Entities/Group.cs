@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ExpensesBook.Domain.Entities;
 
-internal class Group : IEntity
+internal sealed class Group : IEntity
 {
     [Key]
     public Guid Id { get; set; }
@@ -14,7 +14,7 @@ internal class Group : IEntity
     public int Sort { get; set; }
 }
 
-internal class GroupDto
+internal sealed class GroupDto
 {
     public Guid? Id { get; set; }
 
@@ -34,7 +34,7 @@ internal static class ExpensesGroupDtoExtensions
     public static Guid GetId(this GroupDto? grDto) => grDto?.Id ?? Guid.Empty;
 }
 
-internal record GroupDefaultCategory : IEntity
+internal sealed record GroupDefaultCategory : IEntity
 {
     public Guid Id { get; set; }
 

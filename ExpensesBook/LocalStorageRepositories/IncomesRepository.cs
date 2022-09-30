@@ -7,7 +7,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal class IncomesRepository : IIncomesRepository, ILocalStorageGenericRepository<Income>
+internal sealed class IncomesRepository : IIncomesRepository, ILocalStorageGenericRepository<Income>
 {
     public IncomesRepository(ILocalStorageService localStorageService)
     {

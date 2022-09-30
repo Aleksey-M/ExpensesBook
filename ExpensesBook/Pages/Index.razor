@@ -41,9 +41,9 @@
         </MudCardContent>
     </MudCard>
 
-    @if (_actualDataSet is not null)
+    @if (_tableData is not null)
     {
-        @if (_actualDataSet is { Count: 0 })
+        @if (_tableData.IsEmpty)
         {
             <MudCard Class="mt-5">
                 <MudCardContent>
@@ -56,16 +56,17 @@
             <MudCard Class="mt-5">
                 <MudCardContent>
                     <MudTable
-                        Items="_actualDataSet"
+                        Items="_tableData.Rows"
                         Hover="true"
                         Breakpoint="Breakpoint.None"
                         Striped="true"
                         FixedHeader="true">
 
                         <HeaderContent>
-                            <MudTh>@_headers.Item1</MudTh>
-                            <MudTh>@_headers.Item2</MudTh>
-                            <MudTh>@_headers.Item3</MudTh>
+                            @foreach(var header in _tableData.Headers)
+                            {
+                                <MudTh>@header</MudTh>
+                            }
                         </HeaderContent>
 
                         <RowTemplate>
@@ -74,20 +75,20 @@
                                  {
                                     <MudButton
                                         Variant="Variant.Text"
-                                        OnClick="async _ => await ShowDetails(context.Item1, context.Item4)">
-                                            @context.Item1
+                                        OnClick="async _ => await ShowDetails(context.Value1, context.RelatedId)">
+                                            @context.Value1
                                     </MudButton>
                                  }
                                  else
                                  {
-                                    @context.Item1
+                                    @context.Value1
                                  }
                             </MudTd>
-                            <MudTd>@context.Item2</MudTd>
-                            <MudTd>@context.Item3</MudTd>
+                            <MudTd>@context.Value2</MudTd>
+                            <MudTd>@context.Value3</MudTd>
                         </RowTemplate>
                     </MudTable>
-                    <MudText Color="Color.Info" Typo="Typo.h6" Class="mt-5 ml-5">Всего: @_total</MudText>
+                    <MudText Color="Color.Info" Typo="Typo.h6" Class="mt-5 ml-5">Всего: @_tableData.Total</MudText>
 
                     <div style="display: block; position: absolute; bottom: 0; left: 0;">
                         <MudPopover
@@ -142,7 +143,11 @@
             if(_viewType == ExpensesGroupingType.ByCategory || _viewType == ExpensesGroupingType.ByGroup)
             {
                 <MudPaper Class="pa-4 mt-3">
-                    <MudChart ChartType="ChartType.Pie" InputData="@_data" InputLabels="@_labels" Width="300px" Height="300px" />
+                    <MudChart
+                        ChartType="ChartType.Pie"
+                        InputData="@_tableData.ChartData"
+                        InputLabels="@_tableData.ChartLabels"
+                        Width="300px" Height="300px" />
                 </MudPaper>
             }
         }
@@ -154,14 +159,7 @@
     private DateTime? _endDate = DateTimeOffset.Now.Date.AddDays(1);
     private ExpensesGroupingType _viewType;
 
-    private string _total = "0";
-    private bool RecordsNotFound => (_actualDataSet?.Count ?? 0) == 0;
-
-    private (string, string, string) _headers;
-    private List<(string, string, string, Guid?)>? _actualDataSet;
-
-    private double[] _data = Array.Empty<double>();
-    private string[] _labels = Array.Empty<string>();
+    private PeriodExpensesTableData? _tableData = null;
 
     private async Task ShowTable()
     {
@@ -169,18 +167,9 @@
         var start = new DateTimeOffset(_startDate.Value);
         var end = new DateTimeOffset(_endDate.Value);
 
-        _headers = Calc.GetTableHeaders(_viewType);
-
-        (_actualDataSet, _total) = await Calc.GetExpensesAsTable(_viewType, start, end, null);
-
+        _tableData = await Calc.GetExpensesAsTable(_viewType, start, end, null);
         _detailsListAvailable = _viewType != ExpensesGroupingType.None;
         _groupingCriteriaName = null;
-
-        if(_viewType == ExpensesGroupingType.ByGroup || _viewType == ExpensesGroupingType.ByCategory)
-        {
-            _data = _actualDataSet.OrderBy(d => d.Item1).Select(d => double.Parse(d.Item2)).ToArray();
-            _labels = _actualDataSet.OrderBy(d => d.Item1).Select(d => d.Item1).ToArray();
-        }
     }
 
     private List<Expense> _expandedSublist = new();

@@ -8,7 +8,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal class ExpensesRepository : IExpensesRepository, ILocalStorageGenericRepository<Expense>
+internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGenericRepository<Expense>
 {
     public ExpensesRepository(ILocalStorageService localStorageService)
     {

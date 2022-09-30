@@ -7,7 +7,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal class LimitsRepository : ILimitsRepository, ILocalStorageGenericRepository<Limit>
+internal sealed class LimitsRepository : ILimitsRepository, ILocalStorageGenericRepository<Limit>
 {
     public LimitsRepository(ILocalStorageService localStorageService)
     {

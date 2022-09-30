@@ -32,11 +32,11 @@
                     </HeaderContent>
 
                     <RowTemplate>
-                        <MudTd>@context.yearAndMonth</MudTd>
-                        <MudTd style="color:darkblue">@context.monthBalance.Incomes</MudTd>
-                        <MudTd style="color:darkred">@context.monthBalance.Expenses</MudTd>
-                        <MudTd style="@context.monthBalance.SavingsCSSStyle">
-                            @context.monthBalance.Savings <small><i>@context.monthBalance.SavingsPercent</i></small>
+                        <MudTd>@context.PeriodName</MudTd>
+                        <MudTd style="color:darkblue">@context.Incomes</MudTd>
+                        <MudTd style="color:darkred">@context.Expenses</MudTd>
+                        <MudTd style="@context.SavingsCSSStyle">
+                            @context.Savings <small><i>@context.SavingsPercent</i></small>
                         </MudTd>
                     </RowTemplate>
                 </MudTable>
@@ -118,7 +118,7 @@
 @code
 {
 
-    private List<(string yearAndMonth, CashBalance monthBalance)> _rows = new();
+    private List<CashBalance> _rows = new();
     private List<CashBalance> _singleRowForPeriod = new();
 
     private DateTime? _from = DateTime.Now.Date;
@@ -166,24 +166,24 @@
         }
         else
         {
-            XAxisLabels = _rows.Select(r => r.monthBalance.FromDate.ToString("yyyy-MM")).ToArray();
+            XAxisLabels = _rows.Select(r => r.StartPeriodMonth).ToArray();
 
             Series = new List<ChartSeries>
             {
                 new ChartSeries
                 {
                     Name = "Доходы",
-                    Data = _rows.Select(r => r.monthBalance.IncomesNum).ToArray()
+                    Data = _rows.Select(r => r.IncomesNum).ToArray()
                 },
                 new ChartSeries
                 {
                     Name = "Расходы",
-                    Data = _rows.Select(r => r.monthBalance.ExpensesNum).ToArray()
+                    Data = _rows.Select(r => r.ExpensesNum).ToArray()
                 },
                 new ChartSeries
                 {
                     Name = "Сбережения",
-                    Data = _rows.Select(r => r.monthBalance.SavingsNum >= 0 ? r.monthBalance.SavingsNum : 0).ToArray()
+                    Data = _rows.Select(r => r.SavingsNum >= 0 ? r.SavingsNum : 0).ToArray()
                 }
             };
 
@@ -192,7 +192,7 @@
 
             foreach(var r in _rows)
             {
-                totalSavings += r.monthBalance.SavingsNum;
+                totalSavings += r.SavingsNum;
 
                 if (totalSavings < 0) totalSavings = 0;
 
@@ -211,7 +211,7 @@
                 _ => 20
             };
 
-            _rows.Add(("Всего:", total));
+            _rows.Add(total);
         }
     }
 }

@@ -18,7 +18,7 @@ internal interface IIncomesService
     ValueTask DeleteIncome(Guid incomeId);
 }
 
-internal class IncomesService : IIncomesService
+internal sealed class IncomesService : IIncomesService
 {
     private readonly IIncomesRepository _incomesRepo;
 

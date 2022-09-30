@@ -20,7 +20,7 @@ internal interface ICategoriesService
     ValueTask<bool> IsEmptyCategory(Guid categoryId);
 }
 
-internal class CategoriesService : ICategoriesService
+internal sealed class CategoriesService : ICategoriesService
 {
     private readonly ICategoriesRepository _categoriesRepo;
     private readonly IGroupDefaultCategoryRepository _groupDefaultCategoryRepo;

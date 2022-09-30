@@ -8,7 +8,7 @@ using ExpensesBook.Domain.Services;
 
 namespace ExpensesBook.Domain.Calculators;
 
-internal class YearExpensesCalculator
+internal sealed class YearExpensesCalculator
 {
     private readonly IExpensesService _expensesSvc;
     private readonly ICategoriesService _categoriesSvc;
@@ -75,7 +75,7 @@ internal class YearExpensesCalculator
     }
 }
 
-internal class YearPivotTable
+internal sealed class YearPivotTable
 {
     public List<(string rowName, List<(string value, string percent)>)> Rows { get; }
 
