@@ -7,9 +7,9 @@ namespace ExpensesBook.Domain.Repositories;
 
 internal interface IGroupDefaultCategoryRepository
 {
-    ValueTask AddGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories);
+    Task AddGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories);
 
-    ValueTask DeleteGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories);
+    Task DeleteGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories);
 
-    ValueTask<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId, Guid? groupId);
+    Task<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId, Guid? groupId);
 }

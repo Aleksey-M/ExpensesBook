@@ -17,7 +17,7 @@ internal sealed class GroupDefaultCategoryRepository : IGroupDefaultCategoryRepo
 
     public ILocalStorageService LocalStorage { get; }
 
-    public async ValueTask AddGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories)
+    public async Task AddGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories)
     {
         if (!groupCategories.Any()) return;
 
@@ -26,7 +26,7 @@ internal sealed class GroupDefaultCategoryRepository : IGroupDefaultCategoryRepo
         await (this as ILocalStorageGenericRepository<GroupDefaultCategory>).SetCollection(list);
     }
 
-    public async ValueTask DeleteGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories)
+    public async Task DeleteGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories)
     {
         if (!groupCategories.Any()) return;
 
@@ -35,7 +35,7 @@ internal sealed class GroupDefaultCategoryRepository : IGroupDefaultCategoryRepo
         await (this as ILocalStorageGenericRepository<GroupDefaultCategory>).SetCollection(list);
     }
 
-    public async ValueTask<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId, Guid? groupId)
+    public async Task<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId, Guid? groupId)
     {
         var fullList = await (this as ILocalStorageGenericRepository<GroupDefaultCategory>).GetCollection();
 

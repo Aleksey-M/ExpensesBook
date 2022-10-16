@@ -9,13 +9,13 @@ namespace ExpensesBook.Domain.Services;
 
 internal interface ILimitsService
 {
-    ValueTask<Limit> AddLimit(DateTimeOffset startDate, DateTimeOffset endDate, string description, double amounth);
+    Task<Limit> AddLimit(DateTimeOffset startDate, DateTimeOffset endDate, string description, double amounth);
 
-    ValueTask<List<Limit>> GetLimits();
+    Task<List<Limit>> GetLimits();
 
-    ValueTask UpdateLimit(Guid limitId, DateTimeOffset? startDate, DateTimeOffset? endDate, string? description, double? amounth);
+    Task UpdateLimit(Guid limitId, DateTimeOffset? startDate, DateTimeOffset? endDate, string? description, double? amounth);
 
-    ValueTask DeleteLimit(Guid limitId);
+    Task DeleteLimit(Guid limitId);
 }
 
 internal sealed class LimitsService : ILimitsService
@@ -27,7 +27,7 @@ internal sealed class LimitsService : ILimitsService
         _limitsRepo = limitsRepo;
     }
 
-    public async ValueTask<Limit> AddLimit(DateTimeOffset startDate, DateTimeOffset endDate, string description, double amounth)
+    public async Task<Limit> AddLimit(DateTimeOffset startDate, DateTimeOffset endDate, string description, double amounth)
     {
         if (amounth <= 0) throw new ArgumentException("'Amount' should be positive and greater than 0");
         if (startDate >= endDate) throw new ArgumentException("EndDate should be greater than StartDate");
@@ -46,15 +46,15 @@ internal sealed class LimitsService : ILimitsService
         return limit;
     }
 
-    public async ValueTask DeleteLimit(Guid limitId) => await _limitsRepo.DeleteLimit(limitId);
+    public async Task DeleteLimit(Guid limitId) => await _limitsRepo.DeleteLimit(limitId);
 
-    public async ValueTask<List<Limit>> GetLimits()
+    public async Task<List<Limit>> GetLimits()
     {
         var limits = await _limitsRepo.GetLimits();
         return limits.OrderBy(l => l.StartDate).ThenBy(l => l.EndDate).ToList();
     }
 
-    public async ValueTask UpdateLimit(Guid limitId,
+    public async Task UpdateLimit(Guid limitId,
         DateTimeOffset? startDate, DateTimeOffset? endDate, string? description, double? amounth)
     {
         if (startDate is null && endDate is null && amounth is null && description is null) return;

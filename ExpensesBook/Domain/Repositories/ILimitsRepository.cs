@@ -7,11 +7,11 @@ namespace ExpensesBook.Domain.Repositories;
 
 internal interface ILimitsRepository
 {
-    ValueTask AddLimit(Limit limit);
+    Task AddLimit(Limit limit);
 
-    ValueTask<List<Limit>> GetLimits();
+    Task<List<Limit>> GetLimits();
 
-    ValueTask UpdateLimit(Limit limit);
+    Task UpdateLimit(Limit limit);
 
-    ValueTask DeleteLimit(Guid limitId);
+    Task DeleteLimit(Guid limitId);
 }

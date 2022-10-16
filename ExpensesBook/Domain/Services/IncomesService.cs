@@ -9,13 +9,13 @@ namespace ExpensesBook.Domain.Services;
 
 internal interface IIncomesService
 {
-    ValueTask<Income> AddIncome(DateTimeOffset date, double amounth, string description);
+    Task<Income> AddIncome(DateTimeOffset date, double amounth, string description);
 
-    ValueTask<List<Income>> GetIncomes(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
+    Task<List<Income>> GetIncomes(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
 
-    ValueTask UpdateIncome(Guid incomeId, DateTimeOffset? date, double? amounth, string? description);
+    Task UpdateIncome(Guid incomeId, DateTimeOffset? date, double? amounth, string? description);
 
-    ValueTask DeleteIncome(Guid incomeId);
+    Task DeleteIncome(Guid incomeId);
 }
 
 internal sealed class IncomesService : IIncomesService
@@ -27,7 +27,7 @@ internal sealed class IncomesService : IIncomesService
         _incomesRepo = incomesRepo;
     }
 
-    public async ValueTask<Income> AddIncome(DateTimeOffset date, double amounth, string description)
+    public async Task<Income> AddIncome(DateTimeOffset date, double amounth, string description)
     {
         if (amounth <= 0) throw new ArgumentException("'Amount' should be positive and greater than 0");
 
@@ -44,9 +44,9 @@ internal sealed class IncomesService : IIncomesService
         return income;
     }
 
-    public async ValueTask DeleteIncome(Guid incomeId) => await _incomesRepo.DeleteIncome(incomeId);
+    public async Task DeleteIncome(Guid incomeId) => await _incomesRepo.DeleteIncome(incomeId);
 
-    public async ValueTask<List<Income>> GetIncomes(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter)
+    public async Task<List<Income>> GetIncomes(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter)
     {
         var incomes = await _incomesRepo.GetIncomes();
 
@@ -68,7 +68,7 @@ internal sealed class IncomesService : IIncomesService
             .ToList();
     }
 
-    public async ValueTask UpdateIncome(Guid incomeId, DateTimeOffset? date, double? amounth, string? description)
+    public async Task UpdateIncome(Guid incomeId, DateTimeOffset? date, double? amounth, string? description)
     {
         if (date is null && amounth is null && description is null) return;
 

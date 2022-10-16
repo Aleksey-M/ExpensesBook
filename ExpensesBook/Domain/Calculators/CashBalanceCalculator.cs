@@ -18,7 +18,7 @@ internal sealed class CashBalanceCalculator
         _expensesService = expensesService;
     }
 
-    public async ValueTask<CashBalance> GetCashBalance(DateTimeOffset fromDate, DateTimeOffset toDate)
+    public async Task<CashBalance> GetCashBalance(DateTimeOffset fromDate, DateTimeOffset toDate)
     {
         if (fromDate.Date > toDate.Date) throw new ArgumentException(null, nameof(fromDate));
 
@@ -31,7 +31,7 @@ internal sealed class CashBalanceCalculator
         return new CashBalance(fromDate: fromDate, toDate: toDate, expenses: expenses, incomes: incomes);
     }
 
-    public async ValueTask<(List<CashBalance> rows, CashBalance? total)> GetMonthlyCashBalance()
+    public async Task<(List<CashBalance> rows, CashBalance? total)> GetMonthlyCashBalance()
     {
         var allExpenses = await _expensesService.GetExpenses(startDate: null, endDate: null, filter: null);
         var allIncomes = await _incomesService.GetIncomes(startDate: null, endDate: null, filter: null);

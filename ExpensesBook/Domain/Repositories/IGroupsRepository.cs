@@ -7,11 +7,11 @@ namespace ExpensesBook.Domain.Repositories;
 
 internal interface IGroupsRepository
 {
-    ValueTask AddGroup(Group group);
+    Task AddGroup(Group group);
 
-    ValueTask<List<Group>> GetGroups();
+    Task<List<Group>> GetGroups();
 
-    ValueTask UpdateGroup(Group group);
+    Task UpdateGroup(Group group);
 
-    ValueTask DeleteGroup(Guid groupId);
+    Task DeleteGroup(Guid groupId);
 }

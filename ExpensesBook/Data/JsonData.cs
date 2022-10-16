@@ -7,11 +7,11 @@ namespace ExpensesBook.Data;
 
 internal interface IJsonData
 {
-    ValueTask<string> ExportToJson();
+    Task<string> ExportToJson();
 
-    ValueTask ImportFromJson(string data, bool dataMerge);
+    Task ImportFromJson(string data, bool dataMerge);
 
-    ValueTask ClearData();
+    Task ClearData();
 }
 
 internal sealed class JsonData : IJsonData
@@ -40,7 +40,7 @@ internal sealed class JsonData : IJsonData
         _limitsRepo = limitsRepo;
     }
 
-    public async ValueTask<string> ExportToJson()
+    public async Task<string> ExportToJson()
     {
         var expenses = await _expensesRepo.GetCollection();
         var categories = await _categoriesRepo.GetCollection();
@@ -63,7 +63,7 @@ internal sealed class JsonData : IJsonData
         return json;
     }
 
-    public async ValueTask ImportFromJson(string data, bool dataMerge)
+    public async Task ImportFromJson(string data, bool dataMerge)
     {
         var expenses = dataMerge ? await _expensesRepo.GetCollection() : new();
         var categories = dataMerge ? await _categoriesRepo.GetCollection() : new();
@@ -151,7 +151,7 @@ internal sealed class JsonData : IJsonData
         await _limitsRepo.SetCollection(limits);
     }
 
-    public async ValueTask ClearData()
+    public async Task ClearData()
     {
         await _expensesRepo.Clear();
         await _categoriesRepo.Clear();

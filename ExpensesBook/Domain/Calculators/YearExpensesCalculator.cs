@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Services;
+using MudBlazor;
+using static MudBlazor.CategoryTypes;
 
 namespace ExpensesBook.Domain.Calculators;
 
@@ -21,13 +24,13 @@ internal sealed class YearExpensesCalculator
         _groupsSvc = groupsSvc;
     }
 
-    public async ValueTask<List<int>> GetYears()
+    public async Task<List<int>> GetYears()
     {
         var months = await _expensesSvc.GetExpensesMonths();
         return months.Select(m => m.year).Distinct().OrderBy(y => y).ToList();
     }
 
-    public async ValueTask<YearPivotTable?> GetYearExpenses(int year, ExpensesGroupingType groupingType)
+    public async Task<YearPivotTable?> GetYearExpenses(int year, ExpensesGroupingType groupingType)
     {
         if (year == 0) return null;
 
@@ -75,19 +78,25 @@ internal sealed class YearExpensesCalculator
     }
 }
 
+
+internal sealed record ValuePercent(string Value, string Percent, double NumValue);
+
+internal sealed record YearPivotTableRow(string RowName, ReadOnlyCollection<ValuePercent> CellsValues);
+
+internal sealed record MonthColumnTotal(int Month, string MonthName, string Total, string YearPercent, double NumTotal);
+
+
 internal sealed class YearPivotTable
 {
-    public List<(string rowName, List<(string value, string percent)>)> Rows { get; }
+    private readonly double _totalNum;
 
-    public List<(int month, string total, string percent)> MonthsTotals { get; }
+    public ReadOnlyCollection<YearPivotTableRow> Rows { get; }
 
-    public List<string> MonthsNames { get; }
-
-    public double TotalNum { get; }
-
-    public string Total => TotalNum.ToString("N2");
+    public ReadOnlyCollection<MonthColumnTotal> MonthsTotals { get; }
 
     public string GroupingParameterName { get; }
+
+    public string Total => _totalNum.ToString("N2");
 
     public YearPivotTable(int year, string groupingParamName, IEnumerable<Expense> allExpenses,
         Func<IEnumerable<Expense>, IEnumerable<(string, double)>> groupingLogic)
@@ -95,7 +104,7 @@ internal sealed class YearPivotTable
         GroupingParameterName = groupingParamName;
 
         var yearExpenses = allExpenses.Where(e => e.Date.Year == year).ToList();
-        TotalNum = yearExpenses.Select(e => e.Amounth).DefaultIfEmpty().Sum();
+        _totalNum = yearExpenses.Select(e => e.Amounth).DefaultIfEmpty().Sum();
 
         var yearMonths = yearExpenses
             .Select(e => e.Date.Month)
@@ -104,32 +113,38 @@ internal sealed class YearPivotTable
             .OrderBy(m => m)
             .ToList();
 
-        MonthsNames = yearMonths
-            .Select(m => new DateTimeOffset(year, m, 1, 0, 0, 0, TimeSpan.FromSeconds(0))
-                .ToString("MMMM", CultureInfo.CreateSpecificCulture("ru-RU")))
-            .ToList();
-
         var monthsTotals = yearExpenses
             .GroupBy(e => e.Date.Month)
-            .Select(g => (g.Key, g.Select(e => e.Amounth).Sum()))
+            .Select(g => (month: g.Key, total: g.Select(e => e.Amounth).Sum()))
+            .OrderBy(x => x.month)
             .ToList();
 
-        MonthsTotals = monthsTotals
-            .Select(mt => (mt.Key, mt.Item2.ToString("N2"), (mt.Item2 / TotalNum).ToString("P2")))
+        var monthsTotalsList = monthsTotals
+            .Zip(yearMonths
+                .OrderBy(x => x)
+                .Select(m => new DateTimeOffset(year, m, 1, 0, 0, 0, TimeSpan.FromSeconds(0))
+                    .ToString("MMMM", CultureInfo.CreateSpecificCulture("ru-RU"))))
+            .Select(pair => new MonthColumnTotal(
+                Month: pair.First.month,
+                MonthName: pair.Second,
+                Total: pair.First.total.ToString("N2"),
+                YearPercent: (pair.First.total / _totalNum).ToString("P2"),
+                NumTotal: pair.First.total))
             .ToList();
 
-        var monthsCalculated = new Dictionary<int, List<(string name, string value, string percent)>>();
+        MonthsTotals = new ReadOnlyCollection<MonthColumnTotal>(monthsTotalsList);
+        
+
+        var monthsCalculated = new Dictionary<int, List<(string name, ValuePercent value)>>();
 
         foreach (int m in yearMonths)
         {
-            var total = monthsTotals.Single(t => t.Key == m).Item2;
+            var total = monthsTotals.Single(t => t.month == m).total;
 
             monthsCalculated[m] = groupingLogic(yearExpenses.Where(e => e.Date.Month == m))
-                .Where(i => i.Item2 > 0)
-                .Select(i => (
-                    i.Item1,
-                    i.Item2.ToString("N2"),
-                    (i.Item2 / total).ToString("P2")))
+            .Select(x => x.Item2 > 0
+                    ? (x.Item1, new ValuePercent(x.Item2.ToString("N2"), (x.Item2 / total).ToString("P2"), x.Item2))
+                    : (x.Item1, new ValuePercent("0.00", "0%", 0)))
                 .ToList();
         }
 
@@ -139,34 +154,62 @@ internal sealed class YearPivotTable
             .Distinct()
             .ToList();
 
-        Rows = new List<(string rowName, List<(string value, string percent)>)>();
+
+        var rows = new List<YearPivotTableRow>();
 
         foreach (var n in allRowsNames)
         {
-            var row = new List<(string value, string percent)>();
+            var cellsValues = new List<ValuePercent>();
 
             foreach (int m in yearMonths)
             {
-                if (monthsCalculated.ContainsKey(m))
+                bool valueExists = monthsCalculated.ContainsKey(m)
+                    && monthsCalculated[m].SingleOrDefault(v => v.name == n) != default;
+                
+                if (valueExists)
                 {
-                    var val = monthsCalculated[m].SingleOrDefault(v => v.name == n);
-
-                    if (val == default)
-                    {
-                        row.Add(("0.00", "0%"));
-                    }
-                    else
-                    {
-                        row.Add((val.value, val.percent));
-                    }
+                    cellsValues.Add(monthsCalculated[m].SingleOrDefault(v => v.name == n).value);
                 }
                 else
                 {
-                    row.Add(("0.00", "0%"));
+                    cellsValues.Add(new ValuePercent("0.00", "0%", 0));
                 }
             }
 
-            Rows.Add((rowName: n, row));
+            rows.Add(new YearPivotTableRow(n, new ReadOnlyCollection<ValuePercent>(cellsValues)));
         }
+
+        rows.Add(new YearPivotTableRow("За месяц", new ReadOnlyCollection<ValuePercent>(
+            MonthsTotals.Select(x => new ValuePercent(x.Total, x.YearPercent, x.NumTotal)).ToList())));
+
+        Rows = new ReadOnlyCollection<YearPivotTableRow>(rows);
     }
+
+    public string[] XAxisLabels => MonthsTotals.Select(x => x.MonthName).ToArray();
+
+    public int GetYAxisTicks(HashSet<YearPivotTableRow> selectedRows)
+    {
+        var max = selectedRows
+            .SelectMany(x => x.CellsValues)
+            .Max(x => x.NumValue);
+
+        return max switch
+        {
+            0 => 10,
+            < 1000 => 200,
+            < 2000 => 250,
+            < 3000 => 300,
+            < 5000 => 500,
+            < 10_000 => 1000,
+            _ => 20_000
+        };
+    }
+
+    public List<ChartSeries> GetChartSeries(HashSet<YearPivotTableRow> selectedRows) => selectedRows
+        .Select(x => new ChartSeries
+            {
+                Name = x.RowName,
+                Data = x.CellsValues.Select(y => y.NumValue).ToArray()
+            })
+        .ToList();
 }

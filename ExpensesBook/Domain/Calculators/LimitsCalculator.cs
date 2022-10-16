@@ -18,7 +18,7 @@ internal sealed class LimitsCalculator
         _expensesService = expensesService;
     }
 
-    public async ValueTask<List<CalculatedLimit>> GetCalculatedLimits(bool onlyActual, DateTimeOffset? currentDate = null)
+    public async Task<List<CalculatedLimit>> GetCalculatedLimits(bool onlyActual, DateTimeOffset? currentDate = null)
     {
         currentDate ??= DateTimeOffset.Now.Date;
 
@@ -42,7 +42,7 @@ internal sealed class LimitsCalculator
             .ToList();
     }
 
-    public async ValueTask<CalculatedLimit> GetCalculatedLimit(Limit limit, DateTimeOffset? currentDate = null)
+    public async Task<CalculatedLimit> GetCalculatedLimit(Limit limit, DateTimeOffset? currentDate = null)
     {
         currentDate ??= DateTimeOffset.Now.Date;
 

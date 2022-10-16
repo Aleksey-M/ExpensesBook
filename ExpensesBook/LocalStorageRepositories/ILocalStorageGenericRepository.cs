@@ -11,19 +11,19 @@ internal interface ILocalStorageGenericRepository<T> where T : IEntity
 {
     ILocalStorageService LocalStorage { get; }
 
-    async ValueTask Clear()
+    async Task Clear()
     {
         var collectionName = typeof(T).Name;
         await LocalStorage.RemoveItemAsync(collectionName);
     }
 
-    async ValueTask SetCollection(IEnumerable<T> collection)
+    async Task SetCollection(IEnumerable<T> collection)
     {
         var collectionName = typeof(T).Name;
         await LocalStorage.SetItemAsync(collectionName, collection.ToList());
     }
 
-    async ValueTask<List<T>> GetCollection()
+    async Task<List<T>> GetCollection()
     {
         var collectionName = typeof(T).Name;
         var items = await LocalStorage.GetItemAsync<List<T>>(collectionName);
@@ -31,7 +31,7 @@ internal interface ILocalStorageGenericRepository<T> where T : IEntity
         return items ?? new List<T>();
     }
 
-    async ValueTask AddEntity(T entity)
+    async Task AddEntity(T entity)
     {
         var collectionName = typeof(T).Name;
         var list = await LocalStorage.GetItemAsync<List<T>>(collectionName);
@@ -42,7 +42,7 @@ internal interface ILocalStorageGenericRepository<T> where T : IEntity
         await LocalStorage.SetItemAsync(collectionName, list);
     }
 
-    async ValueTask DeleteEntity(Guid entityId)
+    async Task DeleteEntity(Guid entityId)
     {
         var collectionName = typeof(T).Name;
         var list = await LocalStorage.GetItemAsync<List<T>>(collectionName);
@@ -55,7 +55,7 @@ internal interface ILocalStorageGenericRepository<T> where T : IEntity
         await LocalStorage.SetItemAsync(collectionName, list);
     }
 
-    async ValueTask<List<string>> GetKeys()
+    async Task<List<string>> GetKeys()
     {
         var keysCount = await LocalStorage.LengthAsync();
         var keys = new List<string>();
@@ -68,7 +68,7 @@ internal interface ILocalStorageGenericRepository<T> where T : IEntity
         return keys;
     }
 
-    async ValueTask UpdateEntity(T entity)
+    async Task UpdateEntity(T entity)
     {
         var collectionName = typeof(T).Name;
         var entities = await LocalStorage.GetItemAsync<List<T>>(collectionName);

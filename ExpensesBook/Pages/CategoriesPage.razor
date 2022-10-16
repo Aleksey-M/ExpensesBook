@@ -9,110 +9,102 @@
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
 
-    <MudCard>
-        <MudCardContent>
+    @if (_state == PageState.Edit || _state == PageState.Add)
+    {
+        <EditForm Model="@_category" OnValidSubmit="async _ => await SaveCategory()">
 
-            <MudTable Items="Categories" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
-                <ToolBarContent>
-                    <MudText Typo="Typo.h5" GutterBottom="true">Категории</MudText>
+            <DataAnnotationsValidator />
 
-                    <MudToolBarSpacer />
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
 
-                    <MudFab 
-                        OnClick="_ => OpenAddNewCategoryPopup()"
-                        Icon="@Icons.Material.Filled.Add"
-                        Size="Size.Small"
-                        IconSize="Size.Small"
-                        Class="ma-2"
-                        DisableElevation="true" />
-                </ToolBarContent>
+                        <MudText Typo="Typo.h6" Color="Color.Info">Категория</MudText>
 
-                <HeaderContent>
-                    <MudTh>#</MudTh>
-                    <MudTh>Название</MudTh>
-                    <MudTh></MudTh>
-                </HeaderContent>
+                    </CardHeaderContent>
 
-                <RowTemplate>
-                    <MudTd>@context.Sort</MudTd>
-                    <MudTd>@context.Name</MudTd>
-                    <MudTh Style="text-align:right">
+                    <CardHeaderActions>
+
                         <MudIconButton 
-                            Icon="@Icons.Material.Filled.Edit" 
-                            OnClick="_ => OpenEditCategoryPopup(context)">
+                            Class="ml-auto mb-1"
+                            OnClick="_ => _state = PageState.List"
+                            Icon="@Icons.Material.Filled.Close">
                         </MudIconButton>
 
-                        <MudIconButton
-                            Icon="@Icons.Material.Filled.DeleteForever"
-                            Color="Color.Error"
-                            Class="ml-2"
-                            OnClick="async _ => await DeleteCategory(context.Id)">
-                        </MudIconButton>
-                    </MudTh>
-                </RowTemplate>
-            </MudTable>
-        </MudCardContent>
-    </MudCard>
+                    </CardHeaderActions>
+                </MudCardHeader>
 
-    <div style="display: block; position: absolute; bottom: 0; left: 0;">
-        <MudPopover
-            Open="@(_state == PageState.Edit || _state == PageState.Add)"
-            Class="pa-4"
-            Style="width: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12" sm="4">
+                            <MudTextField Label="Сортировка"
+                                InputType="InputType.Number"
+                                @bind-Value="_category.Sort"
+                                For="@(() => _category.Sort)" />
+                        </MudItem>
 
-            <EditForm Model="@_category" OnValidSubmit="async _ => await SaveCategory()">
-                <DataAnnotationsValidator />
-                <MudCard>
-                    <MudCardHeader>
-                        <CardHeaderContent>
+                        <MudItem xs="12" sm="8">
+                            <MudTextField Label="Название"
+                                @bind-Value="_category.Name"
+                                For="@(() => _category.Name)" />
+                        </MudItem>
+                    </MudGrid>
 
-                            <MudText Typo="Typo.h6" Color="Color.Info">Категория</MudText>
+                </MudCardContent>
 
-                        </CardHeaderContent>
-                        <CardHeaderActions>
+                <MudCardActions>
+                    <MudButton 
+                        ButtonType="ButtonType.Submit"
+                        Variant="Variant.Filled"
+                        Color="Color.Primary"
+                        Class="ml-auto">
+                            @_state.SaveActionName()
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    }
+    else
+    {
+        <MudTable Items="Categories" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
+            <ToolBarContent>
+                <MudText Typo="Typo.h5" GutterBottom="true">Категории</MudText>
 
-                            <MudIconButton
-                                Class="ml-auto mb-1"
-                                OnClick="_ => _state = PageState.List"
-                                Icon="@Icons.Material.Filled.Close">
-                            </MudIconButton>
+                <MudSpacer />
 
-                        </CardHeaderActions>
-                    </MudCardHeader>
+                <MudFab OnClick="_ => OpenAddNewCategoryPopup()"
+                    Icon="@Icons.Material.Filled.Add"
+                    Size="Size.Small"
+                    IconSize="Size.Small"
+                    Class="ma-2"
+                    DisableElevation="true" />
+            </ToolBarContent>
 
-                    <MudCardContent>
-                        <MudGrid>
-                            <MudItem xs="12" sm="4">
-                                <MudTextField
-                                    Label="Сортировка"
-                                    InputType="InputType.Number"
-                                    @bind-Value="_category.Sort"
-                                    For="@(() => _category.Sort)" />
-                            </MudItem>
+            <HeaderContent>
+                <MudTh>#</MudTh>
+                <MudTh>Название</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
 
-                            <MudItem xs="12" sm="8">
-                                <MudTextField
-                                    Label="Название"
-                                    @bind-Value="_category.Name"
-                                    For="@(() => _category.Name)" />
-                            </MudItem>
-                        </MudGrid>
+            <RowTemplate>
+                <MudTd>@context.Sort</MudTd>
+                <MudTd>@context.Name</MudTd>
+                <MudTh Style="text-align:right">
+                    <MudIconButton 
+                        Icon="@Icons.Material.Filled.Edit"
+                        OnClick="_ => OpenEditCategoryPopup(context)">
+                    </MudIconButton>
 
-                    </MudCardContent>
-
-                    <MudCardActions>
-                        <MudButton
-                            ButtonType="ButtonType.Submit"
-                            Variant="Variant.Filled"
-                            Color="Color.Primary"
-                            Class="ml-auto">
-                                @_state.SaveActionName()
-                        </MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </EditForm>
-        </MudPopover>
-    </div>
+                    <MudIconButton 
+                        Icon="@Icons.Material.Filled.DeleteForever"
+                        Color="Color.Error"
+                        Class="ml-2"
+                        OnClick="async _ => await DeleteCategory(context.Id)">
+                    </MudIconButton>
+                </MudTh>
+            </RowTemplate>
+        </MudTable>
+    }
 
 </MudContainer>
 

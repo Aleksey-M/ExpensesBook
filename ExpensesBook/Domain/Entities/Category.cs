@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 
 namespace ExpensesBook.Domain.Entities;
 
@@ -14,6 +15,13 @@ internal sealed class Category : IEntity
     public int Sort { get; set; }
 
     public override string ToString() => Name;
+
+    public override bool Equals(object? o)
+    {
+        var other = o as Category;
+        return other?.Id == Id;
+    }
+    public override int GetHashCode() => Id.GetHashCode();
 }
 
 internal sealed class CategoryDto

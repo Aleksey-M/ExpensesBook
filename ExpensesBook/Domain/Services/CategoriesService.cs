@@ -9,15 +9,15 @@ namespace ExpensesBook.Domain.Services;
 
 internal interface ICategoriesService
 {
-    ValueTask<Category> AddCategory(string categoryName, int? sortOrder);
+    Task<Category> AddCategory(string categoryName, int? sortOrder);
 
-    ValueTask<List<Category>> GetCategories();
+    Task<List<Category>> GetCategories();
 
-    ValueTask UpdateCategory(Guid categoryId, string? categoryName, int? sortOrder);
+    Task UpdateCategory(Guid categoryId, string? categoryName, int? sortOrder);
 
-    ValueTask DeleteCategory(Guid categoryId);
+    Task DeleteCategory(Guid categoryId);
 
-    ValueTask<bool> IsEmptyCategory(Guid categoryId);
+    Task<bool> IsEmptyCategory(Guid categoryId);
 }
 
 internal sealed class CategoriesService : ICategoriesService
@@ -34,7 +34,7 @@ internal sealed class CategoriesService : ICategoriesService
         _expenseRepo = expenseRepo;
     }
 
-    public async ValueTask<Category> AddCategory(string categoryName, int? sortOrder)
+    public async Task<Category> AddCategory(string categoryName, int? sortOrder)
     {
         var category = new Category
         {
@@ -48,7 +48,7 @@ internal sealed class CategoriesService : ICategoriesService
         return category;
     }
 
-    public async ValueTask DeleteCategory(Guid categoryId)
+    public async Task DeleteCategory(Guid categoryId)
     {
         bool isEmpty = await IsEmptyCategory(categoryId);
         if (!isEmpty) throw new Exception($"Category with Id='{categoryId}' using for some expenses");
@@ -58,19 +58,19 @@ internal sealed class CategoriesService : ICategoriesService
         await _groupDefaultCategoryRepo.DeleteGroupDefaultCategory(defCateg);
     }
 
-    public async ValueTask<bool> IsEmptyCategory(Guid categoryId)
+    public async Task<bool> IsEmptyCategory(Guid categoryId)
     {
         var expenses = await _expenseRepo.GetExpenses(null, null);
         return !expenses.Any(e => e.CategoryId == categoryId);
     }
 
-    public async ValueTask<List<Category>> GetCategories()
+    public async Task<List<Category>> GetCategories()
     {
         var list = await _categoriesRepo.GetCategories();
         return list.OrderBy(c => c.Sort).ThenBy(c => c.Name).ToList();
     }
 
-    public async ValueTask UpdateCategory(Guid categoryId, string? categoryName, int? sortOrder)
+    public async Task UpdateCategory(Guid categoryId, string? categoryName, int? sortOrder)
     {
         if (categoryName is null && sortOrder is null) return;
 

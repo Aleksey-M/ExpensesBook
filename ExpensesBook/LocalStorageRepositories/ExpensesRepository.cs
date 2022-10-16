@@ -17,7 +17,7 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
 
     public ILocalStorageService LocalStorage { get; }
 
-    public async ValueTask Clear()
+    public async Task Clear()
     {
         var keys = await (this as ILocalStorageGenericRepository<Expense>).GetKeys();
         foreach (var k in keys)
@@ -29,7 +29,7 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
         }
     }
 
-    public async ValueTask SetCollection(IEnumerable<Expense> collection)
+    public async Task SetCollection(IEnumerable<Expense> collection)
     {
         var groupedCollection = collection.GroupBy(e => (year: e.Date.Year, month: e.Date.Month));
         foreach (var g in groupedCollection)
@@ -40,7 +40,7 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
         }
     }
 
-    public async ValueTask<List<Expense>> GetCollection()
+    public async Task<List<Expense>> GetCollection()
     {
         var keys = await (this as ILocalStorageGenericRepository<Expense>).GetKeys();
         var expenses = new List<Expense>();
@@ -67,7 +67,7 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
 
     private static string DateToPartKey(DateTime date) => $"ExpListPart.{date.Year}.{date.Month}";
 
-    public async ValueTask<List<Expense>> GetCollection(DateTimeOffset? fromDate, DateTimeOffset? toDate)
+    public async Task<List<Expense>> GetCollection(DateTimeOffset? fromDate, DateTimeOffset? toDate)
     {
         if (fromDate is null && toDate is null) return await GetCollection();
 
@@ -119,7 +119,7 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
         return expenses;
     }
 
-    public async ValueTask AddEntity(Expense entity)
+    public async Task AddEntity(Expense entity)
     {
         var key = DateToPartKey(entity.Date.Date);
         var partExists = await LocalStorage.ContainKeyAsync(key);
@@ -136,11 +136,11 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
         }
     }
 
-    public ValueTask DeleteEntity(Guid entityId) => throw new Exception("Not Applicable For Expenses Repository");
+    public Task DeleteEntity(Guid entityId) => throw new Exception("Not Applicable For Expenses Repository");
 
-    public async ValueTask AddExpense(Expense expense) => await AddEntity(expense);
+    public async Task AddExpense(Expense expense) => await AddEntity(expense);
 
-    public async ValueTask DeleteExpense(Guid expenseId, DateTimeOffset expenseDate)
+    public async Task DeleteExpense(Guid expenseId, DateTimeOffset expenseDate)
     {
         var partKey = DateToPartKey(expenseDate.Date);
         var partExists = await LocalStorage.ContainKeyAsync(partKey);
@@ -163,16 +163,16 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
         }
     }
 
-    public async ValueTask<List<Expense>> GetExpenses(DateTimeOffset? fromDate, DateTimeOffset? toDate) =>
+    public async Task<List<Expense>> GetExpenses(DateTimeOffset? fromDate, DateTimeOffset? toDate) =>
         await GetCollection(fromDate, toDate);
 
-    public async ValueTask UpdateExpense(Expense expense, DateTimeOffset oldDate)
+    public async Task UpdateExpense(Expense expense, DateTimeOffset oldDate)
     {
         await DeleteExpense(expense.Id, oldDate);
         await AddExpense(expense);
     }
 
-    public async ValueTask<Expense> GetExpense(Guid expenseId, DateTimeOffset date)
+    public async Task<Expense> GetExpense(Guid expenseId, DateTimeOffset date)
     {
         var partKey = DateToPartKey(date.Date);
         var partExists = await LocalStorage.ContainKeyAsync(partKey);
@@ -185,7 +185,7 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
         return exp ?? throw new Exception($"Expense with Id='{expenseId}' does not exists");
     }
 
-    public async ValueTask<List<(int year, int month)>> GetMonths()
+    public async Task<List<(int year, int month)>> GetMonths()
     {
         var keys = await (this as ILocalStorageGenericRepository<Expense>).GetKeys();
         var result = new List<(int year, int month)>();

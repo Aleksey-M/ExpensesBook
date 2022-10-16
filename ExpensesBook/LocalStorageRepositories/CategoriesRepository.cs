@@ -16,15 +16,15 @@ internal sealed class CategoriesRepository : ICategoriesRepository, ILocalStorag
 
     public ILocalStorageService LocalStorage { get; }
 
-    public async ValueTask AddCategory(Category category) =>
+    public async Task AddCategory(Category category) =>
         await (this as ILocalStorageGenericRepository<Category>).AddEntity(category);
 
-    public async ValueTask DeleteCategory(Guid categoryId) =>
+    public async Task DeleteCategory(Guid categoryId) =>
         await (this as ILocalStorageGenericRepository<Category>).DeleteEntity(categoryId);
 
-    public async ValueTask<List<Category>> GetCategories() =>
+    public async Task<List<Category>> GetCategories() =>
         await (this as ILocalStorageGenericRepository<Category>).GetCollection();
 
-    public async ValueTask UpdateCategory(Category category) =>
+    public async Task UpdateCategory(Category category) =>
         await (this as ILocalStorageGenericRepository<Category>).UpdateEntity(category);
 }

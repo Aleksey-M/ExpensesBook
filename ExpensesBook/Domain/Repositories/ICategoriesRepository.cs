@@ -7,11 +7,11 @@ namespace ExpensesBook.Domain.Repositories;
 
 internal interface ICategoriesRepository
 {
-    ValueTask AddCategory(Category category);
+    Task AddCategory(Category category);
 
-    ValueTask<List<Category>> GetCategories();
+    Task<List<Category>> GetCategories();
 
-    ValueTask UpdateCategory(Category category);
+    Task UpdateCategory(Category category);
 
-    ValueTask DeleteCategory(Guid categoryId);
+    Task DeleteCategory(Guid categoryId);
 }

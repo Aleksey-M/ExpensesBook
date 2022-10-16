@@ -21,41 +21,42 @@
                         Показать
                 </MudButton>
             }
-            else
-            {
-                <MudTable Items="_rows" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
-                    <HeaderContent>
-                        <MudTh>Месяц</MudTh>
-                        <MudTh>Доходы</MudTh>
-                        <MudTh>Расходы</MudTh>
-                        <MudTh>Сбережения</MudTh>
-                    </HeaderContent>
-
-                    <RowTemplate>
-                        <MudTd>@context.PeriodName</MudTd>
-                        <MudTd style="color:darkblue">@context.Incomes</MudTd>
-                        <MudTd style="color:darkred">@context.Expenses</MudTd>
-                        <MudTd style="@context.SavingsCSSStyle">
-                            @context.Savings <small><i>@context.SavingsPercent</i></small>
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
-
-                <MudPaper Class="mt-3 mb-3">
-                        <MudChart
-                            ChartOptions="Options"
-                            ChartType="ChartType.Line"
-                            ChartSeries="@Series"
-                            XAxisLabels="@XAxisLabels"
-                            Width="100%"
-                            Height="370px"
-                            Style="margin-left:25px">
-                        </MudChart>
-                </MudPaper>
-            }
 
         </MudCardContent>
     </MudCard>
+
+    @if (_rows is { Count: > 0 })
+    {
+        <MudTable Items="_rows" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true" Class="mt-3">
+            <HeaderContent>
+                <MudTh>Месяц</MudTh>
+                <MudTh>Доходы</MudTh>
+                <MudTh>Расходы</MudTh>
+                <MudTh>Сбережения</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd>@context.PeriodName</MudTd>
+                <MudTd style="color:darkblue">@context.Incomes</MudTd>
+                <MudTd style="color:darkred">@context.Expenses</MudTd>
+                <MudTd style="@context.SavingsCSSStyle">
+                    @context.Savings <small><i>@context.SavingsPercent</i></small>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+
+        <MudPaper Class="mt-3 mb-3">
+                <MudChart
+                    ChartOptions="Options"
+                    ChartType="ChartType.Line"
+                    ChartSeries="@Series"
+                    XAxisLabels="@XAxisLabels"
+                    Width="100%"
+                    Height="370px"
+                    Style="margin-left:25px">
+                </MudChart>
+        </MudPaper>
+    }
 
     <MudCard Class="mt-5">
         <MudCardContent>
@@ -86,25 +87,21 @@
 
     @if (_singleRowForPeriod is { Count: > 0 })
     {
-        <MudCard Class="mt-5">
-            <MudCardContent>
-                <MudTable Items="_singleRowForPeriod" Breakpoint="Breakpoint.Xs">
-                    <HeaderContent>
-                        <MudTh>Доходы</MudTh>
-                        <MudTh>Расходы</MudTh>
-                        <MudTh>Сбережения</MudTh>
-                    </HeaderContent>
+        <MudTable Items="_singleRowForPeriod" Breakpoint="Breakpoint.Xs" Class="mt-3">
+            <HeaderContent>
+                <MudTh>Доходы</MudTh>
+                <MudTh>Расходы</MudTh>
+                <MudTh>Сбережения</MudTh>
+            </HeaderContent>
 
-                    <RowTemplate>
-                        <MudTd DataLabel="Доходы" style="color:darkblue">@context.Incomes</MudTd>
-                        <MudTd DataLabel="Расходы" style="color:darkred">@context.Expenses</MudTd>
-                        <MudTd DataLabel="Сбережения" style="@context.SavingsCSSStyle">
-                            @context.Savings <small><i>@context.SavingsPercent</i></small>
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
-            </MudCardContent>
-        </MudCard>
+            <RowTemplate>
+                <MudTd DataLabel="Доходы" style="color:darkblue">@context.Incomes</MudTd>
+                <MudTd DataLabel="Расходы" style="color:darkred">@context.Expenses</MudTd>
+                <MudTd DataLabel="Сбережения" style="@context.SavingsCSSStyle">
+                    @context.Savings <small><i>@context.SavingsPercent</i></small>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
 
         @if (_displayChart) 
         {
@@ -113,6 +110,7 @@
             </MudPaper>
         }
      }
+
 </MudContainer>
 
 @code

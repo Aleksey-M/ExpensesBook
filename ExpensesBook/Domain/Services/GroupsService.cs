@@ -9,19 +9,19 @@ namespace ExpensesBook.Domain.Services;
 
 internal interface IGroupsService
 {
-    ValueTask<Group> AddGroup(string groupName, int? sortOrder, IEnumerable<Guid>? relatedCategories);
+    Task<Group> AddGroup(string groupName, int? sortOrder, IEnumerable<Guid>? relatedCategories);
 
-    ValueTask<List<Group>> GetGroups();
+    Task<List<Group>> GetGroups();
 
-    ValueTask<List<(Group, List<Category>)>> GetGroupsWithRelatedCategories();
+    Task<List<(Group, List<Category>)>> GetGroupsWithRelatedCategories();
 
-    ValueTask UpdateGroup(Guid groupId, string? groupName, int? groupOrder, IEnumerable<Guid>? relatedCategories);
+    Task UpdateGroup(Guid groupId, string? groupName, int? groupOrder, IEnumerable<Guid>? relatedCategories);
 
-    ValueTask DeleteGroup(Guid groupId);
+    Task DeleteGroup(Guid groupId);
 
-    ValueTask<List<Category>> GetFreeCategories();
+    Task<List<Category>> GetFreeCategories();
 
-    ValueTask<Group?> GetRelatedGroup(Guid categoryId);
+    Task<Group?> GetRelatedGroup(Guid categoryId);
 }
 
 internal sealed class GroupsService : IGroupsService
@@ -40,7 +40,7 @@ internal sealed class GroupsService : IGroupsService
         _expensesRepo = expensesRepo;
     }
 
-    public async ValueTask<Group> AddGroup(string groupName, int? sortOrder, IEnumerable<Guid>? relatedCategories)
+    public async Task<Group> AddGroup(string groupName, int? sortOrder, IEnumerable<Guid>? relatedCategories)
     {
         var group = new Group
         {
@@ -70,7 +70,7 @@ internal sealed class GroupsService : IGroupsService
         return group;
     }
 
-    public async ValueTask DeleteGroup(Guid groupId)
+    public async Task DeleteGroup(Guid groupId)
     {
         var expenses = await _expensesRepo.GetExpenses(null, null);
 
@@ -86,7 +86,7 @@ internal sealed class GroupsService : IGroupsService
         await _groupsRepo.DeleteGroup(groupId);
     }
 
-    public async ValueTask<List<Category>> GetFreeCategories()
+    public async Task<List<Category>> GetFreeCategories()
     {
         var allCategories = await _categoriesRepo.GetCategories();
         var relCategories = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, null);
@@ -99,13 +99,13 @@ internal sealed class GroupsService : IGroupsService
         return freeCategories;
     }
 
-    public async ValueTask<List<Group>> GetGroups()
+    public async Task<List<Group>> GetGroups()
     {
         var groups = await _groupsRepo.GetGroups();
         return groups.OrderBy(g => g.Sort).ThenBy(g => g.Name).ToList();
     }
 
-    public async ValueTask<List<(Group, List<Category>)>> GetGroupsWithRelatedCategories()
+    public async Task<List<(Group, List<Category>)>> GetGroupsWithRelatedCategories()
     {
         var groups = await _groupsRepo.GetGroups();
         var relCateg = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, null);
@@ -126,7 +126,7 @@ internal sealed class GroupsService : IGroupsService
         return res;
     }
 
-    public async ValueTask<Group?> GetRelatedGroup(Guid categoryId)
+    public async Task<Group?> GetRelatedGroup(Guid categoryId)
     {
         if (categoryId == Guid.Empty) return null;
 
@@ -139,7 +139,7 @@ internal sealed class GroupsService : IGroupsService
         return group;
     }
 
-    public async ValueTask UpdateGroup(Guid groupId, string? groupName, int? groupOrder, IEnumerable<Guid>? relatedCategories)
+    public async Task UpdateGroup(Guid groupId, string? groupName, int? groupOrder, IEnumerable<Guid>? relatedCategories)
     {
         if (groupName is null && groupOrder is null && relatedCategories is null) return;
 

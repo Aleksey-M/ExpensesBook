@@ -7,15 +7,15 @@ namespace ExpensesBook.Domain.Repositories;
 
 internal interface IExpensesRepository
 {
-    ValueTask AddExpense(Expense expense);
+    Task AddExpense(Expense expense);
 
-    ValueTask<Expense> GetExpense(Guid expenseId, DateTimeOffset date);
+    Task<Expense> GetExpense(Guid expenseId, DateTimeOffset date);
 
-    ValueTask<List<Expense>> GetExpenses(DateTimeOffset? fromDate, DateTimeOffset? toDate);
+    Task<List<Expense>> GetExpenses(DateTimeOffset? fromDate, DateTimeOffset? toDate);
 
-    ValueTask UpdateExpense(Expense expense, DateTimeOffset oldDate);
+    Task UpdateExpense(Expense expense, DateTimeOffset oldDate);
 
-    ValueTask DeleteExpense(Guid expenseId, DateTimeOffset expenseDate);
+    Task DeleteExpense(Guid expenseId, DateTimeOffset expenseDate);
 
-    ValueTask<List<(int year, int month)>> GetMonths();
+    Task<List<(int year, int month)>> GetMonths();
 }

@@ -16,16 +16,16 @@ internal sealed class IncomesRepository : IIncomesRepository, ILocalStorageGener
 
     public ILocalStorageService LocalStorage { get; }
 
-    public async ValueTask AddIncome(Income income) =>
+    public async Task AddIncome(Income income) =>
         await (this as ILocalStorageGenericRepository<Income>).AddEntity(income);
 
-    public async ValueTask DeleteIncome(Guid incomeId) =>
+    public async Task DeleteIncome(Guid incomeId) =>
         await (this as ILocalStorageGenericRepository<Income>).DeleteEntity(incomeId);
 
-    public async ValueTask<List<Income>> GetIncomes() =>
+    public async Task<List<Income>> GetIncomes() =>
         await (this as ILocalStorageGenericRepository<Income>).GetCollection();
 
-    public async ValueTask UpdateIncome(Income income) =>
+    public async Task UpdateIncome(Income income) =>
         await (this as ILocalStorageGenericRepository<Income>).UpdateEntity(income);
 
 }

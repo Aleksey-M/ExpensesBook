@@ -10,17 +10,17 @@ namespace ExpensesBook.Domain.Services;
 
 internal interface IExpensesService
 {
-    ValueTask<Expense> AddExpense(DateTimeOffset date, double amounth, string description, Guid categoryId, Guid? groupId);
+    Task<Expense> AddExpense(DateTimeOffset date, double amounth, string description, Guid categoryId, Guid? groupId);
 
-    ValueTask<List<Expense>> GetExpenses(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
+    Task<List<Expense>> GetExpenses(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
 
-    ValueTask UpdateExpense(Guid expenseId, DateTimeOffset? date, DateTimeOffset oldDate, double? amounth, string? description, Guid? categoryId, Guid? groupId);
+    Task UpdateExpense(Guid expenseId, DateTimeOffset? date, DateTimeOffset oldDate, double? amounth, string? description, Guid? categoryId, Guid? groupId);
 
-    ValueTask DeleteExpense(Guid expenseId, DateTimeOffset date);
+    Task DeleteExpense(Guid expenseId, DateTimeOffset date);
 
-    ValueTask<List<(int year, int month, string monthName)>> GetExpensesMonths();
+    Task<List<(int year, int month, string monthName)>> GetExpensesMonths();
 
-    ValueTask<List<(Expense item, Category category, Group? group)>> GetExpensesWithRelatedData(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
+    Task<List<(Expense item, Category category, Group? group)>> GetExpensesWithRelatedData(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
 }
 
 internal sealed class ExpensesService : IExpensesService
@@ -36,7 +36,7 @@ internal sealed class ExpensesService : IExpensesService
         _groupsRepo = groupsRepo;
     }
 
-    public async ValueTask<Expense> AddExpense(DateTimeOffset date,
+    public async Task<Expense> AddExpense(DateTimeOffset date,
         double amounth, string description, Guid categoryId, Guid? groupId)
     {
         var expense = new Expense
@@ -54,10 +54,10 @@ internal sealed class ExpensesService : IExpensesService
         return expense;
     }
 
-    public async ValueTask DeleteExpense(Guid expenseId, DateTimeOffset date) =>
+    public async Task DeleteExpense(Guid expenseId, DateTimeOffset date) =>
         await _expensesRepo.DeleteExpense(expenseId, date);
 
-    public async ValueTask<List<Expense>> GetExpenses(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter)
+    public async Task<List<Expense>> GetExpenses(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter)
     {
         filter ??= "";
 
@@ -73,7 +73,7 @@ internal sealed class ExpensesService : IExpensesService
             .ToList();
     }
 
-    public async ValueTask UpdateExpense(Guid expenseId, DateTimeOffset? date,
+    public async Task UpdateExpense(Guid expenseId, DateTimeOffset? date,
         DateTimeOffset oldDate, double? amounth, string? description, Guid? categoryId, Guid? groupId)
     {
         if (date is null && amounth is null && description is null && categoryId is null) return;
@@ -93,7 +93,7 @@ internal sealed class ExpensesService : IExpensesService
         await _expensesRepo.UpdateExpense(updatedExpense, oldDate);
     }
 
-    public async ValueTask<List<(int year, int month, string monthName)>> GetExpensesMonths() =>
+    public async Task<List<(int year, int month, string monthName)>> GetExpensesMonths() =>
         (await _expensesRepo.GetMonths())
             .Select(e => (
                 e.year,
@@ -103,7 +103,7 @@ internal sealed class ExpensesService : IExpensesService
             .ThenBy(ym => ym.month)
             .ToList();
 
-    public async ValueTask<List<(Expense item, Category category, Group? group)>> GetExpensesWithRelatedData(
+    public async Task<List<(Expense item, Category category, Group? group)>> GetExpensesWithRelatedData(
         DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter)
     {
         var expenses = await GetExpenses(startDate: startDate, endDate: endDate, filter: filter);

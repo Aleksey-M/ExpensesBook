@@ -16,15 +16,15 @@ internal sealed class GroupsRepository : IGroupsRepository, ILocalStorageGeneric
 
     public ILocalStorageService LocalStorage { get; }
 
-    public async ValueTask AddGroup(Group group) =>
+    public async Task AddGroup(Group group) =>
         await (this as ILocalStorageGenericRepository<Group>).AddEntity(group);
 
-    public async ValueTask DeleteGroup(Guid groupId) =>
+    public async Task DeleteGroup(Guid groupId) =>
         await (this as ILocalStorageGenericRepository<Group>).DeleteEntity(groupId);
 
-    public async ValueTask<List<Group>> GetGroups() =>
+    public async Task<List<Group>> GetGroups() =>
         await (this as ILocalStorageGenericRepository<Group>).GetCollection();
 
-    public async ValueTask UpdateGroup(Group group) =>
+    public async Task UpdateGroup(Group group) =>
         await (this as ILocalStorageGenericRepository<Group>).UpdateEntity(group);
 }

@@ -7,11 +7,11 @@ namespace ExpensesBook.Domain.Repositories;
 
 internal interface IIncomesRepository
 {
-    ValueTask AddIncome(Income income);
+    Task AddIncome(Income income);
 
-    ValueTask<List<Income>> GetIncomes();
+    Task<List<Income>> GetIncomes();
 
-    ValueTask UpdateIncome(Income income);
+    Task UpdateIncome(Income income);
 
-    ValueTask DeleteIncome(Guid incomeId);
+    Task DeleteIncome(Guid incomeId);
 }

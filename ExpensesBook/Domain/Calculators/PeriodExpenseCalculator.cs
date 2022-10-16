@@ -90,7 +90,7 @@ internal sealed class PeriodExpenseCalculator
         return result;
     }
 
-    public async ValueTask<PeriodExpensesTableData> GetExpensesAsTable(
+    public async Task<PeriodExpensesTableData> GetExpensesAsTable(
         ExpensesGroupingType groupingType, DateTimeOffset fromDate, DateTimeOffset toDate, string? filter)
     {
         var periodExpenses = await _expensesService.GetExpensesWithRelatedData(startDate: fromDate, endDate: toDate, filter);
@@ -112,7 +112,7 @@ internal sealed class PeriodExpenseCalculator
         return new PeriodExpensesTableData(groupingType, rows, total);
     }
 
-    public async ValueTask<List<Expense>> GetFilteredExpenses(
+    public async Task<List<Expense>> GetFilteredExpenses(
         ExpensesGroupingType groupingType, DateTimeOffset fromDate, DateTimeOffset toDate, Guid? filterBy)
     {
         if (groupingType == ExpensesGroupingType.ByCategory && filterBy is null)

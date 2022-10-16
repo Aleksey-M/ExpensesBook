@@ -10,140 +10,131 @@
 @inject IJSRuntime JSRuntime
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
+    
+    @if (_state == PageState.Edit || _state == PageState.Add)
+    {
+        <EditForm Model="@_limit" OnValidSubmit="async _ => await SaveLimit()">
 
-    <MudCard>
-        <MudCardContent>
+            <DataAnnotationsValidator />
 
-            <MudTable Items="Limits" Breakpoint="Breakpoint.Xs" Striped="true" FixedHeader="true">
-                <ToolBarContent>
-                    <MudText Typo="Typo.h5" GutterBottom="true">Лимиты</MudText>
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6" Color="Color.Info">Лимит</MudText>
+                    </CardHeaderContent>
 
-                    <MudToolBarSpacer />
+                    <CardHeaderActions>
+                        <MudIconButton 
+                            Class="ml-auto mb-1"
+                            OnClick="_ => _state = PageState.List"
+                            Icon="@Icons.Material.Filled.Close">
+                        </MudIconButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
 
-                    @if (_onlyActual)
-                    {
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudDatePicker Label="Начало (включительно)" @bind-Date="_limit.StartDate" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudDatePicker Label="Конец (включительно)" @bind-Date="_limit.EndDate" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="3" md="4">
+                            <MudTextField 
+                                Label="Сумма"
+                                InputType="InputType.Number"
+                                step=".01"
+                                @bind-Value="_limit.LimitAmounth"
+                                For="@(() => _limit.LimitAmounth)" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="9" md="12">
+                            <MudTextField
+                                Label="Описание"
+                                InputType="InputType.Text"
+                                @bind-Value="_limit.Description"
+                                For="@(() => _limit.Description)" />
+                        </MudItem>
+                    </MudGrid>
+
+                </MudCardContent>
+
+                <MudCardActions>
+                    <MudButton 
+                        ButtonType="ButtonType.Submit"
+                        Variant="Variant.Filled"
+                        Color="Color.Primary"
+                        Class="ml-auto">
+                            @_state.SaveActionName()
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    }
+    else
+    {
+                <MudTable Items="Limits" Breakpoint="Breakpoint.Xs" Striped="true" FixedHeader="true">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h5" GutterBottom="true">Лимиты</MudText>
+
+                        <MudSpacer />
+
+                        @if (_onlyActual)
+                        {
+                            <MudFab
+                                OnClick="_ => _onlyActual = false"
+                                Icon="@Icons.Material.Filled.Alarm"
+                                Size="Size.Small"
+                                IconSize="Size.Small"
+                                Class="ma-2"
+                                DisableElevation="true" />
+                        }
+
                         <MudFab
-                            OnClick="_ => _onlyActual = false"
-                            Icon="@Icons.Material.Filled.Alarm"
+                            OnClick="_ => OpenAddNewLimitPopup()"
+                            Icon="@Icons.Material.Filled.Add"
                             Size="Size.Small"
                             IconSize="Size.Small"
                             Class="ma-2"
                             DisableElevation="true" />
-                    }
 
-                    <MudFab
-                        OnClick="_ => OpenAddNewLimitPopup()"
-                        Icon="@Icons.Material.Filled.Add"
-                        Size="Size.Small"
-                        IconSize="Size.Small"
-                        Class="ma-2"
-                        DisableElevation="true" />
+                    </ToolBarContent>
 
-                </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Период</MudTh>
+                        <MudTh>Описание</MudTh>
+                        <MudTh>Лимит</MudTh>
+                        <MudTh>Расходы</MudTh>
+                        <MudTh>Остаток</MudTh>
+                        <MudTh>Превышение</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
 
-                <HeaderContent>
-                    <MudTh>Период</MudTh>
-                    <MudTh>Описание</MudTh>
-                    <MudTh>Лимит</MudTh>
-                    <MudTh>Расходы</MudTh>
-                    <MudTh>Остаток</MudTh>
-                    <MudTh>Превышение</MudTh>
-                    <MudTh></MudTh>
-                </HeaderContent>
-
-                <RowTemplate>
-                    <MudTd DataLabel="Период" Style="@context.RowColorCSSStyle">@context.DatesRange</MudTd>
-                    <MudTd DataLabel="Описание" Style="@context.RowColorCSSStyle">@context.Description</MudTd>
-                    <MudTd DataLabel="Лимит" Style="@context.RowColorCSSStyle">@context.LimitAmounth</MudTd>
-                    <MudTd DataLabel="Расходы" Style="@context.RowColorCSSStyle">@context.Spent</MudTd>
-                    <MudTd DataLabel="Остаток" Style="@context.RowColorCSSStyle">@context.Left</MudTd>
-                    <MudTd DataLabel="Превышение" Style="@context.RowColorCSSStyle">@context.Deficite</MudTd>
-                    <MudTd DataLabel="Действия" Style="text-align:right">
-                        <MudIconButton
-                            Icon="@Icons.Material.Filled.Edit"
-                            OnClick="_ => OpenEditLimitPopup(context)">
-                        </MudIconButton>
-
-                        <MudIconButton
-                            Icon="@Icons.Material.Filled.DeleteForever"
-                            Color="Color.Error"
-                            Class="ml-2"
-                            OnClick="async _ => await DeleteLimit(context.LimitId)">
-                        </MudIconButton>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        </MudCardContent>
-    </MudCard>
-
-    <div style="display: block; position: absolute; bottom: 0; left: 0;">
-        <MudPopover
-            Open="@(_state == PageState.Edit || _state == PageState.Add)"
-            Class="pa-4"
-            Style="width: 80%; height: 80%; margin: 0 auto; position: fixed; left: 10%; top: 15%;">
-
-            <EditForm Model="@_limit" OnValidSubmit="async _ => await SaveLimit()">
-
-                <DataAnnotationsValidator />
-
-                <MudCard>
-                    <MudCardHeader>
-                        <CardHeaderContent>
-                            <MudText Typo="Typo.h6" Color="Color.Info">Лимит</MudText>
-                        </CardHeaderContent>
-
-                        <CardHeaderActions>
+                    <RowTemplate>
+                        <MudTd DataLabel="Период" Style="@context.RowColorCSSStyle">@context.DatesRange</MudTd>
+                        <MudTd DataLabel="Описание" Style="@context.RowColorCSSStyle">@context.Description</MudTd>
+                        <MudTd DataLabel="Лимит" Style="@context.RowColorCSSStyle">@context.LimitAmounth</MudTd>
+                        <MudTd DataLabel="Расходы" Style="@context.RowColorCSSStyle">@context.Spent</MudTd>
+                        <MudTd DataLabel="Остаток" Style="@context.RowColorCSSStyle">@context.Left</MudTd>
+                        <MudTd DataLabel="Превышение" Style="@context.RowColorCSSStyle">@context.Deficite</MudTd>
+                        <MudTd DataLabel="Действия" Style="text-align:right">
                             <MudIconButton
-                                Class="ml-auto mb-1"
-                                OnClick="_ => _state = PageState.List"
-                                Icon="@Icons.Material.Filled.Close">
+                                Icon="@Icons.Material.Filled.Edit"
+                                OnClick="_ => OpenEditLimitPopup(context)">
                             </MudIconButton>
-                        </CardHeaderActions>
-                    </MudCardHeader>
 
-                    <MudCardContent>
-                        <MudGrid>
-                            <MudItem xs="12" sm="6" md="4">
-                                <MudDatePicker Label="Начало (включительно)" @bind-Date="_limit.StartDate" />
-                            </MudItem>
-
-                            <MudItem xs="12" sm="6" md="4">
-                                <MudDatePicker Label="Конец (включительно)" @bind-Date="_limit.EndDate" />
-                            </MudItem>
-
-                            <MudItem xs="12" sm="3" md="4">
-                                <MudTextField
-                                    Label="Сумма"
-                                    InputType="InputType.Number"
-                                    step=".01"
-                                    @bind-Value="_limit.LimitAmounth"
-                                    For="@(() => _limit.LimitAmounth)" />
-                            </MudItem>
-
-                            <MudItem xs="12" sm="9" md="12">
-                                <MudTextField
-                                    Label="Описание"
-                                    InputType="InputType.Text"
-                                    @bind-Value="_limit.Description"
-                                    For="@(() => _limit.Description)" />
-                            </MudItem>
-                        </MudGrid>
-
-                    </MudCardContent>
-
-                    <MudCardActions>
-                        <MudButton
-                            ButtonType="ButtonType.Submit"
-                            Variant="Variant.Filled"
-                            Color="Color.Primary"
-                            Class="ml-auto">
-                                @_state.SaveActionName()
-                        </MudButton>
-                    </MudCardActions>
-                </MudCard>
-            </EditForm>
-        </MudPopover>
-    </div>
+                            <MudIconButton
+                                Icon="@Icons.Material.Filled.DeleteForever"
+                                Color="Color.Error"
+                                Class="ml-2"
+                                OnClick="async _ => await DeleteLimit(context.LimitId)">
+                            </MudIconButton>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
 
     <MudCard Class="mt-4">
         <MudCardContent>
@@ -152,6 +143,8 @@
                 <p style="color: indianred">*Превышенные лимиты с неактуальным временным диапазоном</p>
         </MudCardContent>
     </MudCard>
+    }
+   
 </MudContainer>
 
 @code {

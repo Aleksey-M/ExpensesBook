@@ -16,16 +16,16 @@ internal sealed class LimitsRepository : ILimitsRepository, ILocalStorageGeneric
 
     public ILocalStorageService LocalStorage { get; }
 
-    public async ValueTask AddLimit(Limit limit) =>
+    public async Task AddLimit(Limit limit) =>
         await (this as ILocalStorageGenericRepository<Limit>).AddEntity(limit);
 
-    public async ValueTask DeleteLimit(Guid limitId) =>
+    public async Task DeleteLimit(Guid limitId) =>
         await (this as ILocalStorageGenericRepository<Limit>).DeleteEntity(limitId);
 
-    public async ValueTask<List<Limit>> GetLimits() =>
+    public async Task<List<Limit>> GetLimits() =>
         await (this as ILocalStorageGenericRepository<Limit>).GetCollection();
 
-    public async ValueTask UpdateLimit(Limit limit) =>
+    public async Task UpdateLimit(Limit limit) =>
         await (this as ILocalStorageGenericRepository<Limit>).UpdateEntity(limit);
 
 }
