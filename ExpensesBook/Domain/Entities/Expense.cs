@@ -8,20 +8,18 @@ internal sealed class Expense : IEntity
     [Key]
     public Guid Id { get; set; }
 
-    [Required(ErrorMessage = "Значение обязательно")]
-    [StringLength(200, ErrorMessage = "Название не должно быть больше 200 символов")]
+    [Required, StringLength(200)]
     public string Description { get; set; } = "";
 
-    [Required(ErrorMessage = "Значение обязательно")]
+    [Required]
     public DateTimeOffset Date { get; set; }
 
-    [Required(ErrorMessage = "Значение обязательно")]
-    [Range(1, 1000000, ErrorMessage = "Значение должно быть больше 0 и меньше 1,000,000.00")]
+    [Required, Range(1, 1000000)]
     public double Amounth { get; set; }
 
     public Guid? GroupId { get; set; }
 
-    [Required(ErrorMessage = "Значение обязательно")]
+    [Required]
     public Guid CategoryId { get; set; }
 
     private bool SameId(Expense? other) => Id == (other?.Id ?? Guid.Empty);

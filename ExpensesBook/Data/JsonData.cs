@@ -1,6 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
+using ExpensesBook.Domain.Repositories;
 using ExpensesBook.LocalStorageRepositories;
 
 namespace ExpensesBook.Data;
@@ -17,7 +21,8 @@ internal interface IJsonData
 internal sealed class JsonData : IJsonData
 {
     private readonly ILocalStorageGenericRepository<Expense> _expensesRepo;
-    private readonly ILocalStorageGenericRepository<Category> _categoriesRepo;
+    private readonly ICategoriesListRepository _categoriesListRepo;
+    private readonly ICategoriesRepository _categoriesRepo;
     private readonly ILocalStorageGenericRepository<GroupDefaultCategory> _groupDefaultCategoriesRepo;
     private readonly ILocalStorageGenericRepository<Group> _groupsRepo;
     private readonly ILocalStorageGenericRepository<Income> _incomesRepo;
@@ -25,7 +30,8 @@ internal sealed class JsonData : IJsonData
 
     public JsonData(
         ILocalStorageGenericRepository<Expense> expensesRepo,
-        ILocalStorageGenericRepository<Category> categoriesRepo,
+        ICategoriesRepository categoriesRepo,
+        ICategoriesListRepository categoriesListRepo,
         ILocalStorageGenericRepository<GroupDefaultCategory> groupDefaultCategoriesRepo,
         ILocalStorageGenericRepository<Group> groupsRepo,
         ILocalStorageGenericRepository<Income> incomesRepo,
@@ -33,6 +39,7 @@ internal sealed class JsonData : IJsonData
         )
     {
         _expensesRepo = expensesRepo;
+        _categoriesListRepo = categoriesListRepo;
         _categoriesRepo = categoriesRepo;
         _groupDefaultCategoriesRepo = groupDefaultCategoriesRepo;
         _groupsRepo = groupsRepo;
@@ -43,7 +50,7 @@ internal sealed class JsonData : IJsonData
     public async Task<string> ExportToJson()
     {
         var expenses = await _expensesRepo.GetCollection();
-        var categories = await _categoriesRepo.GetCollection();
+        var categories = await _categoriesListRepo.GetCategories();
         var groups = await _groupsRepo.GetCollection();
         var groupsDefaultCategories = await _groupDefaultCategoriesRepo.GetCollection();
         var incomes = await _incomesRepo.GetCollection();
@@ -59,14 +66,15 @@ internal sealed class JsonData : IJsonData
             Limits = limits
         };
 
-        var json = ExpensesDataSerializable.SerializeToJson(data);
-        return json;
+        byte[] utf8Json = JsonSerializer.SerializeToUtf8Bytes(data, JsonContext.Default.ExpensesDataSerializable);
+
+        return Encoding.UTF8.GetString(utf8Json);
     }
 
     public async Task ImportFromJson(string data, bool dataMerge)
     {
         var expenses = dataMerge ? await _expensesRepo.GetCollection() : new();
-        var categories = dataMerge ? await _categoriesRepo.GetCollection() : new();
+        var categories = dataMerge ? await _categoriesListRepo.GetCategories() : new();
         var groups = dataMerge ? await _groupsRepo.GetCollection() : new();
         var groupsDefaultCategories = dataMerge ? await _groupDefaultCategoriesRepo.GetCollection() : new();
         var incomes = dataMerge ? await _incomesRepo.GetCollection() : new();
@@ -74,7 +82,8 @@ internal sealed class JsonData : IJsonData
 
         if (!string.IsNullOrWhiteSpace(data))
         {
-            var imported = ExpensesDataSerializable.DeserializeFromJson(data);
+            var imported = JsonSerializer.Deserialize(data, JsonContext.Default.ExpensesDataSerializable)
+                ?? throw new Exception("Parsing Error");
 
             if (dataMerge)
             {
@@ -144,7 +153,12 @@ internal sealed class JsonData : IJsonData
         await ClearData();
 
         await _expensesRepo.SetCollection(expenses);
-        await _categoriesRepo.SetCollection(categories);
+
+        foreach(var category in categories)
+        {
+            await _categoriesRepo.AddCategory(category);
+        }        
+
         await _groupsRepo.SetCollection(groups);
         await _groupDefaultCategoriesRepo.SetCollection(groupsDefaultCategories);
         await _incomesRepo.SetCollection(incomes);
@@ -154,7 +168,7 @@ internal sealed class JsonData : IJsonData
     public async Task ClearData()
     {
         await _expensesRepo.Clear();
-        await _categoriesRepo.Clear();
+        await _categoriesListRepo.Clear();
         await _groupsRepo.Clear();
         await _groupDefaultCategoriesRepo.Clear();
         await _incomesRepo.Clear();

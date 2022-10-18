@@ -8,6 +8,7 @@ using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
 using ExpensesBook.Domain.Services;
 using ExpensesBook.LocalStorageRepositories;
+using ExpensesBook.LocalStorageRepositories2;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -28,37 +29,58 @@ public class Program
 
         #region register services
 
-        builder.Services.AddTransient<ICategoriesRepository, CategoriesRepository>();
-        builder.Services.AddTransient<ILocalStorageGenericRepository<Category>, CategoriesRepository>();
-        builder.Services.AddTransient<ICategoriesService, CategoriesService>();
+        AddRepositories(builder.Services);
 
-        builder.Services.AddTransient<IGroupsRepository, GroupsRepository>();
-        builder.Services.AddTransient<ILocalStorageGenericRepository<Group>, GroupsRepository>();
-        builder.Services.AddTransient<IGroupDefaultCategoryRepository, GroupDefaultCategoryRepository>();
-        builder.Services.AddTransient<ILocalStorageGenericRepository<GroupDefaultCategory>, GroupDefaultCategoryRepository>();
-        builder.Services.AddTransient<IGroupsService, GroupsService>();
-
-        builder.Services.AddTransient<IExpensesRepository, ExpensesRepository>();
-        builder.Services.AddTransient<ILocalStorageGenericRepository<Expense>, ExpensesRepository>();
-        builder.Services.AddTransient<IExpensesService, ExpensesService>();
-
-        builder.Services.AddTransient<IIncomesRepository, IncomesRepository>();
-        builder.Services.AddTransient<ILocalStorageGenericRepository<Income>, IncomesRepository>();
-        builder.Services.AddTransient<IIncomesService, IncomesService>();
-
-        builder.Services.AddTransient<ILimitsRepository, LimitsRepository>();
-        builder.Services.AddTransient<ILocalStorageGenericRepository<Limit>, LimitsRepository>();
-        builder.Services.AddTransient<ILimitsService, LimitsService>();
+        AddEntities(builder.Services);
 
         builder.Services.AddTransient<IJsonData, JsonData>();
 
-        builder.Services.AddTransient<PeriodExpenseCalculator>();
-        builder.Services.AddTransient<CashBalanceCalculator>();
-        builder.Services.AddTransient<LimitsCalculator>();
-        builder.Services.AddTransient<YearExpensesCalculator>();
+        AddCalculators(builder.Services);
 
         #endregion
 
         await builder.Build().RunAsync();
+    }
+
+    private static void AddCalculators(IServiceCollection services)
+    {
+        services.AddTransient<PeriodExpenseCalculator>();
+        services.AddTransient<CashBalanceCalculator>();
+        services.AddTransient<LimitsCalculator>();
+        services.AddTransient<YearExpensesCalculator>();
+    }
+
+    private static void AddEntities(IServiceCollection services)
+    {
+        services.AddTransient<ICategoriesService, CategoriesService>();
+        services.AddTransient<IGroupsService, GroupsService>();
+        services.AddTransient<IExpensesService, ExpensesService>();
+        services.AddTransient<IIncomesService, IncomesService>();
+        services.AddTransient<ILimitsService, LimitsService>();
+    }
+
+    private static void AddRepositories(IServiceCollection services)
+    {
+        //services.AddTransient<ICategoriesRepository, CategoriesRepository>();
+        //services.AddTransient<ICategoriesListRepository, CategoriesRepository>();
+        //services.AddTransient<ILocalStorageGenericRepository<Category>, CategoriesRepository>();
+
+        services.AddScoped<ICategoriesRepository, LocalStorageRepositories2.CategoriesRepository>();
+        services.AddScoped<ICategoriesListRepository, LocalStorageRepositories2.CategoriesListRepository>();
+
+        services.AddTransient<IGroupsRepository, GroupsRepository>();
+        services.AddTransient<IGroupsListRepository, GroupsRepository>();
+        services.AddTransient<ILocalStorageGenericRepository<Group>, GroupsRepository>();
+        services.AddTransient<IGroupDefaultCategoryRepository, GroupDefaultCategoryRepository>();
+        services.AddTransient<ILocalStorageGenericRepository<GroupDefaultCategory>, GroupDefaultCategoryRepository>();
+
+        services.AddTransient<IExpensesRepository, ExpensesRepository>();
+        services.AddTransient<ILocalStorageGenericRepository<Expense>, ExpensesRepository>();
+
+        services.AddTransient<IIncomesRepository, IncomesRepository>();
+        services.AddTransient<ILocalStorageGenericRepository<Income>, IncomesRepository>();
+
+        services.AddTransient<ILimitsRepository, LimitsRepository>();
+        services.AddTransient<ILocalStorageGenericRepository<Limit>, LimitsRepository>();
     }
 }

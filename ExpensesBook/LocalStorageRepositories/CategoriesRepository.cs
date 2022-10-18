@@ -7,7 +7,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class CategoriesRepository : ICategoriesRepository, ILocalStorageGenericRepository<Category>
+internal sealed class CategoriesRepository : ICategoriesRepository, ICategoriesListRepository, ILocalStorageGenericRepository<Category>
 {
     public CategoriesRepository(ILocalStorageService localStorageService)
     {
@@ -18,6 +18,8 @@ internal sealed class CategoriesRepository : ICategoriesRepository, ILocalStorag
 
     public async Task AddCategory(Category category) =>
         await (this as ILocalStorageGenericRepository<Category>).AddEntity(category);
+
+    public Task Clear() => throw new NotImplementedException();
 
     public async Task DeleteCategory(Guid categoryId) =>
         await (this as ILocalStorageGenericRepository<Category>).DeleteEntity(categoryId);

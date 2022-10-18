@@ -26,13 +26,15 @@ internal interface IExpensesService
 internal sealed class ExpensesService : IExpensesService
 {
     private readonly IExpensesRepository _expensesRepo;
-    private readonly ICategoriesRepository _categoriesRepo;
-    private readonly IGroupsRepository _groupsRepo;
+    private readonly ICategoriesListRepository _categoriesListRepository;
+    private readonly IGroupsListRepository _groupsRepo;
 
-    public ExpensesService(IExpensesRepository expensesRepo, ICategoriesRepository categoriesRepo, IGroupsRepository groupsRepo)
+    public ExpensesService(IExpensesRepository expensesRepo,
+        ICategoriesListRepository categoriesListRepository,
+        IGroupsListRepository groupsRepo)
     {
         _expensesRepo = expensesRepo;
-        _categoriesRepo = categoriesRepo;
+        _categoriesListRepository = categoriesListRepository;
         _groupsRepo = groupsRepo;
     }
 
@@ -108,7 +110,7 @@ internal sealed class ExpensesService : IExpensesService
     {
         var expenses = await GetExpenses(startDate: startDate, endDate: endDate, filter: filter);
 
-        var allCategories = await _categoriesRepo.GetCategories();
+        var allCategories = await _categoriesListRepository.GetCategories();
         var allGroups = await _groupsRepo.GetGroups();
 
         var result = new List<(Expense item, Category category, Group? group)>();

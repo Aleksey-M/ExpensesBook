@@ -7,7 +7,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class GroupsRepository : IGroupsRepository, ILocalStorageGenericRepository<Group>
+internal sealed class GroupsRepository : IGroupsRepository, IGroupsListRepository, ILocalStorageGenericRepository<Group>
 {
     public GroupsRepository(ILocalStorageService localStorageService)
     {

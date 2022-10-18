@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Text.Json;
+using System.Text.Json.Serialization;
 using ExpensesBook.Domain.Entities;
 
 namespace ExpensesBook.Data;
@@ -17,20 +17,10 @@ internal sealed class ExpensesDataSerializable
     public List<Limit> Limits { get; set; } = null!;
 
     public List<Income> Incomes { get; set; } = null!;
+}
 
-    internal static string SerializeToJson(ExpensesDataSerializable data) => JsonSerializer.Serialize(data);
+[JsonSerializable(typeof(ExpensesDataSerializable))]
+internal sealed partial class JsonContext : JsonSerializerContext
+{
 
-    internal static ExpensesDataSerializable DeserializeFromJson(string json)
-    {
-        var deserializedData = JsonSerializer.Deserialize<ExpensesDataSerializable>(json) ?? new();
-
-        deserializedData.Categories ??= new();
-        deserializedData.Expenses ??= new();
-        deserializedData.GroupsDefaultCategories ??= new();
-        deserializedData.Groups ??= new();
-        deserializedData.Limits ??= new();
-        deserializedData.Incomes ??= new();
-
-        return deserializedData;
-    }
 }
