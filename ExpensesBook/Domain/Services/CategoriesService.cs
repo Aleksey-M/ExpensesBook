@@ -23,15 +23,13 @@ internal interface ICategoriesService
 internal sealed class CategoriesService : ICategoriesService
 {
     private readonly ICategoriesRepository _categoriesRepo;
-    private readonly ICategoriesListRepository _categoriesListRepository;
     private readonly IGroupDefaultCategoryRepository _groupDefaultCategoryRepo;
     private readonly IExpensesRepository _expenseRepo;
 
     public CategoriesService(ICategoriesRepository categoriesRepository, IExpensesRepository expenseRepo,
-        ICategoriesListRepository categoriesListRepository, IGroupDefaultCategoryRepository groupDefaultCategoryRepo)
+        IGroupDefaultCategoryRepository groupDefaultCategoryRepo)
     {
         _categoriesRepo = categoriesRepository;
-        _categoriesListRepository = categoriesListRepository;
         _groupDefaultCategoryRepo = groupDefaultCategoryRepo;
         _expenseRepo = expenseRepo;
     }
@@ -68,7 +66,7 @@ internal sealed class CategoriesService : ICategoriesService
 
     public async Task<List<Category>> GetCategories()
     {
-        var list = await _categoriesListRepository.GetCategories();
+        var list = await _categoriesRepo.GetCategories();
         return list.OrderBy(c => c.Sort).ThenBy(c => c.Name).ToList();
     }
 
@@ -76,7 +74,7 @@ internal sealed class CategoriesService : ICategoriesService
     {
         if (categoryName is null && sortOrder is null) return;
 
-        var allCategories = await _categoriesListRepository.GetCategories();
+        var allCategories = await _categoriesRepo.GetCategories();
         var category = allCategories.SingleOrDefault(c => c.Id == categoryId);
 
         if (category == null) throw new ArgumentException($"Category with Id='{categoryId}' does not exists");

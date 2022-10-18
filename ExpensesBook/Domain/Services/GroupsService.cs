@@ -27,17 +27,15 @@ internal interface IGroupsService
 internal sealed class GroupsService : IGroupsService
 {
     private readonly IGroupsRepository _groupsRepo;
-    private readonly IGroupsListRepository _groupsListRepository;
-    private readonly ICategoriesListRepository _categoriesRepo;
+    private readonly ICategoriesRepository _categoriesRepo;
     private readonly IGroupDefaultCategoryRepository _groupDefaultCategRepo;
     private readonly IExpensesRepository _expensesRepo;
 
-    public GroupsService(IGroupsRepository gRepo, ICategoriesListRepository catRepo,
-        IGroupDefaultCategoryRepository gDefCatRepo, IGroupsListRepository groupsListRepository, IExpensesRepository expensesRepo)
+    public GroupsService(IGroupsRepository gRepo, ICategoriesRepository catRepo,
+        IGroupDefaultCategoryRepository gDefCatRepo, IExpensesRepository expensesRepo)
     {
         _groupsRepo = gRepo;
         _categoriesRepo = catRepo;
-        _groupsListRepository = groupsListRepository;
         _groupDefaultCategRepo = gDefCatRepo;
         _expensesRepo = expensesRepo;
     }
@@ -103,13 +101,13 @@ internal sealed class GroupsService : IGroupsService
 
     public async Task<List<Group>> GetGroups()
     {
-        var groups = await _groupsListRepository.GetGroups();
+        var groups = await _groupsRepo.GetGroups();
         return groups.OrderBy(g => g.Sort).ThenBy(g => g.Name).ToList();
     }
 
     public async Task<List<(Group, List<Category>)>> GetGroupsWithRelatedCategories()
     {
-        var groups = await _groupsListRepository.GetGroups();
+        var groups = await _groupsRepo.GetGroups();
         var relCateg = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, null);
         var allCategories = await _categoriesRepo.GetCategories();
 
@@ -135,7 +133,7 @@ internal sealed class GroupsService : IGroupsService
         var catGroup = await _groupDefaultCategRepo.GetGroupDefaultCategories(categoryId, null);
         if (catGroup is { Count: 0 }) return null;
 
-        var groups = await _groupsListRepository.GetGroups();
+        var groups = await _groupsRepo.GetGroups();
         var group = groups.SingleOrDefault(g => g.Id == catGroup[0].GroupId);
 
         return group;
@@ -145,7 +143,7 @@ internal sealed class GroupsService : IGroupsService
     {
         if (groupName is null && groupOrder is null && relatedCategories is null) return;
 
-        var allGroups = await _groupsListRepository.GetGroups();
+        var allGroups = await _groupsRepo.GetGroups();
         var group = allGroups.SingleOrDefault(g => g.Id == groupId);
 
         if (group == null) throw new ArgumentException($"Group with Id='{groupId}' does not exists");

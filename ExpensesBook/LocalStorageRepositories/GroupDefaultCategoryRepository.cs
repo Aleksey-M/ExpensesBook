@@ -8,36 +8,37 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class GroupDefaultCategoryRepository : IGroupDefaultCategoryRepository, ILocalStorageGenericRepository<GroupDefaultCategory>
+internal sealed class GroupDefaultCategoryRepository : BaseLocalStorageRepository, IGroupDefaultCategoryRepository
 {
-    public GroupDefaultCategoryRepository(ILocalStorageService localStorageService)
-    {
-        LocalStorage = localStorageService;
-    }
+    protected override string CollectionName => "groupdefaultcategories";
 
-    public ILocalStorageService LocalStorage { get; }
+    public GroupDefaultCategoryRepository(ILocalStorageService localStorageService) : base(localStorageService)
+    {
+    }
 
     public async Task AddGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories)
     {
         if (!groupCategories.Any()) return;
 
-        var list = await (this as ILocalStorageGenericRepository<GroupDefaultCategory>).GetCollection();
+        var list = await GetCollection<List<GroupDefaultCategory>>() ?? new();
         list = list.Union(groupCategories).ToList();
-        await (this as ILocalStorageGenericRepository<GroupDefaultCategory>).SetCollection(list);
+
+        await SetCollection(list);
     }
 
     public async Task DeleteGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories)
     {
         if (!groupCategories.Any()) return;
 
-        var list = await (this as ILocalStorageGenericRepository<GroupDefaultCategory>).GetCollection();
+        var list = await GetCollection<List<GroupDefaultCategory>>() ?? new();
         list = list.Except(groupCategories).ToList();
-        await (this as ILocalStorageGenericRepository<GroupDefaultCategory>).SetCollection(list);
+
+        await SetCollection(list);
     }
 
     public async Task<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId, Guid? groupId)
     {
-        var fullList = await (this as ILocalStorageGenericRepository<GroupDefaultCategory>).GetCollection();
+        var fullList = await GetCollection<List<GroupDefaultCategory>>() ?? new();
 
         Func<GroupDefaultCategory, bool> predicate = (categoryId, groupId) switch
         {
@@ -49,4 +50,9 @@ internal sealed class GroupDefaultCategoryRepository : IGroupDefaultCategoryRepo
 
         return fullList.Where(predicate).ToList();
     }
+
+    public async Task AddGroupDefaultCategories(IEnumerable<GroupDefaultCategory> groupDefaultCategories) =>
+        await SetCollection(groupDefaultCategories.ToList());
+
+    public async Task Clear() => await Clear<List<GroupDefaultCategory>>();
 }

@@ -5,52 +5,56 @@ using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
+using ExpensesBook.Serialization;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGenericRepository<Expense>
+internal sealed class ExpensesRepository : BaseLocalStorageRepository, IExpensesRepository
 {
-    public ExpensesRepository(ILocalStorageService localStorageService)
-    {
-        LocalStorage = localStorageService;
-    }
+    protected override string CollectionName => "explistpart";
 
-    public ILocalStorageService LocalStorage { get; }
+    public ExpensesRepository(ILocalStorageService localStorageService) : base(localStorageService)
+    {
+    }
 
     public async Task Clear()
     {
-        var keys = await (this as ILocalStorageGenericRepository<Expense>).GetKeys();
+        var keys = await GetKeys();
         foreach (var k in keys)
         {
-            if (k.StartsWith("ExpListPart", StringComparison.OrdinalIgnoreCase))
+            if (k.StartsWith(CollectionName, StringComparison.OrdinalIgnoreCase))
             {
                 await LocalStorage.RemoveItemAsync(k);
             }
         }
     }
 
-    public async Task SetCollection(IEnumerable<Expense> collection)
+    public async Task AddExpenses(IEnumerable<Expense> expenses)
     {
-        var groupedCollection = collection.GroupBy(e => (year: e.Date.Year, month: e.Date.Month));
+        var groupedCollection = expenses.GroupBy(e => (year: e.Date.Year, month: e.Date.Month));
         foreach (var g in groupedCollection)
         {
-            var key = $"ExpListPart.{g.Key.year}.{g.Key.month}";
+            var key = $"{CollectionName}.{g.Key.year}.{g.Key.month}";
             var value = g.ToList();
-            await LocalStorage.SetItemAsync(key, value);
+
+            var serialized = EntitiesJsonSerializer.GetUtf8JsonString(value);
+            await LocalStorage.SetItemAsStringAsync(key, serialized);
         }
     }
 
     public async Task<List<Expense>> GetCollection()
     {
-        var keys = await (this as ILocalStorageGenericRepository<Expense>).GetKeys();
+        var keys = await GetKeys();
         var expenses = new List<Expense>();
 
         foreach (var k in keys)
         {
-            if (k.StartsWith("ExpListPart", StringComparison.OrdinalIgnoreCase))
+            if (k.StartsWith(CollectionName, StringComparison.OrdinalIgnoreCase))
             {
-                var part = await LocalStorage.GetItemAsync<List<Expense>>(k);
-                expenses.AddRange(part);
+                var part = await LocalStorage.GetItemAsStringAsync(k);
+                var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<Expense>>(part);
+
+                expenses.AddRange(items);
             }
         }
 
@@ -65,7 +69,7 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
         return y * 100 + m;
     }
 
-    private static string DateToPartKey(DateTime date) => $"ExpListPart.{date.Year}.{date.Month}";
+    private string DateToPartKey(DateTime date) => $"{CollectionName}.{date.Year}.{date.Month}";
 
     public async Task<List<Expense>> GetCollection(DateTimeOffset? fromDate, DateTimeOffset? toDate)
     {
@@ -91,11 +95,11 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
             (null, null) => i => true
         };
 
-        var allKeys = await (this as ILocalStorageGenericRepository<Expense>).GetKeys();
+        var allKeys = await GetKeys();
         var filteredKeys = new List<string>();
 
         var keys = allKeys
-            .Where(k => k.StartsWith("ExpListPart", StringComparison.OrdinalIgnoreCase))
+            .Where(k => k.StartsWith(CollectionName, StringComparison.OrdinalIgnoreCase))
             .Select(s => (key: s, dateVal: PartKeyToComparableInt(s)))
             .Where(d => filter(d.dateVal))
             .Select(d => d.key)
@@ -112,8 +116,9 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
 
         foreach (var k in keys)
         {
-            var part = await LocalStorage.GetItemAsync<List<Expense>>(k);
-            expenses.AddRange(part.Where(e => datesFilter(e.Date)).ToList());
+            var part = await LocalStorage.GetItemAsStringAsync(k);
+            var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<Expense>>(part);
+            expenses.AddRange(items.Where(e => datesFilter(e.Date)).ToList());
         }
 
         return expenses;
@@ -126,17 +131,19 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
 
         if (partExists)
         {
-            var part = await LocalStorage.GetItemAsync<List<Expense>>(key);
-            part.Add(entity);
-            await LocalStorage.SetItemAsync(key, part);
+            var part = await LocalStorage.GetItemAsStringAsync(key);
+            var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<Expense>>(part);
+            items.Add(entity);
+
+            var serialized = EntitiesJsonSerializer.GetUtf8JsonString(items);
+            await LocalStorage.SetItemAsStringAsync(key, serialized);
         }
         else
         {
-            await LocalStorage.SetItemAsync(key, new List<Expense> { entity });
+            var serialized = EntitiesJsonSerializer.GetUtf8JsonString(new List<Expense> { entity });
+            await LocalStorage.SetItemAsStringAsync(key, serialized);
         }
     }
-
-    public Task DeleteEntity(Guid entityId) => throw new Exception("Not Applicable For Expenses Repository");
 
     public async Task AddExpense(Expense expense) => await AddEntity(expense);
 
@@ -147,19 +154,22 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
 
         if (!partExists) return;
 
-        var part = await LocalStorage.GetItemAsync<List<Expense>>(partKey);
-        var e = part.SingleOrDefault(e => e.Id == expenseId);
+        var part = await LocalStorage.GetItemAsStringAsync(partKey);
+        var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<Expense>>(part);
+        var e = items.SingleOrDefault(e => e.Id == expenseId);
 
-        if (e is null) return;
+        if (e == null) return;
 
-        part.Remove(e);
-        if (part.Count == 0)
+        items.Remove(e);
+
+        if (items.Count == 0)
         {
             await LocalStorage.RemoveItemAsync(partKey);
         }
         else
         {
-            await LocalStorage.SetItemAsync(partKey, part);
+            var serialized = EntitiesJsonSerializer.GetUtf8JsonString(items);
+            await LocalStorage.SetItemAsStringAsync(partKey, serialized);
         }
     }
 
@@ -179,18 +189,19 @@ internal sealed class ExpensesRepository : IExpensesRepository, ILocalStorageGen
 
         if (!partExists) throw new Exception($"Expense with Id='{expenseId}' does not exists");
 
-        var part = await LocalStorage.GetItemAsync<List<Expense>>(partKey);
-        var exp = part.SingleOrDefault(e => e.Id == expenseId);
+        var part = await LocalStorage.GetItemAsStringAsync(partKey);
+        var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<Expense>>(part);
+        var exp = items.SingleOrDefault(e => e.Id == expenseId);
 
         return exp ?? throw new Exception($"Expense with Id='{expenseId}' does not exists");
     }
 
     public async Task<List<(int year, int month)>> GetMonths()
     {
-        var keys = await (this as ILocalStorageGenericRepository<Expense>).GetKeys();
+        var keys = await GetKeys();
         var result = new List<(int year, int month)>();
 
-        foreach (var k in keys.Where(str => str.StartsWith("ExpListPart", StringComparison.OrdinalIgnoreCase)))
+        foreach (var k in keys.Where(str => str.StartsWith(CollectionName, StringComparison.OrdinalIgnoreCase)))
         {
             var arr = k.Split('.');
             int y = int.Parse(arr[1]);

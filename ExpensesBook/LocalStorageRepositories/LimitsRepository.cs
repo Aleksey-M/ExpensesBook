@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -7,25 +8,23 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class LimitsRepository : ILimitsRepository, ILocalStorageGenericRepository<Limit>
+internal sealed class LimitsRepository : BaseLocalStorageRepository, ILimitsRepository
 {
-    public LimitsRepository(ILocalStorageService localStorageService)
+    protected override string CollectionName => "limits";
+
+    public LimitsRepository(ILocalStorageService localStorageService) : base(localStorageService)
     {
-        LocalStorage = localStorageService;
     }
 
-    public ILocalStorageService LocalStorage { get; }
+    public async Task AddLimit(Limit limit) => await AddEntity(limit);
 
-    public async Task AddLimit(Limit limit) =>
-        await (this as ILocalStorageGenericRepository<Limit>).AddEntity(limit);
+    public async Task DeleteLimit(Guid limitId) => await DeleteEntity<Limit>(limitId);
 
-    public async Task DeleteLimit(Guid limitId) =>
-        await (this as ILocalStorageGenericRepository<Limit>).DeleteEntity(limitId);
+    public async Task<List<Limit>> GetLimits() => await GetCollection<List<Limit>>() ?? new();
 
-    public async Task<List<Limit>> GetLimits() =>
-        await (this as ILocalStorageGenericRepository<Limit>).GetCollection();
+    public async Task UpdateLimit(Limit limit) => await UpdateEntity(limit);
 
-    public async Task UpdateLimit(Limit limit) =>
-        await (this as ILocalStorageGenericRepository<Limit>).UpdateEntity(limit);
+    public async Task AddLimits(IEnumerable<Limit> limits) => await SetCollection(limits.ToList());
 
+    public async Task Clear() => await Clear<List<Limit>>();
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -7,26 +8,23 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class CategoriesRepository : ICategoriesRepository, ICategoriesListRepository, ILocalStorageGenericRepository<Category>
+internal sealed class CategoriesRepository : BaseLocalStorageRepository, ICategoriesRepository
 {
-    public CategoriesRepository(ILocalStorageService localStorageService)
+    protected override string CollectionName => "categories";
+
+    public CategoriesRepository(ILocalStorageService localStorageService) : base(localStorageService)
     {
-        LocalStorage = localStorageService;
     }
 
-    public ILocalStorageService LocalStorage { get; }
+    public async Task AddCategory(Category category) => await AddEntity(category);
 
-    public async Task AddCategory(Category category) =>
-        await (this as ILocalStorageGenericRepository<Category>).AddEntity(category);
+    public async Task DeleteCategory(Guid categoryId) => await DeleteEntity<Category>(categoryId);
 
-    public Task Clear() => throw new NotImplementedException();
+    public async Task<List<Category>> GetCategories() => await GetCollection<List<Category>>() ?? new();
 
-    public async Task DeleteCategory(Guid categoryId) =>
-        await (this as ILocalStorageGenericRepository<Category>).DeleteEntity(categoryId);
+    public async Task UpdateCategory(Category category) => await UpdateEntity(category);
 
-    public async Task<List<Category>> GetCategories() =>
-        await (this as ILocalStorageGenericRepository<Category>).GetCollection();
+    public async Task AddCategories(IEnumerable<Category> categories) => await SetCollection(categories.ToList());
 
-    public async Task UpdateCategory(Category category) =>
-        await (this as ILocalStorageGenericRepository<Category>).UpdateEntity(category);
+    public async Task Clear() => await Clear<List<Category>>();
 }

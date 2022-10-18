@@ -14,4 +14,8 @@ internal interface ILimitsRepository
     Task UpdateLimit(Limit limit);
 
     Task DeleteLimit(Guid limitId);
+
+    Task AddLimits(IEnumerable<Limit> limits);
+
+    Task Clear();
 }

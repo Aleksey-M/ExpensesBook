@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -7,24 +8,23 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class GroupsRepository : IGroupsRepository, IGroupsListRepository, ILocalStorageGenericRepository<Group>
+internal sealed class GroupsRepository : BaseLocalStorageRepository, IGroupsRepository
 {
-    public GroupsRepository(ILocalStorageService localStorageService)
+    protected override string CollectionName => "groups";
+
+    public GroupsRepository(ILocalStorageService localStorageService) : base(localStorageService)
     {
-        LocalStorage = localStorageService;
     }
 
-    public ILocalStorageService LocalStorage { get; }
+    public async Task AddGroup(Group group) => await AddEntity(group);
 
-    public async Task AddGroup(Group group) =>
-        await (this as ILocalStorageGenericRepository<Group>).AddEntity(group);
+    public async Task DeleteGroup(Guid groupId) => await DeleteEntity<Group>(groupId);
 
-    public async Task DeleteGroup(Guid groupId) =>
-        await (this as ILocalStorageGenericRepository<Group>).DeleteEntity(groupId);
+    public async Task<List<Group>> GetGroups() => await GetCollection<List<Group>>() ?? new();
 
-    public async Task<List<Group>> GetGroups() =>
-        await (this as ILocalStorageGenericRepository<Group>).GetCollection();
+    public async Task UpdateGroup(Group group) => await UpdateEntity(group);
 
-    public async Task UpdateGroup(Group group) =>
-        await (this as ILocalStorageGenericRepository<Group>).UpdateEntity(group);
+    public async Task AddGroups(IEnumerable<Group> groups) => await SetCollection(groups.ToList());
+
+    public async Task Clear() => await Clear<List<Group>>();
 }

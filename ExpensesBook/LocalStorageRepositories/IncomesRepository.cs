@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -7,25 +8,23 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class IncomesRepository : IIncomesRepository, ILocalStorageGenericRepository<Income>
+internal sealed class IncomesRepository : BaseLocalStorageRepository, IIncomesRepository
 {
-    public IncomesRepository(ILocalStorageService localStorageService)
+    protected override string CollectionName => "incomes";
+
+    public IncomesRepository(ILocalStorageService localStorageService) : base(localStorageService)
     {
-        LocalStorage = localStorageService;
     }
 
-    public ILocalStorageService LocalStorage { get; }
+    public async Task AddIncome(Income income) => await AddEntity(income);
 
-    public async Task AddIncome(Income income) =>
-        await (this as ILocalStorageGenericRepository<Income>).AddEntity(income);
+    public async Task DeleteIncome(Guid incomeId) => await DeleteEntity<Income>(incomeId);
 
-    public async Task DeleteIncome(Guid incomeId) =>
-        await (this as ILocalStorageGenericRepository<Income>).DeleteEntity(incomeId);
+    public async Task<List<Income>> GetIncomes() => await GetCollection<List<Income>>() ?? new();
 
-    public async Task<List<Income>> GetIncomes() =>
-        await (this as ILocalStorageGenericRepository<Income>).GetCollection();
+    public async Task UpdateIncome(Income income) => await UpdateEntity(income);
 
-    public async Task UpdateIncome(Income income) =>
-        await (this as ILocalStorageGenericRepository<Income>).UpdateEntity(income);
+    public async Task AddIncomes(IEnumerable<Income> incomes) => await SetCollection(incomes.ToList());
 
+    public async Task Clear() => await Clear<List<Income>>();
 }

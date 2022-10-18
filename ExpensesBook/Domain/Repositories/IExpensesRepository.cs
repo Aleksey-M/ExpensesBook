@@ -18,4 +18,8 @@ internal interface IExpensesRepository
     Task DeleteExpense(Guid expenseId, DateTimeOffset expenseDate);
 
     Task<List<(int year, int month)>> GetMonths();
+
+    Task AddExpenses(IEnumerable<Expense> expenses);
+
+    Task Clear();
 }

@@ -4,11 +4,9 @@ using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Data;
 using ExpensesBook.Domain.Calculators;
-using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
 using ExpensesBook.Domain.Services;
 using ExpensesBook.LocalStorageRepositories;
-using ExpensesBook.LocalStorageRepositories2;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
@@ -31,7 +29,7 @@ public class Program
 
         AddRepositories(builder.Services);
 
-        AddEntities(builder.Services);
+        AddAppServices(builder.Services);
 
         builder.Services.AddTransient<IJsonData, JsonData>();
 
@@ -50,7 +48,7 @@ public class Program
         services.AddTransient<YearExpensesCalculator>();
     }
 
-    private static void AddEntities(IServiceCollection services)
+    private static void AddAppServices(IServiceCollection services)
     {
         services.AddTransient<ICategoriesService, CategoriesService>();
         services.AddTransient<IGroupsService, GroupsService>();
@@ -61,26 +59,11 @@ public class Program
 
     private static void AddRepositories(IServiceCollection services)
     {
-        //services.AddTransient<ICategoriesRepository, CategoriesRepository>();
-        //services.AddTransient<ICategoriesListRepository, CategoriesRepository>();
-        //services.AddTransient<ILocalStorageGenericRepository<Category>, CategoriesRepository>();
-
-        services.AddScoped<ICategoriesRepository, LocalStorageRepositories2.CategoriesRepository>();
-        services.AddScoped<ICategoriesListRepository, LocalStorageRepositories2.CategoriesListRepository>();
-
-        services.AddTransient<IGroupsRepository, GroupsRepository>();
-        services.AddTransient<IGroupsListRepository, GroupsRepository>();
-        services.AddTransient<ILocalStorageGenericRepository<Group>, GroupsRepository>();
-        services.AddTransient<IGroupDefaultCategoryRepository, GroupDefaultCategoryRepository>();
-        services.AddTransient<ILocalStorageGenericRepository<GroupDefaultCategory>, GroupDefaultCategoryRepository>();
-
-        services.AddTransient<IExpensesRepository, ExpensesRepository>();
-        services.AddTransient<ILocalStorageGenericRepository<Expense>, ExpensesRepository>();
-
-        services.AddTransient<IIncomesRepository, IncomesRepository>();
-        services.AddTransient<ILocalStorageGenericRepository<Income>, IncomesRepository>();
-
-        services.AddTransient<ILimitsRepository, LimitsRepository>();
-        services.AddTransient<ILocalStorageGenericRepository<Limit>, LimitsRepository>();
+        services.AddScoped<ICategoriesRepository, CategoriesRepository>();
+        services.AddScoped<IGroupsRepository, GroupsRepository>();
+        services.AddScoped<IGroupDefaultCategoryRepository, GroupDefaultCategoryRepository>();
+        services.AddScoped<IExpensesRepository, ExpensesRepository>();
+        services.AddScoped<IIncomesRepository, IncomesRepository>();
+        services.AddScoped<ILimitsRepository, LimitsRepository>();
     }
 }

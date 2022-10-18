@@ -4,37 +4,37 @@ using ExpensesBook.Domain.Entities;
 
 namespace ExpensesBook.Serialization;
 
-[JsonSerializable(typeof(Category))]
+[JsonSerializable(typeof(List<Category>))]
 internal sealed partial class CategoryJsonContext : JsonSerializerContext
 {
 
 }
 
-[JsonSerializable(typeof(Group))]
+[JsonSerializable(typeof(List<Group>))]
 internal sealed partial class GroupJsonContext : JsonSerializerContext
 {
 
 }
 
-[JsonSerializable(typeof(Expense))]
+[JsonSerializable(typeof(List<Expense>))]
 internal sealed partial class ExpenseJsonContext : JsonSerializerContext
 {
 
 }
 
-[JsonSerializable(typeof(GroupDefaultCategory))]
+[JsonSerializable(typeof(List<GroupDefaultCategory>))]
 internal sealed partial class GroupDefaultCategoryJsonContext : JsonSerializerContext
 {
 
 }
 
-[JsonSerializable(typeof(Income))]
+[JsonSerializable(typeof(List<Income>))]
 internal sealed partial class IncomeJsonContext : JsonSerializerContext
 {
 
 }
 
-[JsonSerializable(typeof(Limit))]
+[JsonSerializable(typeof(List<Limit>))]
 internal sealed partial class LimitJsonContext : JsonSerializerContext
 {
 

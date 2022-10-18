@@ -5,16 +5,6 @@ using ExpensesBook.Domain.Entities;
 
 namespace ExpensesBook.Domain.Repositories;
 
-internal interface IGroupsListRepository
-{
-    Task<List<Group>> GetGroups();
-}
-
-internal interface IAsyncGroupsListRepository
-{
-    IAsyncEnumerable<Group> GetGroupsAsyncEnumerable();
-}
-
 internal interface IGroupsRepository
 {
     Task AddGroup(Group group);
@@ -22,4 +12,10 @@ internal interface IGroupsRepository
     Task UpdateGroup(Group group);
 
     Task DeleteGroup(Guid groupId);
+
+    Task<List<Group>> GetGroups();
+
+    Task AddGroups(IEnumerable<Group> groups);
+
+    Task Clear();
 }

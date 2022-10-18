@@ -3,9 +3,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
-using ExpensesBook.LocalStorageRepositories;
 
 namespace ExpensesBook.Data;
 
@@ -20,26 +18,23 @@ internal interface IJsonData
 
 internal sealed class JsonData : IJsonData
 {
-    private readonly ILocalStorageGenericRepository<Expense> _expensesRepo;
-    private readonly ICategoriesListRepository _categoriesListRepo;
+    private readonly IExpensesRepository _expensesRepo;
     private readonly ICategoriesRepository _categoriesRepo;
-    private readonly ILocalStorageGenericRepository<GroupDefaultCategory> _groupDefaultCategoriesRepo;
-    private readonly ILocalStorageGenericRepository<Group> _groupsRepo;
-    private readonly ILocalStorageGenericRepository<Income> _incomesRepo;
-    private readonly ILocalStorageGenericRepository<Limit> _limitsRepo;
+    private readonly IGroupDefaultCategoryRepository _groupDefaultCategoriesRepo;
+    private readonly IGroupsRepository _groupsRepo;
+    private readonly IIncomesRepository _incomesRepo;
+    private readonly ILimitsRepository _limitsRepo;
 
     public JsonData(
-        ILocalStorageGenericRepository<Expense> expensesRepo,
+        IExpensesRepository expensesRepo,
         ICategoriesRepository categoriesRepo,
-        ICategoriesListRepository categoriesListRepo,
-        ILocalStorageGenericRepository<GroupDefaultCategory> groupDefaultCategoriesRepo,
-        ILocalStorageGenericRepository<Group> groupsRepo,
-        ILocalStorageGenericRepository<Income> incomesRepo,
-        ILocalStorageGenericRepository<Limit> limitsRepo
+        IGroupDefaultCategoryRepository groupDefaultCategoriesRepo,
+        IGroupsRepository groupsRepo,
+        IIncomesRepository incomesRepo,
+        ILimitsRepository limitsRepo
         )
     {
         _expensesRepo = expensesRepo;
-        _categoriesListRepo = categoriesListRepo;
         _categoriesRepo = categoriesRepo;
         _groupDefaultCategoriesRepo = groupDefaultCategoriesRepo;
         _groupsRepo = groupsRepo;
@@ -49,12 +44,12 @@ internal sealed class JsonData : IJsonData
 
     public async Task<string> ExportToJson()
     {
-        var expenses = await _expensesRepo.GetCollection();
-        var categories = await _categoriesListRepo.GetCategories();
-        var groups = await _groupsRepo.GetCollection();
-        var groupsDefaultCategories = await _groupDefaultCategoriesRepo.GetCollection();
-        var incomes = await _incomesRepo.GetCollection();
-        var limits = await _limitsRepo.GetCollection();
+        var categories = await _categoriesRepo.GetCategories();
+        var expenses = await _expensesRepo.GetExpenses(null, null);
+        var groups = await _groupsRepo.GetGroups();
+        var groupsDefaultCategories = await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(null, null);
+        var incomes = await _incomesRepo.GetIncomes();
+        var limits = await _limitsRepo.GetLimits();
 
         var data = new ExpensesDataSerializable
         {
@@ -73,12 +68,12 @@ internal sealed class JsonData : IJsonData
 
     public async Task ImportFromJson(string data, bool dataMerge)
     {
-        var expenses = dataMerge ? await _expensesRepo.GetCollection() : new();
-        var categories = dataMerge ? await _categoriesListRepo.GetCategories() : new();
-        var groups = dataMerge ? await _groupsRepo.GetCollection() : new();
-        var groupsDefaultCategories = dataMerge ? await _groupDefaultCategoriesRepo.GetCollection() : new();
-        var incomes = dataMerge ? await _incomesRepo.GetCollection() : new();
-        var limits = dataMerge ? await _limitsRepo.GetCollection() : new();
+        var expenses = dataMerge ? await _expensesRepo.GetExpenses(null, null) : new();
+        var categories = dataMerge ? await _categoriesRepo.GetCategories() : new();
+        var groups = dataMerge ? await _groupsRepo.GetGroups() : new();
+        var groupsDefaultCategories = dataMerge ? await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(null, null) : new();
+        var incomes = dataMerge ? await _incomesRepo.GetIncomes() : new();
+        var limits = dataMerge ? await _limitsRepo.GetLimits() : new();
 
         if (!string.IsNullOrWhiteSpace(data))
         {
@@ -152,25 +147,20 @@ internal sealed class JsonData : IJsonData
 
         await ClearData();
 
-        await _expensesRepo.SetCollection(expenses);
-
-        foreach(var category in categories)
-        {
-            await _categoriesRepo.AddCategory(category);
-        }        
-
-        await _groupsRepo.SetCollection(groups);
-        await _groupDefaultCategoriesRepo.SetCollection(groupsDefaultCategories);
-        await _incomesRepo.SetCollection(incomes);
-        await _limitsRepo.SetCollection(limits);
+        await _expensesRepo.AddExpenses(expenses);
+        await _categoriesRepo.AddCategories(categories);
+        await _groupsRepo.AddGroups(groups);
+        await _groupDefaultCategoriesRepo.AddGroupDefaultCategories(groupsDefaultCategories);
+        await _incomesRepo.AddIncomes(incomes);
+        await _limitsRepo.AddLimits(limits);
     }
 
     public async Task ClearData()
     {
         await _expensesRepo.Clear();
-        await _categoriesListRepo.Clear();
         await _groupsRepo.Clear();
         await _groupDefaultCategoriesRepo.Clear();
+        await _categoriesRepo.Clear();
         await _incomesRepo.Clear();
         await _limitsRepo.Clear();
     }

@@ -5,18 +5,6 @@ using ExpensesBook.Domain.Entities;
 
 namespace ExpensesBook.Domain.Repositories;
 
-internal interface ICategoriesListRepository
-{
-    Task<List<Category>> GetCategories();
-
-    Task Clear();
-}
-
-internal interface IAsyncCategoriesListRepository
-{
-    IAsyncEnumerable<Category> GetCategoriesAsyncEnumerable();
-}
-
 internal interface ICategoriesRepository
 {
     Task AddCategory(Category category);
@@ -24,4 +12,10 @@ internal interface ICategoriesRepository
     Task UpdateCategory(Category category);
 
     Task DeleteCategory(Guid categoryId);
+
+    Task<List<Category>> GetCategories();
+
+    Task AddCategories(IEnumerable<Category> categories);
+
+    Task Clear();    
 }

@@ -14,4 +14,8 @@ internal interface IIncomesRepository
     Task UpdateIncome(Income income);
 
     Task DeleteIncome(Guid incomeId);
+
+    Task AddIncomes(IEnumerable<Income> incomes);
+
+    Task Clear();
 }

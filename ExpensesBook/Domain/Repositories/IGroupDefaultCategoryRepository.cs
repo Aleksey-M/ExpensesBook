@@ -12,4 +12,8 @@ internal interface IGroupDefaultCategoryRepository
     Task DeleteGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories);
 
     Task<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId, Guid? groupId);
+
+    Task AddGroupDefaultCategories(IEnumerable<GroupDefaultCategory> groupDefaultCategories);
+
+    Task Clear();
 }
