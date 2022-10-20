@@ -8,7 +8,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class IncomesRepository : BaseLocalStorageRepository, IIncomesRepository
+internal sealed class IncomesRepository : BaseLocalStorageRepository<Income>, IIncomesRepository
 {
     protected override string CollectionName => "incomes";
 
@@ -18,9 +18,9 @@ internal sealed class IncomesRepository : BaseLocalStorageRepository, IIncomesRe
 
     public async Task AddIncome(Income income) => await AddEntity(income);
 
-    public async Task DeleteIncome(Guid incomeId) => await DeleteEntity<Income>(incomeId);
+    public async Task DeleteIncome(Guid incomeId) => await DeleteEntity(incomeId);
 
-    public async Task<List<Income>> GetIncomes() => await GetCollection<List<Income>>() ?? new();
+    public async Task<List<Income>> GetIncomes() => await GetCollection() ?? new();
 
     public async Task UpdateIncome(Income income) => await UpdateEntity(income);
 

@@ -9,7 +9,7 @@ using ExpensesBook.Serialization;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class ExpensesRepository : BaseLocalStorageRepository, IExpensesRepository
+internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, IExpensesRepository
 {
     protected override string CollectionName => "explistpart";
 
@@ -42,7 +42,7 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository, IExpenses
         }
     }
 
-    public async Task<List<Expense>> GetCollection()
+    public new async Task<List<Expense>> GetCollection()
     {
         var keys = await GetKeys();
         var expenses = new List<Expense>();
@@ -124,7 +124,7 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository, IExpenses
         return expenses;
     }
 
-    public async Task AddEntity(Expense entity)
+    public new async Task AddEntity(Expense entity)
     {
         var key = DateToPartKey(entity.Date.Date);
         var partExists = await LocalStorage.ContainKeyAsync(key);

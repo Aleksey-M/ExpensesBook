@@ -8,62 +8,82 @@ using ExpensesBook.Serialization;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal abstract class BaseLocalStorageRepository
+internal abstract class BaseLocalStorageRepository<T> where T : IEntity
 {
     protected ILocalStorageService LocalStorage { get; }
 
     protected abstract string CollectionName { get; }
+
+    private List<T>? _cash = null;
 
     public BaseLocalStorageRepository(ILocalStorageService localStorage)
     {
         LocalStorage = localStorage;
     }
 
-    public async Task Clear<TCollection>()
+    private async Task EnsureCashLoaded()
     {
-        await LocalStorage.RemoveItemAsync(CollectionName);
+        if (_cash == null)
+        {
+            _cash = new();
+
+            var serialized = await LocalStorage.GetItemAsStringAsync(CollectionName);
+            if (!string.IsNullOrEmpty(serialized))
+            {
+                var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<T>>(serialized);
+                _cash.AddRange(items);
+            }
+        }
     }
 
-    protected async Task SetCollection<TCollection>(TCollection collection)
+    private async Task WriteCash()
     {
-        var serialized = EntitiesJsonSerializer.GetUtf8JsonString(collection);
+        var serialized = EntitiesJsonSerializer.GetUtf8JsonString(_cash);
         await LocalStorage.SetItemAsStringAsync(CollectionName, serialized);
     }
 
-    protected async Task<TCollection?> GetCollection<TCollection>()
+    public async Task Clear<TCollection>()
     {
-        var serialized = await LocalStorage.GetItemAsStringAsync(CollectionName);
-
-        if (string.IsNullOrEmpty(serialized))
-        {
-            return default;
-        }
-
-        var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<TCollection>(serialized);
-        return items;
+        _cash?.Clear();
+        _cash = null;
+        await LocalStorage.RemoveItemAsync(CollectionName);
     }
 
-    protected async Task AddEntity<T>(T entity) where T : IEntity
+    protected async Task SetCollection(List<T> collection)
     {
-        var items = await GetCollection<List<T>>();
+        await EnsureCashLoaded();
 
-        items ??= new List<T>();
-        items.Add(entity);
+        _cash?.AddRange(collection);
 
-        await SetCollection(items);
+        await WriteCash();
     }
 
-    protected async Task DeleteEntity<T>(Guid entityId) where T : IEntity
+    protected async Task<List<T>> GetCollection()
     {
-        var items = await GetCollection<List<T>>();
-        if (items == null) return;
+        await EnsureCashLoaded();
 
-        var e = items.SingleOrDefault(e => e.Id == entityId);
+        return _cash!.ToList();
+    }
+
+    protected async Task AddEntity(T entity)
+    {
+        await EnsureCashLoaded();
+
+        _cash!.Add(entity);
+
+        await WriteCash();
+    }
+
+    protected async Task DeleteEntity(Guid entityId)
+    {
+        await EnsureCashLoaded();
+
+        var e = _cash!.SingleOrDefault(e => e.Id == entityId);
         if (e == null) return;
 
-        items.Remove(e);
+        _cash!.Remove(e);
 
-        await SetCollection(items);
+        await WriteCash();
     }
 
     protected async Task<List<string>> GetKeys()
@@ -79,18 +99,17 @@ internal abstract class BaseLocalStorageRepository
         return keys;
     }
 
-    protected async Task UpdateEntity<T>(T entity) where T : IEntity
+    protected async Task UpdateEntity(T entity)
     {
-        var items = await GetCollection<List<T>>();
-        if (items == null) throw new Exception($"Collection '{CollectionName}' is empty");
+        await EnsureCashLoaded();
 
-        var ent = items.SingleOrDefault(ent => ent.Id == entity.Id);
+        var ent = _cash!.SingleOrDefault(ent => ent.Id == entity.Id);
 
         if (ent == null) throw new Exception($"Entity with Id='{entity.Id}' does not exists in '{CollectionName}' collection");
 
-        items.Remove(ent);
-        items.Add(entity);
+        _cash!.Remove(ent);
+        _cash!.Add(entity);
 
-        await SetCollection(items);
+        await WriteCash();
     }
 }

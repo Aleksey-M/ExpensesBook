@@ -8,7 +8,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class GroupDefaultCategoryRepository : BaseLocalStorageRepository, IGroupDefaultCategoryRepository
+internal sealed class GroupDefaultCategoryRepository : BaseLocalStorageRepository<GroupDefaultCategory>, IGroupDefaultCategoryRepository
 {
     protected override string CollectionName => "groupdefaultcategories";
 
@@ -20,7 +20,7 @@ internal sealed class GroupDefaultCategoryRepository : BaseLocalStorageRepositor
     {
         if (!groupCategories.Any()) return;
 
-        var list = await GetCollection<List<GroupDefaultCategory>>() ?? new();
+        var list = await GetCollection() ?? new();
         list = list.Union(groupCategories).ToList();
 
         await SetCollection(list);
@@ -30,7 +30,7 @@ internal sealed class GroupDefaultCategoryRepository : BaseLocalStorageRepositor
     {
         if (!groupCategories.Any()) return;
 
-        var list = await GetCollection<List<GroupDefaultCategory>>() ?? new();
+        var list = await GetCollection() ?? new();
         list = list.Except(groupCategories).ToList();
 
         await SetCollection(list);
@@ -38,7 +38,7 @@ internal sealed class GroupDefaultCategoryRepository : BaseLocalStorageRepositor
 
     public async Task<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId, Guid? groupId)
     {
-        var fullList = await GetCollection<List<GroupDefaultCategory>>() ?? new();
+        var fullList = await GetCollection() ?? new();
 
         Func<GroupDefaultCategory, bool> predicate = (categoryId, groupId) switch
         {

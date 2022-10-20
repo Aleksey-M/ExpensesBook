@@ -8,7 +8,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class LimitsRepository : BaseLocalStorageRepository, ILimitsRepository
+internal sealed class LimitsRepository : BaseLocalStorageRepository<Limit>, ILimitsRepository
 {
     protected override string CollectionName => "limits";
 
@@ -18,9 +18,9 @@ internal sealed class LimitsRepository : BaseLocalStorageRepository, ILimitsRepo
 
     public async Task AddLimit(Limit limit) => await AddEntity(limit);
 
-    public async Task DeleteLimit(Guid limitId) => await DeleteEntity<Limit>(limitId);
+    public async Task DeleteLimit(Guid limitId) => await DeleteEntity(limitId);
 
-    public async Task<List<Limit>> GetLimits() => await GetCollection<List<Limit>>() ?? new();
+    public async Task<List<Limit>> GetLimits() => await GetCollection() ?? new();
 
     public async Task UpdateLimit(Limit limit) => await UpdateEntity(limit);
 

@@ -8,7 +8,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class GroupsRepository : BaseLocalStorageRepository, IGroupsRepository
+internal sealed class GroupsRepository : BaseLocalStorageRepository<Group>, IGroupsRepository
 {
     protected override string CollectionName => "groups";
 
@@ -18,9 +18,9 @@ internal sealed class GroupsRepository : BaseLocalStorageRepository, IGroupsRepo
 
     public async Task AddGroup(Group group) => await AddEntity(group);
 
-    public async Task DeleteGroup(Guid groupId) => await DeleteEntity<Group>(groupId);
+    public async Task DeleteGroup(Guid groupId) => await DeleteEntity(groupId);
 
-    public async Task<List<Group>> GetGroups() => await GetCollection<List<Group>>() ?? new();
+    public async Task<List<Group>> GetGroups() => await GetCollection() ?? new();
 
     public async Task UpdateGroup(Group group) => await UpdateEntity(group);
 

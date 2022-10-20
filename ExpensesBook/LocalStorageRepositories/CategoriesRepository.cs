@@ -8,7 +8,7 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class CategoriesRepository : BaseLocalStorageRepository, ICategoriesRepository
+internal sealed class CategoriesRepository : BaseLocalStorageRepository<Category>, ICategoriesRepository
 {
     protected override string CollectionName => "categories";
 
@@ -18,9 +18,9 @@ internal sealed class CategoriesRepository : BaseLocalStorageRepository, ICatego
 
     public async Task AddCategory(Category category) => await AddEntity(category);
 
-    public async Task DeleteCategory(Guid categoryId) => await DeleteEntity<Category>(categoryId);
+    public async Task DeleteCategory(Guid categoryId) => await DeleteEntity(categoryId);
 
-    public async Task<List<Category>> GetCategories() => await GetCollection<List<Category>>() ?? new();
+    public async Task<List<Category>> GetCategories() => await GetCollection() ?? new();
 
     public async Task UpdateCategory(Category category) => await UpdateEntity(category);
 
