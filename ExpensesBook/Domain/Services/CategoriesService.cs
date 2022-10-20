@@ -60,7 +60,7 @@ internal sealed class CategoriesService : ICategoriesService
 
     public async Task<bool> IsEmptyCategory(Guid categoryId)
     {
-        var expenses = await _expenseRepo.GetExpenses(null, null);
+        var expenses = await _expenseRepo.GetExpenses();
         return !expenses.Any(e => e.CategoryId == categoryId);
     }
 

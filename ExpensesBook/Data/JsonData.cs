@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Repositories;
@@ -45,7 +44,7 @@ internal sealed class JsonData : IJsonData
     public async Task<string> ExportToJson()
     {
         var categories = await _categoriesRepo.GetCategories();
-        var expenses = await _expensesRepo.GetExpenses(null, null);
+        var expenses = await _expensesRepo.GetExpenses();
         var groups = await _groupsRepo.GetGroups();
         var groupsDefaultCategories = await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(null, null);
         var incomes = await _incomesRepo.GetIncomes();
@@ -61,14 +60,12 @@ internal sealed class JsonData : IJsonData
             Limits = limits
         };
 
-        byte[] utf8Json = JsonSerializer.SerializeToUtf8Bytes(data, JsonContext.Default.ExpensesDataSerializable);
-
-        return Encoding.UTF8.GetString(utf8Json);
+        return JsonSerializer.Serialize(data, JsonContext.Default.ExpensesDataSerializable);
     }
 
     public async Task ImportFromJson(string data, bool dataMerge)
     {
-        var expenses = dataMerge ? await _expensesRepo.GetExpenses(null, null) : new();
+        var expenses = dataMerge ? await _expensesRepo.GetExpenses() : new();
         var categories = dataMerge ? await _categoriesRepo.GetCategories() : new();
         var groups = dataMerge ? await _groupsRepo.GetGroups() : new();
         var groupsDefaultCategories = dataMerge ? await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(null, null) : new();

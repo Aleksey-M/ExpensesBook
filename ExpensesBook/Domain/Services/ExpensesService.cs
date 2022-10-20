@@ -14,9 +14,9 @@ internal interface IExpensesService
 
     Task<List<Expense>> GetExpenses(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
 
-    Task UpdateExpense(Guid expenseId, DateTimeOffset? date, DateTimeOffset oldDate, double? amounth, string? description, Guid? categoryId, Guid? groupId);
+    Task UpdateExpense(Guid expenseId, DateTimeOffset? date, double? amounth, string? description, Guid? categoryId, Guid? groupId);
 
-    Task DeleteExpense(Guid expenseId, DateTimeOffset date);
+    Task DeleteExpense(Guid expenseId);
 
     Task<List<(int year, int month, string monthName)>> GetExpensesMonths();
 
@@ -56,8 +56,8 @@ internal sealed class ExpensesService : IExpensesService
         return expense;
     }
 
-    public async Task DeleteExpense(Guid expenseId, DateTimeOffset date) =>
-        await _expensesRepo.DeleteExpense(expenseId, date);
+    public async Task DeleteExpense(Guid expenseId) =>
+        await _expensesRepo.DeleteExpense(expenseId);
 
     public async Task<List<Expense>> GetExpenses(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter)
     {
@@ -67,20 +67,32 @@ internal sealed class ExpensesService : IExpensesService
             ? _ => true
             : desc => desc.Contains(filter, StringComparison.OrdinalIgnoreCase);
 
-        var fullList = await _expensesRepo.GetExpenses(startDate, endDate);
+        var fullList = await _expensesRepo.GetExpenses();
+
+        Func<DateTimeOffset, bool> datesFilter = (startDate, endDate) switch
+        {
+            (not null, not null) => d => d.Date >= startDate && d.Date <= endDate,
+            (null, not null) => d => d <= endDate,
+            (not null, null) => d => d >= startDate,
+            (null, null) => d => true
+        };
 
         return fullList
+            .Where(x => datesFilter(x.Date))
             .Where(exp => descriptionFilter(exp.Description))
             .OrderBy(exp => exp.Date)
             .ToList();
     }
 
     public async Task UpdateExpense(Guid expenseId, DateTimeOffset? date,
-        DateTimeOffset oldDate, double? amounth, string? description, Guid? categoryId, Guid? groupId)
+         double? amounth, string? description, Guid? categoryId, Guid? groupId)
     {
         if (date is null && amounth is null && description is null && categoryId is null) return;
 
-        var expense = await _expensesRepo.GetExpense(expenseId, oldDate);
+        var expenses = await _expensesRepo.GetExpenses();
+        var expense = expenses.SingleOrDefault(x => x.Id == expenseId);
+
+        if (expense == null) throw new ArgumentException($"Expense with Id='{expenseId}' does not exists");
 
         var updatedExpense = new Expense
         {
@@ -92,7 +104,7 @@ internal sealed class ExpensesService : IExpensesService
             GroupId = groupId
         };
 
-        await _expensesRepo.UpdateExpense(updatedExpense, oldDate);
+        await _expensesRepo.UpdateExpense(updatedExpense);
     }
 
     public async Task<List<(int year, int month, string monthName)>> GetExpensesMonths() =>

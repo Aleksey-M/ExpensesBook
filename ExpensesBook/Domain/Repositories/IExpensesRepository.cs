@@ -9,13 +9,11 @@ internal interface IExpensesRepository
 {
     Task AddExpense(Expense expense);
 
-    Task<Expense> GetExpense(Guid expenseId, DateTimeOffset date);
+    Task<List<Expense>> GetExpenses();
 
-    Task<List<Expense>> GetExpenses(DateTimeOffset? fromDate, DateTimeOffset? toDate);
+    Task UpdateExpense(Expense expense);
 
-    Task UpdateExpense(Expense expense, DateTimeOffset oldDate);
-
-    Task DeleteExpense(Guid expenseId, DateTimeOffset expenseDate);
+    Task DeleteExpense(Guid expenseId);
 
     Task<List<(int year, int month)>> GetMonths();
 

@@ -5,10 +5,63 @@ using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
-using ExpensesBook.Serialization;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
+
+internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, IExpensesRepository
+{
+    protected override string CollectionName => "expenses";
+
+    public ExpensesRepository(ILocalStorageService localStorageService) : base(localStorageService)
+    {
+    }
+
+    public async Task AddExpense(Expense expense) => await AddEntity(expense);
+
+    public async Task DeleteExpense(Guid expenseId) => await DeleteEntity(expenseId);
+
+    public async Task<List<Expense>> GetExpenses() => await GetCollection() ?? new();
+
+    public async Task UpdateExpense(Expense expense) => await UpdateEntity(expense);
+
+    public async Task AddExpenses(IEnumerable<Expense> expenses) => await SetCollection(expenses.ToList());
+
+    public async Task Clear() => await Clear<List<Expense>>();
+
+    public async Task<List<(int year, int month)>> GetMonths()
+    {
+        var allExpenses = await GetExpenses();
+
+        return allExpenses
+            .Select(x => (year: x.Date.Year, month: x.Date.Month))
+            .Distinct()
+            .OrderBy(x => x.year)
+            .ThenBy(x => x.month)
+            .ToList();
+    }
+}
+
+//internal interface IExpensesRepository
+//{
+//    Task AddExpense(Expense expense);
+
+//    Task<Expense> GetExpense(Guid expenseId, DateTimeOffset date);
+
+//    Task<List<Expense>> GetExpenses(DateTimeOffset? fromDate, DateTimeOffset? toDate);
+
+//    Task UpdateExpense(Expense expense, DateTimeOffset oldDate);
+
+//    Task DeleteExpense(Guid expenseId, DateTimeOffset expenseDate);
+
+//    Task<List<(int year, int month)>> GetMonths();
+
+//    Task AddExpenses(IEnumerable<Expense> expenses);
+
+//    Task Clear();
+//}
+
+/*
 internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, IExpensesRepository
 {
     protected override string CollectionName => "explistpart";
@@ -37,7 +90,7 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, 
             var key = $"{CollectionName}.{g.Key.year}.{g.Key.month}";
             var value = g.ToList();
 
-            var serialized = EntitiesJsonSerializer.GetUtf8JsonString(value);
+            var serialized = EntitiesJsonSerializer.GetJsonString(value);
             await LocalStorage.SetItemAsStringAsync(key, serialized);
         }
     }
@@ -52,7 +105,7 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, 
             if (k.StartsWith(CollectionName, StringComparison.OrdinalIgnoreCase))
             {
                 var part = await LocalStorage.GetItemAsStringAsync(k);
-                var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<Expense>>(part);
+                var items = EntitiesJsonSerializer.GetEntitiesFromJsonString<List<Expense>>(part);
 
                 expenses.AddRange(items);
             }
@@ -117,7 +170,7 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, 
         foreach (var k in keys)
         {
             var part = await LocalStorage.GetItemAsStringAsync(k);
-            var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<Expense>>(part);
+            var items = EntitiesJsonSerializer.GetEntitiesFromJsonString<List<Expense>>(part);
             expenses.AddRange(items.Where(e => datesFilter(e.Date)).ToList());
         }
 
@@ -132,15 +185,15 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, 
         if (partExists)
         {
             var part = await LocalStorage.GetItemAsStringAsync(key);
-            var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<Expense>>(part);
+            var items = EntitiesJsonSerializer.GetEntitiesFromJsonString<List<Expense>>(part);
             items.Add(entity);
 
-            var serialized = EntitiesJsonSerializer.GetUtf8JsonString(items);
+            var serialized = EntitiesJsonSerializer.GetJsonString(items);
             await LocalStorage.SetItemAsStringAsync(key, serialized);
         }
         else
         {
-            var serialized = EntitiesJsonSerializer.GetUtf8JsonString(new List<Expense> { entity });
+            var serialized = EntitiesJsonSerializer.GetJsonString(new List<Expense> { entity });
             await LocalStorage.SetItemAsStringAsync(key, serialized);
         }
     }
@@ -155,7 +208,7 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, 
         if (!partExists) return;
 
         var part = await LocalStorage.GetItemAsStringAsync(partKey);
-        var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<Expense>>(part);
+        var items = EntitiesJsonSerializer.GetEntitiesFromJsonString<List<Expense>>(part);
         var e = items.SingleOrDefault(e => e.Id == expenseId);
 
         if (e == null) return;
@@ -168,7 +221,7 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, 
         }
         else
         {
-            var serialized = EntitiesJsonSerializer.GetUtf8JsonString(items);
+            var serialized = EntitiesJsonSerializer.GetJsonString(items);
             await LocalStorage.SetItemAsStringAsync(partKey, serialized);
         }
     }
@@ -190,7 +243,7 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, 
         if (!partExists) throw new Exception($"Expense with Id='{expenseId}' does not exists");
 
         var part = await LocalStorage.GetItemAsStringAsync(partKey);
-        var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<Expense>>(part);
+        var items = EntitiesJsonSerializer.GetEntitiesFromJsonString<List<Expense>>(part);
         var exp = items.SingleOrDefault(e => e.Id == expenseId);
 
         return exp ?? throw new Exception($"Expense with Id='{expenseId}' does not exists");
@@ -212,3 +265,4 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, 
         return result;
     }
 }
+*/

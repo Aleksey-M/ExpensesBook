@@ -72,12 +72,12 @@ internal sealed class GroupsService : IGroupsService
 
     public async Task DeleteGroup(Guid groupId)
     {
-        var expenses = await _expensesRepo.GetExpenses(null, null);
+        var expenses = await _expensesRepo.GetExpenses();
 
         foreach (var exp in expenses.Where(e => e.GroupId == groupId))
         {
             exp.GroupId = null;
-            await _expensesRepo.UpdateExpense(exp, exp.Date);
+            await _expensesRepo.UpdateExpense(exp);
         }
 
         var defCat = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, groupId);

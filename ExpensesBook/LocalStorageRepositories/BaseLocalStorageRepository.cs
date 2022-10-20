@@ -30,7 +30,7 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
             var serialized = await LocalStorage.GetItemAsStringAsync(CollectionName);
             if (!string.IsNullOrEmpty(serialized))
             {
-                var items = EntitiesJsonSerializer.GetEntityFromUtf8Json<List<T>>(serialized);
+                var items = EntitiesJsonSerializer.GetEntitiesFromJsonString<List<T>>(serialized);
                 _cash.AddRange(items);
             }
         }
@@ -38,7 +38,7 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
 
     private async Task WriteCash()
     {
-        var serialized = EntitiesJsonSerializer.GetUtf8JsonString(_cash);
+        var serialized = EntitiesJsonSerializer.GetJsonString(_cash);
         await LocalStorage.SetItemAsStringAsync(CollectionName, serialized);
     }
 

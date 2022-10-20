@@ -283,7 +283,7 @@
 
         var oldDate = _expenses.Single(e => e.item.Id == expenseId).item.Date;
 
-        await ExpensesSvc.DeleteExpense(expenseId, oldDate);
+        await ExpensesSvc.DeleteExpense(expenseId);
 
         var exp = _expenses.Single(i => i.item.Id == expenseId);
         _expenses.Remove(exp);
@@ -380,7 +380,6 @@
             await ExpensesSvc.UpdateExpense(
                 expenseId: _expense.Id,
                 date: _expense.Date,
-                oldDate: oldDate,
                 amounth: _expense.Amounth,
                 description: _expense.Description,
                 categoryId: _expense.CategoryId,

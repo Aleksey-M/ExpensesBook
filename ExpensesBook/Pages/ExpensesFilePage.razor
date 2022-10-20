@@ -5,81 +5,92 @@
 @inject IJsonData JData
 @inject IJSRuntime JSRuntime
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
-    <MudCard>
-        <MudCardContent>
-            <MudText Typo="Typo.h5" GutterBottom="true">Сохранить данные в файл</MudText>
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h5" GutterBottom="true">Сохранить данные в файл</MudText>
+    
+                <MudButton
+                    Class="mt-3"
+                    Variant="Variant.Filled"
+                    Color="Color.Success"
+                    StartIcon="@Icons.Material.Filled.CloudDownload"
+                    OnClick="SaveToFile">
+                        Сохранить
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+    </MudContainer>
+    
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h5" GutterBottom="true">Загрузить данные из файла</MudText>
+    
+                @if (uploadMessage != string.Empty)
+                {
+                    <MudAlert Severity="Severity.Success">@uploadMessage</MudAlert>
+                }    
+    
+                <MudContainer>
+                    <MudCheckBox @bind-Checked="mergeData">Слияние данных</MudCheckBox>
+                </MudContainer>
+    
+                <InputFile id="fileInput" OnChange="UploadDataFile" hidden="hidden" accept=".json"/>
+    
+                <MudButton
+                    HtmlTag="label"
+                    Class="mt-3"
+                    Variant="Variant.Filled"
+                    Color="Color.Primary"
+                    StartIcon="@Icons.Filled.CloudUpload" for="fileInput">
+                        Загрузить
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+    </MudContainer>
+    
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h5" GutterBottom="true" Style="color:red">Удалить данные из Local Storage</MudText>
+    
+                @if (clearMessage is { Length: > 0 })
+                {
+                    <MudAlert Severity="Severity.Warning">@clearMessage</MudAlert>
+                }
+    
+                <MudButton
+                    Variant="Variant.Filled"
+                    Color="Color.Warning"
+                    Class="mt-3"
+                    StartIcon="@Icons.Material.Filled.Cancel"
+                    OnClick="ClearData">
+                        Удалить
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+    </MudContainer>
 
-            <MudButton
-                Class="mt-3"
-                Variant="Variant.Filled"
-                Color="Color.Success"
-                StartIcon="@Icons.Material.Filled.CloudDownload"
-                OnClick="SaveToFile">
-                    Сохранить
-            </MudButton>
-        </MudCardContent>
-    </MudCard>
-</MudContainer>
-
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
-    <MudCard>
-        <MudCardContent>
-            <MudText Typo="Typo.h5" GutterBottom="true">Загрузить данные из файла</MudText>
-
-            @if (uploadMessage is { Length: > 0 })
-            {
-                <MudAlert Severity="Severity.Success">@uploadMessage</MudAlert>
-            }
-
-            <MudContainer>
-                <MudCheckBox @bind-Checked="mergeData">Слияние данных</MudCheckBox>
-            </MudContainer>
-
-            <InputFile id="fileInput" OnChange="UploadDataFile" hidden="hidden" accept=".json"/>
-
-            <MudButton
-                HtmlTag="label"
-                Class="mt-3"
-                Variant="Variant.Filled"
-                Color="Color.Primary"
-                StartIcon="@Icons.Filled.CloudUpload" for="fileInput">
-                    Загрузить
-            </MudButton>
-        </MudCardContent>
-    </MudCard>
-</MudContainer>
-
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
-    <MudCard>
-        <MudCardContent>
-            <MudText Typo="Typo.h5" GutterBottom="true" Style="color:red">Удалить данные из Local Storage</MudText>
-
-            @if (clearMessage is { Length: > 0 })
-            {
-                <MudAlert Severity="Severity.Warning">@clearMessage</MudAlert>
-            }
-
-            <MudButton
-                Variant="Variant.Filled"
-                Color="Color.Warning"
-                Class="mt-3"
-                StartIcon="@Icons.Material.Filled.Cancel"
-                OnClick="ClearData">
-                    Удалить
-            </MudButton>
-        </MudCardContent>
-    </MudCard>
-</MudContainer>
 
 @code {
 
-    private string uploadMessage = "";
-    private string clearMessage = "";
+    private string uploadMessage = string.Empty;
+    private string clearMessage = string.Empty;
     private bool mergeData;
+
+    private async Task ClearMessages()
+    {
+        uploadMessage = string.Empty;
+        clearMessage = string.Empty;
+        StateHasChanged();
+        await Task.Delay(1);
+    }
 
     private async Task SaveToFile()
     {
+        await ClearMessages();
+
         var str = await JData.ExportToJson();
         var fileName = "exp." + DateTime.Now.ToString("yyyy.MM.dd") + ".json";
         await JSRuntime.InvokeAsync<object>("fileSaveAs", fileName, str);
@@ -87,6 +98,8 @@
 
     private async Task UploadDataFile(InputFileChangeEventArgs e)
     {
+        await ClearMessages();
+
         var stream = e.File.OpenReadStream();
         using var reader = new StreamReader(stream);
         var text = await reader.ReadToEndAsync();
@@ -94,11 +107,18 @@
         await JData.ImportFromJson(text, mergeData);
 
         uploadMessage = "Файл загружен";
+        StateHasChanged();
+        await Task.Delay(1);
     }
 
     private async Task ClearData()
     {
+        await ClearMessages();
+
         await JData.ClearData();
+
         clearMessage = "Данные удалены";
+        StateHasChanged();
+        await Task.Delay(1);
     }
 }
