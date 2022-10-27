@@ -3,9 +3,10 @@
 @using ExpensesBook.Domain.Services
 @using ExpensesBook.Domain.Entities
 @using System.Collections.Generic
+@using ExpensesBook.Reports
 
 @inject IIncomesService IncomesService
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JsRuntime
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
 
@@ -110,6 +111,14 @@
                 </MudTh>
             </RowTemplate>
         </MudTable>
+
+        <MudButton Class="mt-3"
+               Variant="Variant.Filled"
+               EndIcon="@Icons.Filled.FileDownload"
+               Color="Color.Info"
+               OnClick="async _ => await ExportToXlsx()">
+            Экспорт
+        </MudButton>
     }
 
 </MudContainer>
@@ -172,7 +181,7 @@
 
     private async Task DeleteIncome(Guid incomeId)
     {
-        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить запись о доходе?");
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("window.confirm", "Удалить запись о доходе?");
         if (!confirmed) return;
 
         await IncomesService.DeleteIncome(incomeId);
@@ -181,4 +190,13 @@
         Incomes.Remove(i);
     }        
 
+    private async Task ExportToXlsx()
+    {
+        var data = await IncomesService.GetIncomes(null, null, null);
+
+        var file = await IncomesXlsxExport.ExportExpenses(data);
+        var base64String = Convert.ToBase64String(file);
+
+        await JsRuntime.InvokeVoidAsync("fileSaveAs", "Доходы.xlsx", base64String, true);
+    }
 }
