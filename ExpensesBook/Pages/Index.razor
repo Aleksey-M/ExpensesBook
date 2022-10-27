@@ -3,8 +3,12 @@
 @using ExpensesBook.Domain.Calculators
 @using ExpensesBook.Domain.Entities
 @using System.Collections.Generic
+@using ExpensesBook.Domain.Services
+@using ExpensesBook.Reports
 
 @inject PeriodExpenseCalculator Calc
+@inject IExpensesService ExpensesSvc
+@inject IJSRuntime JsRuntime
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
     @if (_groupingCriteriaName == null)
@@ -36,7 +40,7 @@
                                Class="mt-2"
                                Color="Color.Success"
                                StartIcon="@Icons.Material.Filled.TableChart"
-                               OnClick="ShowTable">
+                               OnClick="async _ => await ShowTable()">
                             Показать
                         </MudButton>
                     </MudItem>
@@ -143,6 +147,18 @@
                             Width="300px" Height="300px" />
                     </MudPaper>
                 }
+
+                if(_viewType == ExpensesGroupingType.None)
+                {
+                    <MudButton 
+                        Class="mt-3"
+                        Variant="Variant.Filled"
+                        EndIcon="@Icons.Filled.FileDownload"
+                        Color="Color.Info"
+                        OnClick="async _ => await ExportToXlsx()">
+                        Экспорт
+                    </MudButton>
+                }
             }
         }
     }
@@ -194,5 +210,15 @@
     private void HideDetails()
     {
         _groupingCriteriaName = null;
+    }
+
+    private async Task ExportToXlsx()
+    {
+        var data = await ExpensesSvc.GetExpensesWithRelatedData(_startDate, _endDate, null);
+
+        var file = await ExpensesXlsxExport.ExportExpenses(data);
+        var base64String = Convert.ToBase64String(file);
+
+        await JsRuntime.InvokeVoidAsync("fileSaveAs", "Расходы.xlsx", base64String, true);
     }
 }
