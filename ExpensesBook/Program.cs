@@ -31,7 +31,7 @@ public class Program
 
         AddAppServices(builder.Services);
 
-        builder.Services.AddTransient<IJsonData, JsonData>();
+        builder.Services.AddTransient<IGlobalDataManager, GlobalDataManager>();
 
         AddCalculators(builder.Services);
 

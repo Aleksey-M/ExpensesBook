@@ -176,7 +176,10 @@ internal sealed class YearPivotTable
                 }
             }
 
-            rows.Add(new YearPivotTableRow(n, new ReadOnlyCollection<ValuePercent>(cellsValues)));
+            if (cellsValues.Any(x => x.NumValue > 0))
+            {
+                rows.Add(new YearPivotTableRow(n, new ReadOnlyCollection<ValuePercent>(cellsValues)));
+            }            
         }
 
         rows.Add(new YearPivotTableRow("За месяц", new ReadOnlyCollection<ValuePercent>(

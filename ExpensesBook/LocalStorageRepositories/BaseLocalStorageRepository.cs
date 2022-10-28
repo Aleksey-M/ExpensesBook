@@ -23,6 +23,8 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
 
     private async Task EnsureCashLoaded()
     {
+        await Task.Delay(1);
+
         if (_cash == null)
         {
             _cash = new();
@@ -38,6 +40,8 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
 
     private async Task WriteCash()
     {
+        await Task.Delay(1);
+
         var serialized = EntitiesJsonSerializer.GetJsonString(_cash);
         await LocalStorage.SetItemAsStringAsync(CollectionName, serialized);
     }
