@@ -2,6 +2,8 @@
 
 @using ExpensesBook.Domain.Calculators
 
+@inherits BasePage
+
 @inject CashBalanceCalculator BalanceCalculator
 @inject IJSRuntime JSRuntime
 
@@ -136,7 +138,8 @@
 
         var forSelectedPeriod = await BalanceCalculator.GetCashBalance(
             new DateTimeOffset(_from ?? DateTime.Now),
-            new DateTimeOffset(_to ?? DateTime.Now));
+            new DateTimeOffset(_to ?? DateTime.Now),
+            Token);
 
         _singleRowForPeriod = new List<CashBalance> { forSelectedPeriod };
 
@@ -156,7 +159,7 @@
     private async Task ShowMonthlyBalance()
     {
         CashBalance? total = null;
-        (_rows, total) = await BalanceCalculator.GetMonthlyCashBalance();
+        (_rows, total) = await BalanceCalculator.GetMonthlyCashBalance(Token);
 
         if(total is null)
         {

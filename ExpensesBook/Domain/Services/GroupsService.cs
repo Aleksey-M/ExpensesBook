@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
@@ -11,17 +12,17 @@ internal interface IGroupsService
 {
     Task<Group> AddGroup(string groupName, int? sortOrder, IEnumerable<Guid>? relatedCategories);
 
-    Task<List<Group>> GetGroups();
+    Task<List<Group>> GetGroups(CancellationToken token);
 
-    Task<List<(Group, List<Category>)>> GetGroupsWithRelatedCategories();
+    Task<List<(Group, List<Category>)>> GetGroupsWithRelatedCategories(CancellationToken token);
 
     Task UpdateGroup(Guid groupId, string? groupName, int? groupOrder, IEnumerable<Guid>? relatedCategories);
 
     Task DeleteGroup(Guid groupId);
 
-    Task<List<Category>> GetFreeCategories();
+    Task<List<Category>> GetFreeCategories(CancellationToken token);
 
-    Task<Group?> GetRelatedGroup(Guid categoryId);
+    Task<Group?> GetRelatedGroup(Guid categoryId, CancellationToken token);
 }
 
 internal sealed class GroupsService : IGroupsService
@@ -53,7 +54,7 @@ internal sealed class GroupsService : IGroupsService
 
         if (relatedCategories != null && relatedCategories.Any())
         {
-            var allRelations = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, null);
+            var allRelations = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, null, token: default);
             var filtered = relatedCategories.Where(rc => !allRelations.Any(r => r.CategoryId == rc)).ToList();
 
             var relations = filtered.Select(id => new GroupDefaultCategory
@@ -72,7 +73,7 @@ internal sealed class GroupsService : IGroupsService
 
     public async Task DeleteGroup(Guid groupId)
     {
-        var expenses = await _expensesRepo.GetExpenses();
+        var expenses = await _expensesRepo.GetExpenses(token: default);
 
         foreach (var exp in expenses.Where(e => e.GroupId == groupId))
         {
@@ -80,16 +81,16 @@ internal sealed class GroupsService : IGroupsService
             await _expensesRepo.UpdateExpense(exp);
         }
 
-        var defCat = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, groupId);
+        var defCat = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, groupId, token: default);
         await _groupDefaultCategRepo.DeleteGroupDefaultCategory(defCat);
 
         await _groupsRepo.DeleteGroup(groupId);
     }
 
-    public async Task<List<Category>> GetFreeCategories()
+    public async Task<List<Category>> GetFreeCategories(CancellationToken token)
     {
-        var allCategories = await _categoriesRepo.GetCategories();
-        var relCategories = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, null);
+        var allCategories = await _categoriesRepo.GetCategories(token);
+        var relCategories = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, null, token);
 
         var freeCategories = allCategories
             .Where(c => !relCategories.Any(rc => rc.CategoryId == c.Id))
@@ -99,17 +100,17 @@ internal sealed class GroupsService : IGroupsService
         return freeCategories;
     }
 
-    public async Task<List<Group>> GetGroups()
+    public async Task<List<Group>> GetGroups(CancellationToken token)
     {
-        var groups = await _groupsRepo.GetGroups();
+        var groups = await _groupsRepo.GetGroups(token);
         return groups.OrderBy(g => g.Sort).ThenBy(g => g.Name).ToList();
     }
 
-    public async Task<List<(Group, List<Category>)>> GetGroupsWithRelatedCategories()
+    public async Task<List<(Group, List<Category>)>> GetGroupsWithRelatedCategories(CancellationToken token)
     {
-        var groups = await _groupsRepo.GetGroups();
-        var relCateg = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, null);
-        var allCategories = await _categoriesRepo.GetCategories();
+        var groups = await _groupsRepo.GetGroups(token);
+        var relCateg = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, null, token);
+        var allCategories = await _categoriesRepo.GetCategories(token);
 
         var relCategoriesList = relCateg
             .Join(allCategories, gdc => gdc.CategoryId, c => c.Id, (gdc, c) => (defCat: gdc, category: c))
@@ -126,14 +127,14 @@ internal sealed class GroupsService : IGroupsService
         return res;
     }
 
-    public async Task<Group?> GetRelatedGroup(Guid categoryId)
+    public async Task<Group?> GetRelatedGroup(Guid categoryId, CancellationToken token)
     {
         if (categoryId == Guid.Empty) return null;
 
-        var catGroup = await _groupDefaultCategRepo.GetGroupDefaultCategories(categoryId, null);
+        var catGroup = await _groupDefaultCategRepo.GetGroupDefaultCategories(categoryId, null, token);
         if (catGroup is { Count: 0 }) return null;
 
-        var groups = await _groupsRepo.GetGroups();
+        var groups = await _groupsRepo.GetGroups(token);
         var group = groups.SingleOrDefault(g => g.Id == catGroup[0].GroupId);
 
         return group;
@@ -143,7 +144,7 @@ internal sealed class GroupsService : IGroupsService
     {
         if (groupName is null && groupOrder is null && relatedCategories is null) return;
 
-        var allGroups = await _groupsRepo.GetGroups();
+        var allGroups = await _groupsRepo.GetGroups(token: default);
         var group = allGroups.SingleOrDefault(g => g.Id == groupId);
 
         if (group == null) throw new ArgumentException($"Group with Id='{groupId}' does not exists");
@@ -159,7 +160,7 @@ internal sealed class GroupsService : IGroupsService
 
         if (relatedCategories is not null)
         {
-            var relCateg = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, groupId);
+            var relCateg = await _groupDefaultCategRepo.GetGroupDefaultCategories(null, groupId, token: default);
             await _groupDefaultCategRepo.DeleteGroupDefaultCategory(relCateg);
             relCateg = relatedCategories
                 .Select(c => new GroupDefaultCategory

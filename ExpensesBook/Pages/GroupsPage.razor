@@ -3,6 +3,8 @@
 @using ExpensesBook.Domain.Services
 @using ExpensesBook.Domain.Entities
 
+@inherits BasePage
+
 @inject IGroupsService GroupsService
 @inject ICategoriesService CategoriesService
 @inject IJSRuntime JSRuntime
@@ -140,8 +142,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Groups = await GroupsService.GetGroupsWithRelatedCategories();
-        _freeCategories = await GroupsService.GetFreeCategories();
+        await base.OnInitializedAsync();
+
+        Groups = await GroupsService.GetGroupsWithRelatedCategories(Token);
+        _freeCategories = await GroupsService.GetFreeCategories(Token);
     }
 
     private List<Category> AvailableCategories => _state switch
@@ -159,7 +163,7 @@
             Sort = Groups is { Count: > 0 } ? Groups.Max(c => c.group.Sort) + 1 : 1 
         };
 
-        _freeCategories = await GroupsService.GetFreeCategories();
+        _freeCategories = await GroupsService.GetFreeCategories(Token);
         _selectedOptions = new HashSet<Category>();
         _alreadySelectedCategories = new();
         _state = PageState.Add;
@@ -174,7 +178,7 @@
             Sort = group.group.Sort
         };
 
-        _freeCategories = await GroupsService.GetFreeCategories();
+        _freeCategories = await GroupsService.GetFreeCategories(Token);
         _alreadySelectedCategories = group.categories;
         _selectedOptions = new HashSet<Category>(group.categories);
         _state = PageState.Edit;
@@ -200,9 +204,9 @@
                 _selectedOptions.Select(x => x.Id));
         }
 
-        Groups = await GroupsService.GetGroupsWithRelatedCategories();
+        Groups = await GroupsService.GetGroupsWithRelatedCategories(Token);
 
-        _freeCategories = await GroupsService.GetFreeCategories();
+        _freeCategories = await GroupsService.GetFreeCategories(Token);
         _state = PageState.List;
     }
 
@@ -213,7 +217,7 @@
 
         await GroupsService.DeleteGroup(groupId);
 
-        Groups = await GroupsService.GetGroupsWithRelatedCategories();
-        _freeCategories = await GroupsService.GetFreeCategories();
+        Groups = await GroupsService.GetGroupsWithRelatedCategories(Token);
+        _freeCategories = await GroupsService.GetFreeCategories(Token);
     }    
 }

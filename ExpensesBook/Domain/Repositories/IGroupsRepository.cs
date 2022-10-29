@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 
@@ -13,7 +14,7 @@ internal interface IGroupsRepository
 
     Task DeleteGroup(Guid groupId);
 
-    Task<List<Group>> GetGroups();
+    Task<List<Group>> GetGroups(CancellationToken token);
 
     Task AddGroups(IEnumerable<Group> groups);
 

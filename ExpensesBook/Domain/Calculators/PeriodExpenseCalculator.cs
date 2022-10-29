@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Services;
@@ -90,10 +91,10 @@ internal sealed class PeriodExpenseCalculator
         return result;
     }
 
-    public async Task<PeriodExpensesTableData> GetExpensesAsTable(
-        ExpensesGroupingType groupingType, DateTimeOffset fromDate, DateTimeOffset toDate, string? filter)
+    public async Task<PeriodExpensesTableData> GetExpensesAsTable(ExpensesGroupingType groupingType,
+        DateTimeOffset fromDate, DateTimeOffset toDate, string? filter, CancellationToken token)
     {
-        var periodExpenses = await _expensesService.GetExpensesWithRelatedData(startDate: fromDate, endDate: toDate, filter);
+        var periodExpenses = await _expensesService.GetExpensesWithRelatedData(startDate: fromDate, endDate: toDate, filter, token);
 
         var total = periodExpenses
             .Select(e => e.item.Amounth)
@@ -112,8 +113,8 @@ internal sealed class PeriodExpenseCalculator
         return new PeriodExpensesTableData(groupingType, rows, total);
     }
 
-    public async Task<List<Expense>> GetFilteredExpenses(
-        ExpensesGroupingType groupingType, DateTimeOffset fromDate, DateTimeOffset toDate, Guid? filterBy)
+    public async Task<List<Expense>> GetFilteredExpenses(ExpensesGroupingType groupingType,
+        DateTimeOffset fromDate, DateTimeOffset toDate, Guid? filterBy, CancellationToken token)
     {
         if (groupingType == ExpensesGroupingType.ByCategory && filterBy is null)
         {
@@ -125,7 +126,7 @@ internal sealed class PeriodExpenseCalculator
             throw new ArgumentException("FromDate and ToDate should be the same");
         }
 
-        var periodExpenses = await _expensesService.GetExpensesWithRelatedData(startDate: fromDate, endDate: toDate, null);
+        var periodExpenses = await _expensesService.GetExpensesWithRelatedData(startDate: fromDate, endDate: toDate, null, token);
 
         if (groupingType == ExpensesGroupingType.None)
         {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Services;
 
@@ -18,12 +19,12 @@ internal sealed class CashBalanceCalculator
         _expensesService = expensesService;
     }
 
-    public async Task<CashBalance> GetCashBalance(DateTimeOffset fromDate, DateTimeOffset toDate)
+    public async Task<CashBalance> GetCashBalance(DateTimeOffset fromDate, DateTimeOffset toDate, CancellationToken token)
     {
         if (fromDate.Date > toDate.Date) throw new ArgumentException(null, nameof(fromDate));
 
-        var allExpenses = await _expensesService.GetExpenses(startDate: fromDate, endDate: toDate, filter: null);
-        var allIncomes = await _incomesService.GetIncomes(startDate: fromDate, endDate: toDate, filter: null);
+        var allExpenses = await _expensesService.GetExpenses(startDate: fromDate, endDate: toDate, filter: null, token);
+        var allIncomes = await _incomesService.GetIncomes(startDate: fromDate, endDate: toDate, filter: null, token);
 
         double expenses = allExpenses.Select(e => e.Amounth).DefaultIfEmpty().Sum();
         double incomes = allIncomes.Select(s => s.Amounth).DefaultIfEmpty().Sum();
@@ -31,10 +32,10 @@ internal sealed class CashBalanceCalculator
         return new CashBalance(fromDate: fromDate, toDate: toDate, expenses: expenses, incomes: incomes);
     }
 
-    public async Task<(List<CashBalance> rows, CashBalance? total)> GetMonthlyCashBalance()
+    public async Task<(List<CashBalance> rows, CashBalance? total)> GetMonthlyCashBalance(CancellationToken token)
     {
-        var allExpenses = await _expensesService.GetExpenses(startDate: null, endDate: null, filter: null);
-        var allIncomes = await _incomesService.GetIncomes(startDate: null, endDate: null, filter: null);
+        var allExpenses = await _expensesService.GetExpenses(startDate: null, endDate: null, filter: null, token);
+        var allIncomes = await _incomesService.GetIncomes(startDate: null, endDate: null, filter: null, token);
 
         double totalExpenses = allExpenses.Select(e => e.Amounth).DefaultIfEmpty().Sum();
         double totalIncomes = allIncomes.Select(s => s.Amounth).DefaultIfEmpty().Sum();

@@ -19,7 +19,7 @@ internal static class EntitiesJsonSerializer
             List<GroupDefaultCategory> list => JsonSerializer.Serialize(list,
                 GroupDefaultCategoryJsonContext.Default.ListGroupDefaultCategory),
             List<string> list => JsonSerializer.Serialize(list, StringListJsonContext.Default.ListString),
-            _ => throw new Exception("Unknown entity type")
+            _ => throw new Exception("Unknown entity type: " + typeof(T).Name)
         };
 
         return jsonString;
@@ -37,7 +37,7 @@ internal static class EntitiesJsonSerializer
             Type t when t == typeof(List<GroupDefaultCategory>) => JsonSerializer.Deserialize(jsonString,
                 GroupDefaultCategoryJsonContext.Default.ListGroupDefaultCategory),
             Type t when t == typeof(List<string>) => JsonSerializer.Deserialize(jsonString, StringListJsonContext.Default.ListString),
-            _ => throw new Exception("Unknown entity type")
+            _ => throw new Exception("Unknown entity type: " + typeof(T).Name)
         };
 
         if (entity == null)

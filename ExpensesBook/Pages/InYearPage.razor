@@ -2,6 +2,8 @@
 
 @using ExpensesBook.Domain.Calculators
 
+@inherits BasePage
+
 @inject YearExpensesCalculator YearExpCalc
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
@@ -118,9 +120,9 @@
 
         XAxisLabels = _yearPivotTable.XAxisLabels;
 
-        Series = _yearPivotTable.GetChartSeries(_selectedRows);
+        Series = YearPivotTable.GetChartSeries(_selectedRows);
 
-        Options.YAxisTicks = _yearPivotTable.GetYAxisTicks(_selectedRows);
+        Options.YAxisTicks = YearPivotTable.GetYAxisTicks(_selectedRows);
     }
 
     private void OnSelectedChanged(HashSet<YearPivotTableRow> items)
@@ -130,7 +132,7 @@
 
     private async Task ShowTable()
     {
-        _yearPivotTable = await YearExpCalc.GetYearExpenses(_year, _viewType);
+        _yearPivotTable = await YearExpCalc.GetYearExpenses(_year, _viewType, Token);
 
         if (_yearPivotTable != null)
         {
@@ -142,7 +144,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _allYears = await YearExpCalc.GetYears();
+        await base.OnInitializedAsync();
+
+        _allYears = await YearExpCalc.GetYears(Token);
 
         var y = DateTimeOffset.Now.Year;
 

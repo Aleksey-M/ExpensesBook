@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -8,7 +9,8 @@ using ExpensesBook.Domain.Repositories;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
-internal sealed class GroupDefaultCategoryRepository : BaseLocalStorageRepository<GroupDefaultCategory>, IGroupDefaultCategoryRepository
+internal sealed class GroupDefaultCategoryRepository :
+    BaseLocalStorageRepository<GroupDefaultCategory>, IGroupDefaultCategoryRepository
 {
     protected override string CollectionName => "groupdefaultcategories";
 
@@ -20,7 +22,7 @@ internal sealed class GroupDefaultCategoryRepository : BaseLocalStorageRepositor
     {
         if (!groupCategories.Any()) return;
 
-        var list = await GetCollection() ?? new();
+        var list = await GetCollection(token: default) ?? new();
         list = list.Union(groupCategories).ToList();
 
         await SetCollection(list);
@@ -30,15 +32,16 @@ internal sealed class GroupDefaultCategoryRepository : BaseLocalStorageRepositor
     {
         if (!groupCategories.Any()) return;
 
-        var list = await GetCollection() ?? new();
+        var list = await GetCollection(token: default) ?? new();
         list = list.Except(groupCategories).ToList();
 
         await SetCollection(list);
     }
 
-    public async Task<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId, Guid? groupId)
+    public async Task<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId,
+        Guid? groupId, CancellationToken token)
     {
-        var fullList = await GetCollection() ?? new();
+        var fullList = await GetCollection(token) ?? new();
 
         Func<GroupDefaultCategory, bool> predicate = (categoryId, groupId) switch
         {

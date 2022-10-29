@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -20,7 +21,7 @@ internal sealed class CategoriesRepository : BaseLocalStorageRepository<Category
 
     public async Task DeleteCategory(Guid categoryId) => await DeleteEntity(categoryId);
 
-    public async Task<List<Category>> GetCategories() => await GetCollection() ?? new();
+    public async Task<List<Category>> GetCategories(CancellationToken token) => await GetCollection(token) ?? new();
 
     public async Task UpdateCategory(Category category) => await UpdateEntity(category);
 

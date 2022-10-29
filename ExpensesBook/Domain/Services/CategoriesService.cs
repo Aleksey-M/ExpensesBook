@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
@@ -11,13 +12,13 @@ internal interface ICategoriesService
 {
     Task<Category> AddCategory(string categoryName, int? sortOrder);
 
-    Task<List<Category>> GetCategories();
+    Task<List<Category>> GetCategories(CancellationToken token);
 
     Task UpdateCategory(Guid categoryId, string? categoryName, int? sortOrder);
 
     Task DeleteCategory(Guid categoryId);
 
-    Task<bool> IsEmptyCategory(Guid categoryId);
+    Task<bool> IsEmptyCategory(Guid categoryId, CancellationToken token);
 }
 
 internal sealed class CategoriesService : ICategoriesService
@@ -50,23 +51,23 @@ internal sealed class CategoriesService : ICategoriesService
 
     public async Task DeleteCategory(Guid categoryId)
     {
-        bool isEmpty = await IsEmptyCategory(categoryId);
+        bool isEmpty = await IsEmptyCategory(categoryId, default);
         if (!isEmpty) throw new Exception($"Category with Id='{categoryId}' using for some expenses");
 
-        var defCateg = await _groupDefaultCategoryRepo.GetGroupDefaultCategories(categoryId, null);
+        var defCateg = await _groupDefaultCategoryRepo.GetGroupDefaultCategories(categoryId, null, default);
         await _categoriesRepo.DeleteCategory(categoryId);
         await _groupDefaultCategoryRepo.DeleteGroupDefaultCategory(defCateg);
     }
 
-    public async Task<bool> IsEmptyCategory(Guid categoryId)
+    public async Task<bool> IsEmptyCategory(Guid categoryId, CancellationToken token)
     {
-        var expenses = await _expenseRepo.GetExpenses();
+        var expenses = await _expenseRepo.GetExpenses(token);
         return !expenses.Any(e => e.CategoryId == categoryId);
     }
 
-    public async Task<List<Category>> GetCategories()
+    public async Task<List<Category>> GetCategories(CancellationToken token)
     {
-        var list = await _categoriesRepo.GetCategories();
+        var list = await _categoriesRepo.GetCategories(token);
         return list.OrderBy(c => c.Sort).ThenBy(c => c.Name).ToList();
     }
 
@@ -74,7 +75,7 @@ internal sealed class CategoriesService : ICategoriesService
     {
         if (categoryName is null && sortOrder is null) return;
 
-        var allCategories = await _categoriesRepo.GetCategories();
+        var allCategories = await _categoriesRepo.GetCategories(token: default);
         var category = allCategories.SingleOrDefault(c => c.Id == categoryId);
 
         if (category == null) throw new ArgumentException($"Category with Id='{categoryId}' does not exists");

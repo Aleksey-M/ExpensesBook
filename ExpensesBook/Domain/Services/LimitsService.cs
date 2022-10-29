@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
@@ -11,7 +12,7 @@ internal interface ILimitsService
 {
     Task<Limit> AddLimit(DateTimeOffset startDate, DateTimeOffset endDate, string description, double amounth);
 
-    Task<List<Limit>> GetLimits();
+    Task<List<Limit>> GetLimits(CancellationToken token);
 
     Task UpdateLimit(Guid limitId, DateTimeOffset? startDate, DateTimeOffset? endDate, string? description, double? amounth);
 
@@ -48,18 +49,18 @@ internal sealed class LimitsService : ILimitsService
 
     public async Task DeleteLimit(Guid limitId) => await _limitsRepo.DeleteLimit(limitId);
 
-    public async Task<List<Limit>> GetLimits()
+    public async Task<List<Limit>> GetLimits(CancellationToken token)
     {
-        var limits = await _limitsRepo.GetLimits();
+        var limits = await _limitsRepo.GetLimits(token);
         return limits.OrderBy(l => l.StartDate).ThenBy(l => l.EndDate).ToList();
     }
 
-    public async Task UpdateLimit(Guid limitId,
-        DateTimeOffset? startDate, DateTimeOffset? endDate, string? description, double? amounth)
+    public async Task UpdateLimit(Guid limitId, DateTimeOffset? startDate, DateTimeOffset? endDate,
+        string? description, double? amounth)
     {
         if (startDate is null && endDate is null && amounth is null && description is null) return;
 
-        var limits = await _limitsRepo.GetLimits();
+        var limits = await _limitsRepo.GetLimits(token: default);
         var limit = limits.SingleOrDefault(i => i.Id == limitId);
 
         if (limit is null) throw new Exception($"Limit with Id='{limitId}' does not exists");

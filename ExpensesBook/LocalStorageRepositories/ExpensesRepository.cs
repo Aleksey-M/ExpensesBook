@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -21,7 +22,7 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, 
 
     public async Task DeleteExpense(Guid expenseId) => await DeleteEntity(expenseId);
 
-    public async Task<List<Expense>> GetExpenses() => await GetCollection() ?? new();
+    public async Task<List<Expense>> GetExpenses(CancellationToken token) => await GetCollection(token) ?? new();
 
     public async Task UpdateExpense(Expense expense) => await UpdateEntity(expense);
 
@@ -29,9 +30,9 @@ internal sealed class ExpensesRepository : BaseLocalStorageRepository<Expense>, 
 
     public async Task Clear() => await Clear<List<Expense>>();
 
-    public async Task<List<(int year, int month)>> GetMonths()
+    public async Task<List<(int year, int month)>> GetMonths(CancellationToken token)
     {
-        var allExpenses = await GetExpenses();
+        var allExpenses = await GetExpenses(token);
 
         return allExpenses
             .Select(x => (year: x.Date.Year, month: x.Date.Month))

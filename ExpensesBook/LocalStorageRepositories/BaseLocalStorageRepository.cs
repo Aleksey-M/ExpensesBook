@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -21,18 +22,20 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
         LocalStorage = localStorage;
     }
 
-    private async Task EnsureCashLoaded()
+    private async Task EnsureCashLoaded(CancellationToken token)
     {
-        await Task.Delay(1);
+        await Task.Delay(1, token);
 
         if (_cash == null)
         {
+            var serialized = await LocalStorage.GetItemAsStringAsync(CollectionName);
+            await Task.Delay(1, token);
+
             _cash = new();
 
-            var serialized = await LocalStorage.GetItemAsStringAsync(CollectionName);
             if (!string.IsNullOrEmpty(serialized))
             {
-                var items = EntitiesJsonSerializer.GetEntitiesFromJsonString<List<T>>(serialized);
+                var items = EntitiesJsonSerializer.GetEntitiesFromJsonString<List<T>>(serialized);                
                 _cash.AddRange(items);
             }
         }
@@ -43,6 +46,8 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
         await Task.Delay(1);
 
         var serialized = EntitiesJsonSerializer.GetJsonString(_cash);
+        await Task.Delay(1);
+
         await LocalStorage.SetItemAsStringAsync(CollectionName, serialized);
     }
 
@@ -55,23 +60,23 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
 
     protected async Task SetCollection(List<T> collection)
     {
-        await EnsureCashLoaded();
+        await EnsureCashLoaded(token: default);
 
         _cash?.AddRange(collection);
 
         await WriteCash();
     }
 
-    protected async Task<List<T>> GetCollection()
+    protected async Task<List<T>> GetCollection(CancellationToken token)
     {
-        await EnsureCashLoaded();
+        await EnsureCashLoaded(token);
 
         return _cash!.ToList();
     }
 
     protected async Task AddEntity(T entity)
     {
-        await EnsureCashLoaded();
+        await EnsureCashLoaded(token: default);
 
         _cash!.Add(entity);
 
@@ -80,7 +85,7 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
 
     protected async Task DeleteEntity(Guid entityId)
     {
-        await EnsureCashLoaded();
+        await EnsureCashLoaded(token: default);
 
         var e = _cash!.SingleOrDefault(e => e.Id == entityId);
         if (e == null) return;
@@ -105,7 +110,7 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
 
     protected async Task UpdateEntity(T entity)
     {
-        await EnsureCashLoaded();
+        await EnsureCashLoaded(token: default);
 
         var ent = _cash!.SingleOrDefault(ent => ent.Id == entity.Id);
 

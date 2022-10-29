@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
@@ -11,7 +12,7 @@ internal interface IIncomesService
 {
     Task<Income> AddIncome(DateTimeOffset date, double amounth, string description);
 
-    Task<List<Income>> GetIncomes(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
+    Task<List<Income>> GetIncomes(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter, CancellationToken token);
 
     Task UpdateIncome(Guid incomeId, DateTimeOffset? date, double? amounth, string? description);
 
@@ -46,9 +47,10 @@ internal sealed class IncomesService : IIncomesService
 
     public async Task DeleteIncome(Guid incomeId) => await _incomesRepo.DeleteIncome(incomeId);
 
-    public async Task<List<Income>> GetIncomes(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter)
+    public async Task<List<Income>> GetIncomes(DateTimeOffset? startDate, DateTimeOffset? endDate,
+        string? filter, CancellationToken token)
     {
-        var incomes = await _incomesRepo.GetIncomes();
+        var incomes = await _incomesRepo.GetIncomes(token);
 
         Func<Income, bool> datePredicate = (startDate, endDate) switch
         {
@@ -72,7 +74,7 @@ internal sealed class IncomesService : IIncomesService
     {
         if (date is null && amounth is null && description is null) return;
 
-        var incomes = await _incomesRepo.GetIncomes();
+        var incomes = await _incomesRepo.GetIncomes(token: default);
         var income = incomes.SingleOrDefault(i => i.Id == incomeId);
 
         if (income is null) throw new Exception($"Income with Id='{incomeId}' does not exists");

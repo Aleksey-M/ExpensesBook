@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 
@@ -13,7 +14,7 @@ internal interface ICategoriesRepository
 
     Task DeleteCategory(Guid categoryId);
 
-    Task<List<Category>> GetCategories();
+    Task<List<Category>> GetCategories(CancellationToken token);
 
     Task AddCategories(IEnumerable<Category> categories);
 

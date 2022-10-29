@@ -5,6 +5,8 @@
 @using System.Collections.Generic
 @using ExpensesBook.Data
 
+@inherits BasePage
+
 @inject IIncomesService IncomesService
 @inject IJSRuntime JsRuntime
 
@@ -130,7 +132,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Incomes = await IncomesService.GetIncomes(null, null, null);
+        await base.OnInitializedAsync();
+        Incomes = await IncomesService.GetIncomes(null, null, null, Token);
     }
 
     private IncomeDto _income = new();
@@ -175,7 +178,7 @@
                 description: _income?.Description);
         }
 
-        Incomes = await IncomesService.GetIncomes(null, null, null);
+        Incomes = await IncomesService.GetIncomes(null, null, null, Token);
         _state = PageState.List;
     }
 
@@ -192,9 +195,9 @@
 
     private async Task ExportToXlsx()
     {
-        var data = await IncomesService.GetIncomes(null, null, null);
+        var data = await IncomesService.GetIncomes(null, null, null, Token);
 
-        var file = await IncomesXlsxExport.ExportExpenses(data);
+        var file = await IncomesXlsxExport.ExportExpenses(data, Token);
         var base64String = Convert.ToBase64String(file);
 
         await JsRuntime.InvokeVoidAsync("fileSaveAs", "Доходы.xlsx", base64String, true);

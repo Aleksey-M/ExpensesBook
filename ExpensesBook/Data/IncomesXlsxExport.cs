@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using ClosedXML.Excel;
 using ExpensesBook.Domain.Entities;
@@ -8,7 +9,7 @@ namespace ExpensesBook.Data;
 
 internal static class IncomesXlsxExport
 {
-    public static async Task<byte[]> ExportExpenses(List<Income> incomes)
+    public static async Task<byte[]> ExportExpenses(List<Income> incomes, CancellationToken token)
     {
         await Task.Delay(1); // для обновления анимации кнопки
 

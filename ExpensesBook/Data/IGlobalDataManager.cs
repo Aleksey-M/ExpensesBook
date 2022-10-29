@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 
@@ -8,11 +9,11 @@ internal sealed record ParsedExpense(Expense Expense, string CategoryName, strin
 
 internal interface IGlobalDataManager
 {
-    Task<GlobalDataSerializable> GetAllData();
+    Task<GlobalDataSerializable> GetAllData(CancellationToken token);
 
-    Task SetAllData(GlobalDataSerializable data);
+    Task SetAllData(GlobalDataSerializable data, CancellationToken token);
 
     Task ClearData();
 
-    Task<int> ImportExpensesFromFlatList(List<ParsedExpense> parsedExpenses);
+    Task<int> ImportExpensesFromFlatList(List<ParsedExpense> parsedExpenses, CancellationToken token);
 }

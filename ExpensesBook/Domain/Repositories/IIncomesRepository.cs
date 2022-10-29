@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 
@@ -9,7 +10,7 @@ internal interface IIncomesRepository
 {
     Task AddIncome(Income income);
 
-    Task<List<Income>> GetIncomes();
+    Task<List<Income>> GetIncomes(CancellationToken token);
 
     Task UpdateIncome(Income income);
 

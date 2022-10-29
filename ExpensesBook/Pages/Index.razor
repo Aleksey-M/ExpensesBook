@@ -6,6 +6,8 @@
 @using ExpensesBook.Domain.Services
 @using ExpensesBook.Data
 
+@inherits BasePage
+
 @inject PeriodExpenseCalculator Calc
 @inject IExpensesService ExpensesSvc
 @inject IJSRuntime JsRuntime
@@ -166,6 +168,7 @@
 </MudContainer>
 
 @code {
+
     private DateTime? _startDate = DateTimeOffset.Now.Date.AddDays(-14);
     private DateTime? _endDate = DateTimeOffset.Now.Date.AddDays(1);
     private ExpensesGroupingType _viewType;
@@ -178,7 +181,7 @@
         var start = new DateTimeOffset(_startDate.Value);
         var end = new DateTimeOffset(_endDate.Value);
 
-        _tableData = await Calc.GetExpensesAsTable(_viewType, start, end, null);
+        _tableData = await Calc.GetExpensesAsTable(_viewType, start, end, null, Token);
         _detailsListAvailable = _viewType != ExpensesGroupingType.None;
         _groupingCriteriaName = null;
     }
@@ -200,9 +203,10 @@
                 _viewType,
                 DateTimeOffset.Parse(groupingCriteriaName),
                 DateTimeOffset.Parse(groupingCriteriaName),
-                filterBy),
-            ExpensesGroupingType.ByGroup => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy),
-            ExpensesGroupingType.ByCategory => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy),
+                filterBy,
+                Token),
+            ExpensesGroupingType.ByGroup => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy, Token),
+            ExpensesGroupingType.ByCategory => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy, Token),
             _ => new List<Expense>()
         };
     }
@@ -214,9 +218,9 @@
 
     private async Task ExportToXlsx()
     {
-        var data = await ExpensesSvc.GetExpensesWithRelatedData(_startDate, _endDate, null);
+        var data = await ExpensesSvc.GetExpensesWithRelatedData(_startDate, _endDate, null, Token);
 
-        var file = await ExpensesXlsxExport.ExportExpenses(data);
+        var file = await ExpensesXlsxExport.ExportExpenses(data, Token);
         var base64String = Convert.ToBase64String(file);
 
         await JsRuntime.InvokeVoidAsync("fileSaveAs", "Расходы.xlsx", base64String, true);

@@ -5,6 +5,8 @@
 @using ExpensesBook.Domain.Services
 @using System.Collections.Generic
 
+@inherits BasePage
+
 @inject LimitsCalculator LimitsCalc
 @inject ILimitsService LimitsSvc
 @inject IJSRuntime JSRuntime
@@ -157,7 +159,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _allLimits = await LimitsCalc.GetCalculatedLimits(false);
+        await base.OnInitializedAsync();
+        _allLimits = await LimitsCalc.GetCalculatedLimits(false, Token);
     }
 
     private void ShowAllLimits()
@@ -206,7 +209,7 @@
                 description: _limit.Description ?? "empty",
                 _limit.LimitAmounth);
 
-            var calcLim = await LimitsCalc.GetCalculatedLimit(lim);
+            var calcLim = await LimitsCalc.GetCalculatedLimit(lim, Token);
             _allLimits.Add(calcLim);
         }
         else
@@ -220,8 +223,8 @@
                 description: _limit.Description ?? "empty",
                 _limit.LimitAmounth);
 
-            var lim = (await LimitsSvc.GetLimits()).Single(l => l.Id == limId);
-            var calcLim = await LimitsCalc.GetCalculatedLimit(lim);
+            var lim = (await LimitsSvc.GetLimits(Token)).Single(l => l.Id == limId);
+            var calcLim = await LimitsCalc.GetCalculatedLimit(lim, Token);
 
             _allLimits.Remove(_allLimits.Single(l => l.LimitId == limId));
             _allLimits.Add(calcLim);

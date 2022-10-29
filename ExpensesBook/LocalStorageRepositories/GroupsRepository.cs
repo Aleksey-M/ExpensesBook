@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -20,7 +21,7 @@ internal sealed class GroupsRepository : BaseLocalStorageRepository<Group>, IGro
 
     public async Task DeleteGroup(Guid groupId) => await DeleteEntity(groupId);
 
-    public async Task<List<Group>> GetGroups() => await GetCollection() ?? new();
+    public async Task<List<Group>> GetGroups(CancellationToken token) => await GetCollection(token) ?? new();
 
     public async Task UpdateGroup(Group group) => await UpdateEntity(group);
 

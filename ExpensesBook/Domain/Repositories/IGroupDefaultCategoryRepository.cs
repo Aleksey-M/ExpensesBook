@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 
@@ -11,7 +12,7 @@ internal interface IGroupDefaultCategoryRepository
 
     Task DeleteGroupDefaultCategory(IEnumerable<GroupDefaultCategory> groupCategories);
 
-    Task<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId, Guid? groupId);
+    Task<List<GroupDefaultCategory>> GetGroupDefaultCategories(Guid? categoryId, Guid? groupId, CancellationToken token);
 
     Task AddGroupDefaultCategories(IEnumerable<GroupDefaultCategory> groupDefaultCategories);
 

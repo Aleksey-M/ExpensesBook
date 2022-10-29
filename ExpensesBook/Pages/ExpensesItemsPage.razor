@@ -4,6 +4,8 @@
 @using ExpensesBook.Domain.Entities
 @using System.Collections.Generic
 
+@inherits BasePage
+
 @inject IExpensesService ExpensesSvc
 @inject ICategoriesService CategoriesSvc
 @inject IGroupsService GroupsSvc
@@ -253,7 +255,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _allMonths = await ExpensesSvc.GetExpensesMonths();
+        await base.OnInitializedAsync();
+
+        _allMonths = await ExpensesSvc.GetExpensesMonths(Token);
 
         if (!_allMonths.Any(m => m.year == _year && m.month == _month))
         {
@@ -261,10 +265,10 @@
             _month = 1;
         }
 
-        _expenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
+        _expenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null, Token);
 
-        Categories = await CategoriesSvc.GetCategories();
-        Groups = await GroupsSvc.GetGroups();
+        Categories = await CategoriesSvc.GetCategories(Token);
+        Groups = await GroupsSvc.GetGroups(Token);
     }
 
     private async Task CategorySelected(Guid? value)
@@ -272,7 +276,7 @@
         _expense.CategoryId = value;
 
         if (value is null) return;
-        var group = await GroupsSvc.GetRelatedGroup(value.Value);
+        var group = await GroupsSvc.GetRelatedGroup(value.Value, Token);
         _expense.GroupId = group?.Id;
     }
 
@@ -305,12 +309,12 @@
             _showFullList = false;
         }
 
-        _expenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
+        _expenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null, Token);
     }
 
     private async Task UpdateMonthsList()
     {
-        _allMonths = await ExpensesSvc.GetExpensesMonths();
+        _allMonths = await ExpensesSvc.GetExpensesMonths(Token);
 
         if (!_allMonths.Any(m => m.year == _year && m.month == _month))
         {
@@ -385,7 +389,7 @@
                 categoryId: _expense.CategoryId,
                 groupId: _expense.GroupId);
 
-            _expenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null);
+            _expenses = await ExpensesSvc.GetExpensesWithRelatedData(Start, End, filter: null, Token);
         }
 
         await UpdateMonthsList();

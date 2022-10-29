@@ -10,9 +10,10 @@
     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
         <MudCard>
             <MudCardContent>
-                <MudText Typo="Typo.h5" GutterBottom="true">Сохранить данные в файл</MudText>
+                <MudText Typo="Typo.h5" GutterBottom="true">Сохранить все данные в json-файл</MudText>
     
                 <MudButton
+                    Disabled="disabledButtons"
                     Class="mt-3"
                     Variant="Variant.Filled"
                     Color="Color.Success"
@@ -27,7 +28,7 @@
     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
         <MudCard>
             <MudCardContent>
-                <MudText Typo="Typo.h5" GutterBottom="true">Загрузить данные из файла</MudText>
+                <MudText Typo="Typo.h5" GutterBottom="true">Загрузить данные из json-файла</MudText>
     
                 @if (uploadMessage != string.Empty)
                 {
@@ -39,6 +40,7 @@
                 <MudCheckBox @bind-Checked="mergeData">Слияние данных</MudCheckBox>
 
                 <MudButton
+                    Disabled="disabledButtons"
                     HtmlTag="label"
                     Class="mt-3"
                     Variant="Variant.Filled"
@@ -63,7 +65,9 @@
 
             <InputFile id="expensesXlsxFileInput" OnChange="async e => await UploadExpensesXlsx(e)" hidden="hidden" accept=".xlsx" />
 
-            <MudButton HtmlTag="label"
+            <MudButton 
+                Disabled="disabledButtons"
+                HtmlTag="label"
                        Variant="Variant.Filled"
                        Color="Color.Warning"
                        Class="mt-3"
@@ -97,7 +101,9 @@
 
             <InputFile id="incomesXlsxFileInput" OnChange="async e => await UploadIncomesXlsx(e)" hidden="hidden" accept=".xlsx" />
 
-            <MudButton HtmlTag="label"
+            <MudButton 
+                Disabled = "disabledButtons"
+                HtmlTag="label"
                        Variant="Variant.Filled"
                        Color="Color.Warning"
                        Class="mt-3"
@@ -130,6 +136,7 @@
                 }
     
                 <MudButton
+                    Disabled = "disabledButtons"
                     Variant="Variant.Filled"
                     Color="Color.Warning"
                     Class="mt-3"
@@ -142,38 +149,51 @@
     </MudContainer>
 
 @code {
+
     private string uploadMessage = string.Empty;
     private string clearMessage = string.Empty;
     private bool mergeData;
+    private bool disabledButtons = false;
 
-    private async Task ClearMessages()
+    private async Task ClearMessagesAndDisableButtons()
     {
         uploadMessage = string.Empty;
         clearMessage = string.Empty;
         importExpensesMessage = string.Empty;
+        importIncomesMessage = string.Empty;
+
+        disabledButtons = true;
 
         StateHasChanged();
         await Task.Delay(1, Token);
     }
 
+    private async Task EnableButtons()
+    {
+        disabledButtons = false;
+        StateHasChanged();
+        await Task.Delay(1);
+    }
 
     private async Task SaveToFile()
     {
-        await ClearMessages();
+        await ClearMessagesAndDisableButtons();
 
-        var data = await DataManager.GetAllData();
+        var data = await DataManager.GetAllData(Token);
         var str = JsonGlobalData.Export(data);
 
         var fileName = "exp." + DateTime.Now.ToString("yyyy.MM.dd") + ".json";
         await JSRuntime.InvokeVoidAsync("fileSaveAs", fileName, str);
+
+        await EnableButtons();
     }
 
 
     private async Task UploadDataFile(InputFileChangeEventArgs e)
     {
-        await ClearMessages();
+        await ClearMessagesAndDisableButtons();
 
-        var stream = e.File.OpenReadStream();
+        var stream = e.File.OpenReadStream(2048_000);
         using var reader = new StreamReader(stream);
         var text = await reader.ReadToEndAsync();
 
@@ -184,23 +204,21 @@
             await DataManager.ClearData();
         }
 
-        await DataManager.SetAllData(allData);
+        await DataManager.SetAllData(allData, Token);
 
         uploadMessage = "Файл загружен";
-        StateHasChanged();
-        await Task.Delay(1);
+        await EnableButtons();
     }
 
 
     private async Task ClearData()
     {
-        await ClearMessages();
+        await ClearMessagesAndDisableButtons();
 
         await DataManager.ClearData();
 
         clearMessage = "Данные удалены";
-        StateHasChanged();
-        await Task.Delay(1);
+        await EnableButtons();
     }
 
 
@@ -209,14 +227,14 @@
 
     private async Task UploadExpensesXlsx(InputFileChangeEventArgs e)
     {
-        await ClearMessages();
+        await ClearMessagesAndDisableButtons();
 
         importExpensesMessageSeverity = Severity.Info;
         importExpensesMessage = "Загрузка файла...";
         StateHasChanged();
         await Task.Delay(1, Token);
 
-        var stream = e.File.OpenReadStream();
+        var stream = e.File.OpenReadStream(2048_000);
         using var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream, Token);
         memoryStream.Position = 0;
@@ -238,14 +256,13 @@
             StateHasChanged();
             await Task.Delay(1, Token);
 
-            var count = await DataManager.ImportExpensesFromFlatList(importedItems);
+            var count = await DataManager.ImportExpensesFromFlatList(importedItems, Token);
 
             importExpensesMessageSeverity = Severity.Success;
             importExpensesMessage = $"Импортировано {count} записей";
         }
 
-        StateHasChanged();
-        await Task.Delay(1);
+        await EnableButtons();
     }
 
 
@@ -254,14 +271,14 @@
 
     private async Task UploadIncomesXlsx(InputFileChangeEventArgs e)
     {
-        await ClearMessages();
+        await ClearMessagesAndDisableButtons();
 
         importIncomesMessageSeverity = Severity.Info;
         importIncomesMessage = "Загрузка файла...";
         StateHasChanged();
         await Task.Delay(1, Token);
 
-        var stream = e.File.OpenReadStream();
+        var stream = e.File.OpenReadStream(2048_000);
         using var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream, Token);
         memoryStream.Position = 0;
@@ -288,13 +305,12 @@
                     Incomes = importedItems
                 };
 
-            await DataManager.SetAllData(data);
+            await DataManager.SetAllData(data, Token);
 
             importIncomesMessageSeverity = Severity.Success;
             importIncomesMessage = $"Импортировано {importedItems.Count} записей";
         }
 
-        StateHasChanged();
-        await Task.Delay(1);
+        await EnableButtons();
     }
 }

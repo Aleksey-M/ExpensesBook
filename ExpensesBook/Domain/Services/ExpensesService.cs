@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
@@ -12,15 +13,16 @@ internal interface IExpensesService
 {
     Task<Expense> AddExpense(DateTimeOffset date, double amounth, string description, Guid categoryId, Guid? groupId);
 
-    Task<List<Expense>> GetExpenses(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
+    Task<List<Expense>> GetExpenses(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter, CancellationToken token);
 
     Task UpdateExpense(Guid expenseId, DateTimeOffset? date, double? amounth, string? description, Guid? categoryId, Guid? groupId);
 
     Task DeleteExpense(Guid expenseId);
 
-    Task<List<(int year, int month, string monthName)>> GetExpensesMonths();
+    Task<List<(int year, int month, string monthName)>> GetExpensesMonths(CancellationToken token);
 
-    Task<List<(Expense item, Category category, Group? group)>> GetExpensesWithRelatedData(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter);
+    Task<List<(Expense item, Category category, Group? group)>> GetExpensesWithRelatedData(DateTimeOffset? startDate,
+        DateTimeOffset? endDate, string? filter, CancellationToken token);
 }
 
 internal sealed class ExpensesService : IExpensesService
@@ -59,7 +61,8 @@ internal sealed class ExpensesService : IExpensesService
     public async Task DeleteExpense(Guid expenseId) =>
         await _expensesRepo.DeleteExpense(expenseId);
 
-    public async Task<List<Expense>> GetExpenses(DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter)
+    public async Task<List<Expense>> GetExpenses(DateTimeOffset? startDate,
+        DateTimeOffset? endDate, string? filter, CancellationToken token)
     {
         filter ??= "";
 
@@ -67,7 +70,7 @@ internal sealed class ExpensesService : IExpensesService
             ? _ => true
             : desc => desc.Contains(filter, StringComparison.OrdinalIgnoreCase);
 
-        var fullList = await _expensesRepo.GetExpenses();
+        var fullList = await _expensesRepo.GetExpenses(token);
 
         Func<DateTimeOffset, bool> datesFilter = (startDate, endDate) switch
         {
@@ -89,7 +92,7 @@ internal sealed class ExpensesService : IExpensesService
     {
         if (date is null && amounth is null && description is null && categoryId is null) return;
 
-        var expenses = await _expensesRepo.GetExpenses();
+        var expenses = await _expensesRepo.GetExpenses(token: default);
         var expense = expenses.SingleOrDefault(x => x.Id == expenseId);
 
         if (expense == null) throw new ArgumentException($"Expense with Id='{expenseId}' does not exists");
@@ -107,8 +110,8 @@ internal sealed class ExpensesService : IExpensesService
         await _expensesRepo.UpdateExpense(updatedExpense);
     }
 
-    public async Task<List<(int year, int month, string monthName)>> GetExpensesMonths() =>
-        (await _expensesRepo.GetMonths())
+    public async Task<List<(int year, int month, string monthName)>> GetExpensesMonths(CancellationToken token) =>
+        (await _expensesRepo.GetMonths(token))
             .Select(e => (
                 e.year,
                 e.month,
@@ -118,12 +121,12 @@ internal sealed class ExpensesService : IExpensesService
             .ToList();
 
     public async Task<List<(Expense item, Category category, Group? group)>> GetExpensesWithRelatedData(
-        DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter)
+        DateTimeOffset? startDate, DateTimeOffset? endDate, string? filter, CancellationToken token)
     {
-        var expenses = await GetExpenses(startDate: startDate, endDate: endDate, filter: filter);
+        var expenses = await GetExpenses(startDate: startDate, endDate: endDate, filter: filter, token: token);
 
-        var allCategories = await _categoriesRepository.GetCategories();
-        var allGroups = await _groupsRepo.GetGroups();
+        var allCategories = await _categoriesRepository.GetCategories(token);
+        var allGroups = await _groupsRepo.GetGroups(token);
 
         var result = new List<(Expense item, Category category, Group? group)>();
 

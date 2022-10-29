@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -20,7 +21,7 @@ internal sealed class IncomesRepository : BaseLocalStorageRepository<Income>, II
 
     public async Task DeleteIncome(Guid incomeId) => await DeleteEntity(incomeId);
 
-    public async Task<List<Income>> GetIncomes() => await GetCollection() ?? new();
+    public async Task<List<Income>> GetIncomes(CancellationToken token) => await GetCollection(token) ?? new();
 
     public async Task UpdateIncome(Income income) => await UpdateEntity(income);
 

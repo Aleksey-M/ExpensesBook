@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
@@ -20,7 +21,7 @@ internal sealed class LimitsRepository : BaseLocalStorageRepository<Limit>, ILim
 
     public async Task DeleteLimit(Guid limitId) => await DeleteEntity(limitId);
 
-    public async Task<List<Limit>> GetLimits() => await GetCollection() ?? new();
+    public async Task<List<Limit>> GetLimits(CancellationToken token) => await GetCollection(token) ?? new();
 
     public async Task UpdateLimit(Limit limit) => await UpdateEntity(limit);
 

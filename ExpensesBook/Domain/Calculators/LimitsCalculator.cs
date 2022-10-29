@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Services;
@@ -18,11 +19,11 @@ internal sealed class LimitsCalculator
         _expensesService = expensesService;
     }
 
-    public async Task<List<CalculatedLimit>> GetCalculatedLimits(bool onlyActual, DateTimeOffset? currentDate = null)
+    public async Task<List<CalculatedLimit>> GetCalculatedLimits(bool onlyActual, CancellationToken token, DateTimeOffset? currentDate = null)
     {
         currentDate ??= DateTimeOffset.Now.Date;
 
-        var limits = await _limitsService.GetLimits();
+        var limits = await _limitsService.GetLimits(token);
         if (onlyActual)
         {
             limits = limits.Where(l => l.StartDate.Date <= currentDate && l.EndDate.Date >= currentDate).ToList();
@@ -33,7 +34,7 @@ internal sealed class LimitsCalculator
         var minDate = limits.Select(l => l.StartDate.Date).Min();
         var maxDate = limits.Select(l => l.EndDate.Date).Max();
 
-        var expenses = await _expensesService.GetExpenses(startDate: minDate, endDate: maxDate, filter: null);
+        var expenses = await _expensesService.GetExpenses(startDate: minDate, endDate: maxDate, filter: null, token);
 
         return limits
             .Select(l => new CalculatedLimit(l, expenses, currentDate.Value))
@@ -42,11 +43,11 @@ internal sealed class LimitsCalculator
             .ToList();
     }
 
-    public async Task<CalculatedLimit> GetCalculatedLimit(Limit limit, DateTimeOffset? currentDate = null)
+    public async Task<CalculatedLimit> GetCalculatedLimit(Limit limit, CancellationToken token, DateTimeOffset? currentDate = null)
     {
         currentDate ??= DateTimeOffset.Now.Date;
 
-        var expenses = await _expensesService.GetExpenses(startDate: limit.StartDate, endDate: limit.EndDate, filter: null);
+        var expenses = await _expensesService.GetExpenses(startDate: limit.StartDate, endDate: limit.EndDate, filter: null, token);
 
         return new CalculatedLimit(limit, expenses, currentDate.Value);
     }

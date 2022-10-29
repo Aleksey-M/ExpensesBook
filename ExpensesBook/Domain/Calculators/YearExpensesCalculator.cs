@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Services;
 using MudBlazor;
-using static MudBlazor.CategoryTypes;
 
 namespace ExpensesBook.Domain.Calculators;
 
@@ -24,19 +24,19 @@ internal sealed class YearExpensesCalculator
         _groupsSvc = groupsSvc;
     }
 
-    public async Task<List<int>> GetYears()
+    public async Task<List<int>> GetYears(CancellationToken token)
     {
-        var months = await _expensesSvc.GetExpensesMonths();
+        var months = await _expensesSvc.GetExpensesMonths(token);
         return months.Select(m => m.year).Distinct().OrderBy(y => y).ToList();
     }
 
-    public async Task<YearPivotTable?> GetYearExpenses(int year, ExpensesGroupingType groupingType)
+    public async Task<YearPivotTable?> GetYearExpenses(int year, ExpensesGroupingType groupingType, CancellationToken token)
     {
         if (year == 0) return null;
 
         var firstDay = new DateTimeOffset(year, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var lastDay = new DateTimeOffset(year, 12, 31, 0, 0, 0, TimeSpan.Zero);
-        var expenses = await _expensesSvc.GetExpenses(startDate: firstDay, endDate: lastDay, filter: null);
+        var expenses = await _expensesSvc.GetExpenses(startDate: firstDay, endDate: lastDay, filter: null, token);
 
         if (expenses.Count == 0) return null;
 
@@ -44,7 +44,7 @@ internal sealed class YearExpensesCalculator
         {
             case ExpensesGroupingType.ByCategory:
 
-                var categories = await _categoriesSvc.GetCategories();
+                var categories = await _categoriesSvc.GetCategories(token);
                 if (categories.Count == 0) return null;
 
                 Func<IEnumerable<Expense>, IEnumerable<(string, double)>> groupingLogicC = items => categories
@@ -59,7 +59,7 @@ internal sealed class YearExpensesCalculator
 
             case ExpensesGroupingType.ByGroup:
 
-                var groups = await _groupsSvc.GetGroups();
+                var groups = await _groupsSvc.GetGroups(token);
                 if (groups.Count == 0) return null;
 
                 Func<IEnumerable<Expense>, IEnumerable<(string, double)>> groupingLogicG = items => groups
@@ -190,7 +190,7 @@ internal sealed class YearPivotTable
 
     public string[] XAxisLabels => MonthsTotals.Select(x => x.MonthName).ToArray();
 
-    public int GetYAxisTicks(HashSet<YearPivotTableRow> selectedRows)
+    public static int GetYAxisTicks(HashSet<YearPivotTableRow> selectedRows)
     {
         var max = selectedRows
             .SelectMany(x => x.CellsValues)
@@ -208,7 +208,7 @@ internal sealed class YearPivotTable
         };
     }
 
-    public List<ChartSeries> GetChartSeries(HashSet<YearPivotTableRow> selectedRows) => selectedRows
+    public static List<ChartSeries> GetChartSeries(HashSet<YearPivotTableRow> selectedRows) => selectedRows
         .Select(x => new ChartSeries
             {
                 Name = x.RowName,

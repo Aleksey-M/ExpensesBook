@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
@@ -32,14 +33,14 @@ internal sealed class GlobalDataManager : IGlobalDataManager
         _limitsRepo = limitsRepo;
     }
 
-    public async Task<GlobalDataSerializable> GetAllData()
+    public async Task<GlobalDataSerializable> GetAllData(CancellationToken token)
     {
-        var categories = await _categoriesRepo.GetCategories();
-        var expenses = await _expensesRepo.GetExpenses();
-        var groups = await _groupsRepo.GetGroups();
-        var groupsDefaultCategories = await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(null, null);
-        var incomes = await _incomesRepo.GetIncomes();
-        var limits = await _limitsRepo.GetLimits();
+        var categories = await _categoriesRepo.GetCategories(token);
+        var expenses = await _expensesRepo.GetExpenses(token);
+        var groups = await _groupsRepo.GetGroups(token);
+        var groupsDefaultCategories = await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(null, null, token);
+        var incomes = await _incomesRepo.GetIncomes(token);
+        var limits = await _limitsRepo.GetLimits(token);
 
         return new GlobalDataSerializable
         {
@@ -52,14 +53,14 @@ internal sealed class GlobalDataManager : IGlobalDataManager
         };
     }
 
-    public async Task SetAllData(GlobalDataSerializable data)
+    public async Task SetAllData(GlobalDataSerializable data, CancellationToken token)
     {
-        var expenses = await _expensesRepo.GetExpenses();
-        var categories = await _categoriesRepo.GetCategories();
-        var groups = await _groupsRepo.GetGroups();
-        var groupsDefaultCategories = await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(null, null);
-        var incomes = await _incomesRepo.GetIncomes();
-        var limits = await _limitsRepo.GetLimits();
+        var expenses = await _expensesRepo.GetExpenses(token);
+        var categories = await _categoriesRepo.GetCategories(token);
+        var groups = await _groupsRepo.GetGroups(token);
+        var groupsDefaultCategories = await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(null, null, token);
+        var incomes = await _incomesRepo.GetIncomes(token);
+        var limits = await _limitsRepo.GetLimits(token);
 
         foreach (var cat in data.Categories)
         {
@@ -113,6 +114,8 @@ internal sealed class GlobalDataManager : IGlobalDataManager
             }
         }
 
+        await Task.Delay(1, token);
+
         await ClearData();
 
         await _expensesRepo.AddExpenses(expenses);
@@ -133,19 +136,19 @@ internal sealed class GlobalDataManager : IGlobalDataManager
         await _limitsRepo.Clear();
     }
 
-    public async Task<int> ImportExpensesFromFlatList(List<ParsedExpense> parsedExpenses)
+    public async Task<int> ImportExpensesFromFlatList(List<ParsedExpense> parsedExpenses, CancellationToken token)
     {
         if (parsedExpenses.Count == 0) return 0;
 
-        var existedCategories = await _categoriesRepo.GetCategories();
+        var existedCategories = await _categoriesRepo.GetCategories(token);
         var newCategories = new List<Category>();
 
-        var existedGroups = await _groupsRepo.GetGroups();
+        var existedGroups = await _groupsRepo.GetGroups(token);
         var newGroups = new List<Group>();
 
         foreach (var parsedExpense in parsedExpenses)
         {
-            await Task.Delay(1);
+            await Task.Delay(1, token);
 
             var category = existedCategories
                 .Where(x => x.Name.ToUpper() == parsedExpense.CategoryName.ToUpper())
@@ -180,7 +183,7 @@ internal sealed class GlobalDataManager : IGlobalDataManager
 
             if (string.IsNullOrWhiteSpace(parsedExpense.GroupName))
             {
-                var catGroup = await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(parsedExpense.Expense.CategoryId, null);
+                var catGroup = await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(parsedExpense.Expense.CategoryId, null, token);
                 parsedExpense.Expense.GroupId = catGroup.FirstOrDefault()?.GroupId;
             }
             else
@@ -218,15 +221,12 @@ internal sealed class GlobalDataManager : IGlobalDataManager
             }
         }
 
+        await Task.Delay(1, token);
+
         await _categoriesRepo.AddCategories(newCategories);
-        await Task.Delay(1);
-
         await _groupsRepo.AddGroups(newGroups);
-        await Task.Delay(1);
-
         var newExpenses = parsedExpenses.Select(x => x.Expense);
         await _expensesRepo.AddExpenses(newExpenses);
-        await Task.Delay(1);
 
         return parsedExpenses.Count;
     }
