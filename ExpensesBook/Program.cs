@@ -31,7 +31,7 @@ public class Program
 
         AddAppServices(builder.Services);
 
-        builder.Services.AddTransient<IGlobalDataManager, GlobalDataManager>();
+        builder.Services.AddScoped<IGlobalDataManager, GlobalDataManager>();
 
         AddCalculators(builder.Services);
 
@@ -42,19 +42,19 @@ public class Program
 
     private static void AddCalculators(IServiceCollection services)
     {
-        services.AddTransient<PeriodExpenseCalculator>();
-        services.AddTransient<CashBalanceCalculator>();
-        services.AddTransient<LimitsCalculator>();
-        services.AddTransient<YearExpensesCalculator>();
+        services.AddScoped<PeriodExpenseCalculator>();
+        services.AddScoped<CashBalanceCalculator>();
+        services.AddScoped<LimitsCalculator>();
+        services.AddScoped<YearExpensesCalculator>();
     }
 
     private static void AddAppServices(IServiceCollection services)
     {
-        services.AddTransient<ICategoriesService, CategoriesService>();
-        services.AddTransient<IGroupsService, GroupsService>();
-        services.AddTransient<IExpensesService, ExpensesService>();
-        services.AddTransient<IIncomesService, IncomesService>();
-        services.AddTransient<ILimitsService, LimitsService>();
+        services.AddScoped<ICategoriesService, CategoriesService>();
+        services.AddScoped<IGroupsService, GroupsService>();
+        services.AddScoped<IExpensesService, ExpensesService>();
+        services.AddScoped<IIncomesService, IncomesService>();
+        services.AddScoped<ILimitsService, LimitsService>();
     }
 
     private static void AddRepositories(IServiceCollection services)

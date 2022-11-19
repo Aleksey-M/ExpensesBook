@@ -165,14 +165,14 @@
         disabledButtons = true;
 
         StateHasChanged();
-        await Task.Delay(1, Token);
+        await Task.Yield();
     }
 
     private async Task EnableButtons()
     {
         disabledButtons = false;
         StateHasChanged();
-        await Task.Delay(1);
+        await Task.Yield();
     }
 
     private async Task SaveToFile()
@@ -232,7 +232,7 @@
         importExpensesMessageSeverity = Severity.Info;
         importExpensesMessage = "Загрузка файла...";
         StateHasChanged();
-        await Task.Delay(1, Token);
+        await Task.Yield();
 
         var stream = e.File.OpenReadStream(2048_000);
         using var memoryStream = new MemoryStream();
@@ -241,7 +241,7 @@
 
         importExpensesMessage = "Чтение данных из файла...";
         StateHasChanged();
-        await Task.Delay(1, Token);
+        await Task.Yield();
 
         var (importedItems, errorMessage) = await ExpensesXlsxParser.Parse(memoryStream, Token);
 
@@ -254,7 +254,7 @@
         {
             importExpensesMessage = "Обработка загруженных данных...";
             StateHasChanged();
-            await Task.Delay(1, Token);
+            await Task.Yield();
 
             var count = await DataManager.ImportExpensesFromFlatList(importedItems, Token);
 
@@ -276,7 +276,7 @@
         importIncomesMessageSeverity = Severity.Info;
         importIncomesMessage = "Загрузка файла...";
         StateHasChanged();
-        await Task.Delay(1, Token);
+        await Task.Yield();
 
         var stream = e.File.OpenReadStream(2048_000);
         using var memoryStream = new MemoryStream();
@@ -285,7 +285,7 @@
 
         importIncomesMessage = "Чтение данных из файла...";
         StateHasChanged();
-        await Task.Delay(1, Token);
+        await Task.Yield();
 
         var (importedItems, errorMessage) = await IncomesXlsxParser.Parse(memoryStream, Token);
 
@@ -298,7 +298,7 @@
         {
             importIncomesMessage = "Обработка загруженных данных...";
             StateHasChanged();
-            await Task.Delay(1, Token);
+            await Task.Yield();
 
             var data = new GlobalDataSerializable
                 {

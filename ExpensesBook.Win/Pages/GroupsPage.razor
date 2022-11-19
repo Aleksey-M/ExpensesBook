@@ -1,0 +1,223 @@
+﻿@page "/groupspage"
+
+@using ExpensesBook.Domain.Services
+@using ExpensesBook.Domain.Entities
+
+@inherits BasePage
+
+@inject IGroupsService GroupsService
+@inject ICategoriesService CategoriesService
+@inject IJSRuntime JSRuntime
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">    
+
+    @if (_state == PageState.Edit || _state == PageState.Add)
+    {
+        <EditForm Model="@_group" OnValidSubmit="async _ => await SaveGroup()">
+
+            <DataAnnotationsValidator />
+
+            <MudCard>
+                <MudCardHeader>
+                    <CardHeaderContent>
+                        <MudText Typo="Typo.h6" Color="Color.Info">Группа</MudText>
+                    </CardHeaderContent>
+
+                    <CardHeaderActions>
+                        <MudIconButton
+                            Class="ml-auto mb-1"
+                            OnClick="_ => _state = PageState.List"
+                            Icon="@Icons.Material.Filled.Close">
+                        </MudIconButton>
+                    </CardHeaderActions>
+                </MudCardHeader>
+
+                <MudCardContent>
+                    <MudGrid>
+                        <MudItem xs="12" sm="6">
+                            <MudTextField
+                                Label="Сортировка"
+                                InputType="InputType.Number" @bind-Value="_group.Sort"
+                                For="@(() => _group.Sort)" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6">
+                            <MudTextField Label="Название" @bind-Value="_group.Name" For="@(() => _group.Name)" />
+                        </MudItem>
+
+                        <MudItem xs="12" md="12">
+                            <MudSelect
+                                T="Category"
+                                Label="Категории"
+                                HelperText="Связать категории с группой для автозаполнения"
+                                MultiSelection="true"
+                                @bind-SelectedValues="_selectedOptions"
+                                Dense="true"
+                                Direction="Direction.Top">
+                                    @foreach (var category in AvailableCategories)
+                                    {
+                                        <MudSelectItem T="Category" Value="@category">@category.Name</MudSelectItem>
+                                    }
+                            </MudSelect>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+
+                <MudCardActions>
+                    <MudButton
+                        ButtonType="ButtonType.Submit"
+                        Variant="Variant.Filled"
+                        Color="Color.Primary"
+                        Class="ml-auto">
+                            @_state.SaveActionName()
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </EditForm>
+    }
+    else
+    {
+        <MudTable Items="Groups" Breakpoint="Breakpoint.None" Striped="true" FixedHeader="true">
+            <ToolBarContent>
+                <MudText Typo="Typo.h5" GutterBottom="true">Группы</MudText>
+
+                <MudSpacer />
+
+                <MudFab 
+                    OnClick="_ => OpenAddNewGroupPopup()"
+                    Icon="@Icons.Material.Filled.Add"
+                    Size="Size.Small"
+                    IconSize="Size.Small"
+                    Class="ma-2"
+                    DisableElevation="true" />
+            </ToolBarContent>
+
+            <HeaderContent>
+                <MudTh>#</MudTh>
+                <MudTh>Название</MudTh>
+                <MudTh>Связанные категории</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd>@context.group.Sort</MudTd>
+                <MudTd>@context.group.Name</MudTd>
+                <MudTd>
+                    <div style="text-wrap:normal">
+                        @foreach (var c in context.relatedCategories)
+                        {
+                            <i>@c.Name; </i>
+                        }
+                    </div>
+                </MudTd>
+                <MudTh Style="text-align:right">
+                    <MudIconButton 
+                        Icon="@Icons.Material.Filled.Edit"
+                        OnClick="_ => OpenEditGroupPopup(context)">
+                    </MudIconButton>
+
+                    <MudIconButton 
+                        Icon="@Icons.Material.Filled.DeleteForever"
+                        Color="Color.Error"
+                        Class="ml-2"
+                        OnClick="async _ => await DeleteGroup(context.group.Id)">
+                    </MudIconButton>
+                </MudTh>
+            </RowTemplate>
+        </MudTable>
+    }
+
+</MudContainer>
+
+@code {
+
+    private GroupDto _group = new();
+    private PageState _state = PageState.List;
+
+    private List<Category> _freeCategories = new();
+    private List<Category> _alreadySelectedCategories = new();
+    private IEnumerable<Category> _selectedOptions = new HashSet<Category>();
+
+    private List<(Group group, List<Category> relatedCategories)> Groups { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        Groups = await GroupsService.GetGroupsWithRelatedCategories(Token);
+        _freeCategories = await GroupsService.GetFreeCategories(Token);
+    }
+
+    private List<Category> AvailableCategories => _state switch
+    {
+        PageState.Add => _freeCategories,
+        PageState.Edit => _freeCategories.Union(_alreadySelectedCategories).OrderBy(c => c.Sort).ToList(),
+        _ => new List<Category>()
+    };
+
+    private async Task OpenAddNewGroupPopup()
+    {
+        _group = new GroupDto() 
+        {
+            Id = Guid.Empty,
+            Sort = Groups is { Count: > 0 } ? Groups.Max(c => c.group.Sort) + 1 : 1 
+        };
+
+        _freeCategories = await GroupsService.GetFreeCategories(Token);
+        _selectedOptions = new HashSet<Category>();
+        _alreadySelectedCategories = new();
+        _state = PageState.Add;
+    }
+
+    private async Task OpenEditGroupPopup((Group group, List<Category> categories) group)
+    {
+        _group = new GroupDto
+        {
+            Id = group.group.Id,
+            Name = group.group.Name,
+            Sort = group.group.Sort
+        };
+
+        _freeCategories = await GroupsService.GetFreeCategories(Token);
+        _alreadySelectedCategories = group.categories;
+        _selectedOptions = new HashSet<Category>(group.categories);
+        _state = PageState.Edit;
+    }
+
+    private async Task SaveGroup()
+    {
+        if (_group == null) return;
+
+        if (_group.Id == Guid.Empty)
+        {
+            await GroupsService.AddGroup(
+                groupName: _group.GetName(),
+                sortOrder: _group.GetSort(),
+                relatedCategories: _selectedOptions.Select(x => x.Id));
+        }
+        else
+        {
+            await GroupsService.UpdateGroup(
+                groupId: _group.GetId(),
+                groupName: _group.GetName(),
+                groupOrder: _group.GetSort(),
+                _selectedOptions.Select(x => x.Id));
+        }
+
+        Groups = await GroupsService.GetGroupsWithRelatedCategories(Token);
+
+        _freeCategories = await GroupsService.GetFreeCategories(Token);
+        _state = PageState.List;
+    }
+
+    private async Task DeleteGroup(Guid groupId)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("window.confirm", "Удалить группу?");
+        if (!confirmed) return;
+
+        await GroupsService.DeleteGroup(groupId);
+
+        Groups = await GroupsService.GetGroupsWithRelatedCategories(Token);
+        _freeCategories = await GroupsService.GetFreeCategories(Token);
+    }    
+}

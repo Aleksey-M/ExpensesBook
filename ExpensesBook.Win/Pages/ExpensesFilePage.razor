@@ -1,0 +1,317 @@
+﻿@page "/expensesfilepage"
+
+@using ExpensesBook.Data
+@using System.IO;
+
+@inherits BasePage
+
+@inject IGlobalDataManager DataManager
+@inject IJSRuntime JSRuntime
+
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h5" GutterBottom="true">Сохранить все данные в json-файл</MudText>
+    
+                <MudButton
+                    Disabled="disabledButtons"
+                    Class="mt-3"
+                    Variant="Variant.Filled"
+                    Color="Color.Success"
+                    StartIcon="@Icons.Material.Filled.CloudDownload"
+                    OnClick="async _ => await SaveToFile()">
+                        Сохранить
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+    </MudContainer>
+    
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h5" GutterBottom="true">Загрузить данные из json-файла</MudText>
+    
+                @if (uploadMessage != string.Empty)
+                {
+                    <MudAlert Severity="Severity.Success">@uploadMessage</MudAlert>
+                }
+    
+                <InputFile id="fileInput" OnChange="async e => await UploadDataFile(e)" hidden="hidden" accept=".json"/>
+
+                <MudCheckBox @bind-Checked="mergeData">Слияние данных</MudCheckBox>
+
+                <MudButton
+                    Disabled="disabledButtons"
+                    HtmlTag="label"
+                    Class="mt-3"
+                    Variant="Variant.Filled"
+                    Color="Color.Primary"
+                    StartIcon="@Icons.Filled.CloudUpload" for="fileInput">
+                        Загрузить
+                </MudButton>
+                
+            </MudCardContent>
+        </MudCard>
+    </MudContainer>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <MudCard>
+        <MudCardContent>
+            <MudText Typo="Typo.h5" GutterBottom="true">Импорт расходов</MudText>
+
+            @if (importExpensesMessage != string.Empty)
+            {
+                <MudAlert Severity="importExpensesMessageSeverity">@importExpensesMessage</MudAlert>
+            }
+
+            <InputFile id="expensesXlsxFileInput" OnChange="async e => await UploadExpensesXlsx(e)" hidden="hidden" accept=".xlsx" />
+
+            <MudButton 
+                Disabled="disabledButtons"
+                HtmlTag="label"
+                       Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       Class="mt-3"
+                       StartIcon="@Icons.Filled.OpenInBrowser"
+                       for="expensesXlsxFileInput">
+                Импорт расходов
+            </MudButton>
+
+            <MudButton Href="uploadtemplates/expenses_template.xlsx"
+                       Target="_top"
+                       Class="mt-3 mx-3"
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Filled.FileDownload"
+                       Color="Color.Info">
+                Скачать шаблон
+            </MudButton>
+
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <MudCard>
+        <MudCardContent>
+            <MudText Typo="Typo.h5" GutterBottom="true">Импорт доходов</MudText>
+
+            @if (importIncomesMessage != string.Empty)
+            {
+                <MudAlert Severity="importIncomesMessageSeverity">@importIncomesMessage</MudAlert>
+            }
+
+            <InputFile id="incomesXlsxFileInput" OnChange="async e => await UploadIncomesXlsx(e)" hidden="hidden" accept=".xlsx" />
+
+            <MudButton 
+                Disabled = "disabledButtons"
+                HtmlTag="label"
+                       Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       Class="mt-3"
+                       StartIcon="@Icons.Filled.OpenInBrowser"
+                       for="incomesXlsxFileInput">
+                Импорт доходов
+            </MudButton>
+
+            <MudButton Href="uploadtemplates/incomes_template.xlsx"
+                       Target="_top"
+                       Class="mt-3 mx-3"
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Filled.FileDownload"
+                       Color="Color.Info">
+                Скачать шаблон
+            </MudButton>
+
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h5" GutterBottom="true" Style="color:red">Удалить данные из Local Storage</MudText>
+    
+                @if (clearMessage is { Length: > 0 })
+                {
+                    <MudAlert Severity="Severity.Warning">@clearMessage</MudAlert>
+                }
+    
+                <MudButton
+                    Disabled = "disabledButtons"
+                    Variant="Variant.Filled"
+                    Color="Color.Warning"
+                    Class="mt-3"
+                    StartIcon="@Icons.Material.Filled.Cancel"
+                    OnClick="async _ => await ClearData()">
+                        Удалить
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+    </MudContainer>
+
+@code {
+
+    private string uploadMessage = string.Empty;
+    private string clearMessage = string.Empty;
+    private bool mergeData;
+    private bool disabledButtons = false;
+
+    private async Task ClearMessagesAndDisableButtons()
+    {
+        uploadMessage = string.Empty;
+        clearMessage = string.Empty;
+        importExpensesMessage = string.Empty;
+        importIncomesMessage = string.Empty;
+
+        disabledButtons = true;
+
+        StateHasChanged();
+        await Task.Yield();
+    }
+
+    private async Task EnableButtons()
+    {
+        disabledButtons = false;
+        StateHasChanged();
+        await Task.Yield();
+    }
+
+    private async Task SaveToFile()
+    {
+        await ClearMessagesAndDisableButtons();
+
+        var data = await DataManager.GetAllData(Token);
+        var str = JsonGlobalData.Export(data);
+
+        var fileName = "exp." + DateTime.Now.ToString("yyyy.MM.dd") + ".json";
+        await JSRuntime.InvokeVoidAsync("fileSaveAs", fileName, str);
+
+        await EnableButtons();
+    }
+
+
+    private async Task UploadDataFile(InputFileChangeEventArgs e)
+    {
+        await ClearMessagesAndDisableButtons();
+
+        var stream = e.File.OpenReadStream(2048_000);
+        using var reader = new StreamReader(stream);
+        var text = await reader.ReadToEndAsync();
+
+        var allData = JsonGlobalData.Import(text);
+
+        if (!mergeData)
+        {
+            await DataManager.ClearData();
+        }
+
+        await DataManager.SetAllData(allData, Token);
+
+        uploadMessage = "Файл загружен";
+        await EnableButtons();
+    }
+
+
+    private async Task ClearData()
+    {
+        await ClearMessagesAndDisableButtons();
+
+        await DataManager.ClearData();
+
+        clearMessage = "Данные удалены";
+        await EnableButtons();
+    }
+
+
+    private string importExpensesMessage = string.Empty;
+    private Severity importExpensesMessageSeverity = Severity.Info;
+
+    private async Task UploadExpensesXlsx(InputFileChangeEventArgs e)
+    {
+        await ClearMessagesAndDisableButtons();
+
+        importExpensesMessageSeverity = Severity.Info;
+        importExpensesMessage = "Загрузка файла...";
+        StateHasChanged();
+        await Task.Yield();
+
+        var stream = e.File.OpenReadStream(2048_000);
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, Token);
+        memoryStream.Position = 0;
+
+        importExpensesMessage = "Чтение данных из файла...";
+        StateHasChanged();
+        await Task.Yield();
+
+        var (importedItems, errorMessage) = await ExpensesXlsxParser.Parse(memoryStream, Token);
+
+        if (errorMessage != null)
+        {
+            importExpensesMessageSeverity = Severity.Error;
+            importExpensesMessage = errorMessage;
+        }
+        else
+        {
+            importExpensesMessage = "Обработка загруженных данных...";
+            StateHasChanged();
+            await Task.Yield();
+
+            var count = await DataManager.ImportExpensesFromFlatList(importedItems, Token);
+
+            importExpensesMessageSeverity = Severity.Success;
+            importExpensesMessage = $"Импортировано {count} записей";
+        }
+
+        await EnableButtons();
+    }
+
+
+    private string importIncomesMessage = string.Empty;
+    private Severity importIncomesMessageSeverity = Severity.Info;
+
+    private async Task UploadIncomesXlsx(InputFileChangeEventArgs e)
+    {
+        await ClearMessagesAndDisableButtons();
+
+        importIncomesMessageSeverity = Severity.Info;
+        importIncomesMessage = "Загрузка файла...";
+        StateHasChanged();
+        await Task.Yield();
+
+        var stream = e.File.OpenReadStream(2048_000);
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, Token);
+        memoryStream.Position = 0;
+
+        importIncomesMessage = "Чтение данных из файла...";
+        StateHasChanged();
+        await Task.Yield();
+
+        var (importedItems, errorMessage) = await IncomesXlsxParser.Parse(memoryStream, Token);
+
+        if (errorMessage != null)
+        {
+            importIncomesMessageSeverity = Severity.Error;
+            importIncomesMessage = errorMessage;
+        }
+        else
+        {
+            importIncomesMessage = "Обработка загруженных данных...";
+            StateHasChanged();
+            await Task.Yield();
+
+            var data = new GlobalDataSerializable
+                {
+                    Incomes = importedItems
+                };
+
+            await DataManager.SetAllData(data, Token);
+
+            importIncomesMessageSeverity = Severity.Success;
+            importIncomesMessage = $"Импортировано {importedItems.Count} записей";
+        }
+
+        await EnableButtons();
+    }
+}
