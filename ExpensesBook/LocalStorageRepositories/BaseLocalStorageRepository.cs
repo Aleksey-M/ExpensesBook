@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
-using ExpensesBook.Serialization;
 
 namespace ExpensesBook.LocalStorageRepositories;
 
@@ -35,7 +36,7 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
 
             if (!string.IsNullOrEmpty(serialized))
             {
-                var items = EntitiesJsonSerializer.GetEntitiesFromJsonString<List<T>>(serialized);                
+                var items = JsonSerializer.Deserialize<List<T>>(serialized) ?? new();
                 _cash.AddRange(items);
             }
         }
@@ -43,11 +44,24 @@ internal abstract class BaseLocalStorageRepository<T> where T : IEntity
 
     private async Task WriteCash()
     {
-        await Task.Yield();
+        // для проверки производительности (webview в 15 раз быстрее, чем WASM)
+        //var stopwatch = new Stopwatch();
+        //stopwatch.Start(); 
+        //var serialized = JsonSerializer.Serialize(_cash);
+        //stopwatch.Stop();
+        //TimeSpan stopwatchElapsed = stopwatch.Elapsed;
+        //Console.WriteLine("Serialization time: {0} sec", stopwatchElapsed.TotalSeconds);
 
-        var serialized = EntitiesJsonSerializer.GetJsonString(_cash);
-        await Task.Yield();
+        //stopwatch.Start();
+        //await LocalStorage.SetItemAsStringAsync(CollectionName, serialized);
+        //stopwatch.Stop();
+        //stopwatchElapsed = stopwatch.Elapsed;
+        //Console.WriteLine("LocalStorage writing time: {0} sec", stopwatchElapsed.TotalSeconds);
 
+        await Task.Yield();
+        var serialized = JsonSerializer.Serialize(_cash);
+
+        await Task.Yield();
         await LocalStorage.SetItemAsStringAsync(CollectionName, serialized);
     }
 
