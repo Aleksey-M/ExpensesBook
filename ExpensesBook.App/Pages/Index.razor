@@ -1,0 +1,229 @@
+﻿@page "/"
+
+@using ExpensesBook.Domain.Calculators
+@using ExpensesBook.Domain.Entities
+@using System.Collections.Generic
+@using ExpensesBook.Domain.Services
+@using ExpensesBook.Data
+@using ExpensesBook.Pages
+
+@inherits BasePage
+
+@inject PeriodExpenseCalculator Calc
+@inject IExpensesService ExpensesSvc
+@inject IJSRuntime JsRuntime
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
+    @if (_groupingCriteriaName == null)
+    {
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.h6" Class="mb-5">Анализ расходов за произвольный период</MudText>
+
+                <MudGrid>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudDatePicker Label="Начало" @bind-Date="_startDate" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudDatePicker Label="Конец" @bind-Date="_endDate" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="8" md="4">
+                        <MudSelect T="ExpensesGroupingType" Label="Группировка" @bind-value="_viewType">
+                            <MudSelectItem Value="ExpensesGroupingType.None">Без группировки</MudSelectItem>
+                            <MudSelectItem Value="ExpensesGroupingType.ByDate">По дате</MudSelectItem>
+                            <MudSelectItem Value="ExpensesGroupingType.ByGroup">По группе</MudSelectItem>
+                            <MudSelectItem Value="ExpensesGroupingType.ByCategory">По категории</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12" sm="4" md="2">
+                        <MudButton Variant="Variant.Filled"
+                               Class="mt-2"
+                               Color="Color.Success"
+                               StartIcon="@Icons.Material.Filled.TableChart"
+                               OnClick="async _ => await ShowTable()">
+                            Показать
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    }
+
+    @if (_tableData != null)
+    {
+        @if (_tableData.IsEmpty)
+        {
+            <MudText Typo="Typo.h5" Class="mt-5">Нет данных</MudText>
+        }
+        else
+        {
+            @if (_groupingCriteriaName != null)
+            {
+                <MudCard Class="mt-5">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <MudText Typo="Typo.h6" Color="Color.Info">@_groupingCriteriaName</MudText>
+                        </CardHeaderContent>
+
+                        <CardHeaderActions>
+                            <MudIconButton
+                                OnClick="HideDetails"
+                                Class="ml-auto mb-1"
+                                Icon="@Icons.Material.Filled.Close">
+                            </MudIconButton>
+                        </CardHeaderActions>  
+                    </MudCardHeader>
+
+                    <MudCardContent>
+                        <MudTable
+                            Items="_expandedSublist"
+                            Hover="false"
+                            Breakpoint="Breakpoint.None"
+                            FixedHeader="true"
+                            Striped="true"
+                            Dense="true">
+
+                            <HeaderContent>
+                                <MudTh>Дата</MudTh>
+                                <MudTh>Описание</MudTh>
+                                <MudTh>Потрачено</MudTh>
+                            </HeaderContent>
+
+                            <RowTemplate>
+                                <MudTd>@context.Date.ToString("yyyy.MM.dd")</MudTd>
+                                <MudTd>@context.Description</MudTd>
+                                <MudTd>@context.Amounth.ToString("N2")</MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                    </MudCardContent>
+                </MudCard> 
+            }
+            else
+            {
+                <MudTable 
+                    Class="mt-5"
+                    Items="_tableData.Rows"
+                    Hover="true"
+                    Breakpoint="Breakpoint.None"
+                    Striped="true"
+                    FixedHeader="true">
+
+                    <HeaderContent>
+                        @foreach(var header in _tableData.Headers)
+                        {
+                            <MudTh>@header</MudTh>
+                        }
+                    </HeaderContent>
+
+                    <RowTemplate>
+                        <MudTd>
+                            @if (_detailsListAvailable)
+                             {
+                                <MudButton
+                                    Variant="Variant.Text"
+                                    OnClick="async _ => await ShowDetails(context.Value1, context.RelatedId)">
+                                        @context.Value1
+                                </MudButton>
+                             }
+                             else
+                             {
+                                @context.Value1
+                             }
+                        </MudTd>
+                        <MudTd>@context.Value2</MudTd>
+                        <MudTd>@context.Value3</MudTd>
+                    </RowTemplate>
+                </MudTable>
+
+                <MudText Color="Color.Info" Typo="Typo.h6" Class="mt-5 ml-5">Всего: @_tableData.Total</MudText>
+
+                if(_viewType == ExpensesGroupingType.ByCategory || _viewType == ExpensesGroupingType.ByGroup)
+                {
+                    <MudPaper Class="pa-4 mt-3">
+                        <MudChart
+                            ChartType="ChartType.Pie"
+                            InputData="@_tableData.ChartData"
+                            InputLabels="@_tableData.ChartLabels"
+                            Width="300px" Height="300px" />
+                    </MudPaper>
+                }
+
+                if(_viewType == ExpensesGroupingType.None)
+                {
+                    <MudButton 
+                        Class="mt-3"
+                        Variant="Variant.Filled"
+                        EndIcon="@Icons.Filled.FileDownload"
+                        Color="Color.Info"
+                        OnClick="async _ => await ExportToXlsx()">
+                        Экспорт
+                    </MudButton>
+                }
+            }
+        }
+    }
+
+</MudContainer>
+
+@code {
+
+    private DateTime? _startDate = DateTimeOffset.Now.Date.AddDays(-14);
+    private DateTime? _endDate = DateTimeOffset.Now.Date.AddDays(1);
+    private ExpensesGroupingType _viewType;
+
+    private PeriodExpensesTableData? _tableData = null;
+
+    private async Task ShowTable()
+    {
+        if (_startDate is null || _endDate is null) return;
+        var start = new DateTimeOffset(_startDate.Value);
+        var end = new DateTimeOffset(_endDate.Value);
+
+        _tableData = await Calc.GetExpensesAsTable(_viewType, start, end, null, Token);
+        _detailsListAvailable = _viewType != ExpensesGroupingType.None;
+        _groupingCriteriaName = null;
+    }
+
+    private List<Expense> _expandedSublist = new();
+    private string? _groupingCriteriaName;
+    private bool _detailsListAvailable = false;
+
+    private async Task ShowDetails(string groupingCriteriaName, Guid? filterBy)
+    {
+        _groupingCriteriaName = groupingCriteriaName;
+        if (_startDate is null || _endDate is null) return;
+        var start = new DateTimeOffset(_startDate.Value);
+        var end = new DateTimeOffset(_endDate.Value);
+
+        _expandedSublist = (_viewType) switch
+        {
+            ExpensesGroupingType.ByDate => await Calc.GetFilteredExpenses(
+                _viewType,
+                DateTimeOffset.Parse(groupingCriteriaName),
+                DateTimeOffset.Parse(groupingCriteriaName),
+                filterBy,
+                Token),
+            ExpensesGroupingType.ByGroup => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy, Token),
+            ExpensesGroupingType.ByCategory => await Calc.GetFilteredExpenses(_viewType, start, end, filterBy, Token),
+            _ => new List<Expense>()
+        };
+    }
+
+    private void HideDetails()
+    {
+        _groupingCriteriaName = null;
+    }
+
+    private async Task ExportToXlsx()
+    {
+        var data = await ExpensesSvc.GetExpensesWithRelatedData(_startDate, _endDate, null, Token);
+
+        var file = await ExpensesXlsxExport.ExportExpenses(data, Token);
+        var base64String = Convert.ToBase64String(file);
+
+        await JsRuntime.InvokeVoidAsync("fileSaveAs", "Расходы.xlsx", base64String, true);
+    }
+}
