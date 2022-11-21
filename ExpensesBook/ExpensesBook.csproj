@@ -30,4 +30,8 @@
     <Folder Include="Properties\PublishProfiles\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ExpensesBook.App\ExpensesBook.App.csproj" />
+  </ItemGroup>
+
 </Project>

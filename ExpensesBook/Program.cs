@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
+using ExpensesBook.App;
 using ExpensesBook.Data;
 using ExpensesBook.Domain.Calculators;
 using ExpensesBook.Domain.Repositories;
@@ -18,7 +19,7 @@ public class Program
     public static async Task Main(string[] args)
     {
         var builder = WebAssemblyHostBuilder.CreateDefault(args);
-        builder.RootComponents.Add<App>("#app");
+        builder.RootComponents.Add<MainApp>("#app");
 
         builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
