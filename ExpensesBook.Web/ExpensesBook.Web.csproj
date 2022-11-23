@@ -29,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ExpensesBook.App\ExpensesBook.App.csproj" />
+    <ProjectReference Include="..\IdbLib\IDBLib.csproj" />
   </ItemGroup>
 
 </Project>
