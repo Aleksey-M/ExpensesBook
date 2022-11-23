@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 using Blazored.LocalStorage;
 using ExpensesBook.Domain.Entities;
 
@@ -36,7 +30,7 @@ public abstract class BaseLocalStorageRepository<T> where T : IEntity
 
             if (!string.IsNullOrEmpty(serialized))
             {
-                var items = JsonSerializer.Deserialize<List<T>>(serialized) ?? new();                
+                var items = JsonSerializer.Deserialize<List<T>>(serialized) ?? new();
                 _cash.AddRange(items);
             }
         }

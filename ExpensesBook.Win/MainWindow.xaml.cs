@@ -4,7 +4,9 @@ using ExpensesBook.Data;
 using ExpensesBook.Domain.Calculators;
 using ExpensesBook.Domain.Repositories;
 using ExpensesBook.Domain.Services;
-using ExpensesBook.LocalStorageRepositories;
+//using ExpensesBook.LocalStorageRepositories;
+using ExpensesBook.IndexedDbRepositories;
+using IdbLib;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 
@@ -25,6 +27,7 @@ namespace ExpensesBook.Win
             serviceCollection.AddBlazorWebViewDeveloperTools();
 
             serviceCollection.AddBlazoredLocalStorage();
+            serviceCollection.AddScoped<IndexedDbManager>();
             serviceCollection.AddMudServices();
 
             AddRepositories(serviceCollection);
