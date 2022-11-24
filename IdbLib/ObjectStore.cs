@@ -19,6 +19,8 @@ public sealed class ObjectStore<T>
 
     public Task AddItem(T item) => _manager.AddItem(_indexedDb, _storageName, item);
 
+    public Task AddItemsRange(IEnumerable<T> item) => _manager.AddItemsRange(_indexedDb, _storageName, item);
+
     public Task<T> GetItem(object id) => _manager.GetItem<T>(_indexedDb, _storageName, id);
 
     public Task DeleteItem(object id) => _manager.DeleteItem(_indexedDb, _storageName, id);

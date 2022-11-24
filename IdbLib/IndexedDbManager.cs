@@ -146,6 +146,23 @@ public sealed class IndexedDbManager : IAsyncDisposable
         return await callbacks.WaitTask;
     }
 
+    /// <summary>
+    /// Множественное добавление записей в IDBObjectStore
+    /// </summary>
+    /// <typeparam name="T">Тип элементов последовательности</typeparam>
+    /// <param name="database">Информация об экземпляре IDBDatabase</param>
+    /// <param name="storeName">Название IDBObjectStore</param>
+    /// <param name="items">Последовательность значений</param>
+    public async Task AddItemsRange<T>(IndexedDb database, string storeName, IEnumerable<T> items)
+    {
+        var module = await moduleTask.Value;
+
+        var callbacks = new CallbacksTask();
+        using var callbacksJsRef = callbacks.CreateRefForJs();
+
+        await module.InvokeVoidAsync("addItemsRange", database.JsObjectRef, callbacksJsRef, storeName, items.ToList());
+        await callbacks.WaitTask;
+    }
 
     public ObjectStore<T> GetObjectStore<T>(IndexedDb database, string storeName) => new(this, database, storeName);
 

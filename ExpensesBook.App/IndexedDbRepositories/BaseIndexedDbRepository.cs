@@ -30,10 +30,7 @@ public abstract class BaseIndexedDbRepository<T> where T : IEntity
     protected async Task SetCollection(List<T> collection)
     {
         var store = await _storeTask.Value;
-        foreach (var item in collection)
-        {
-            await store.AddItem(item);
-        }
+        await store.AddItemsRange(collection);
     }
 
     protected async Task<List<T>> GetCollection()

@@ -53,6 +53,32 @@ export function addItem(idbDotnetRef, dotnetCallbacks, objectStoreName, item) {
 }
 
 
+export function addItemsRange(idbDotnetRef, dotnetCallbacks, objectStoreName, itemsArray) {
+    console.log(itemsArray);
+    const transaction = idbDotnetRef.transaction([objectStoreName], "readwrite");
+
+    // waiting for transaction complete
+    transaction.oncomplete = (event) => {
+        dotnetCallbacks.invokeMethodAsync('Completed');
+    };
+
+    transaction.onerror = (event) => {
+        const message = `ERROR! ${event.srcElement.error.name} : ${event.srcElement.error.message}`;
+        console.log(message);
+        dotnetCallbacks.invokeMethodAsync('Error', message);
+    };
+
+    if (Array.isArray(itemsArray) && itemsArray.length > 0) {
+
+        for (let i = 0; i < itemsArray.length; i++) {
+            transaction
+                .objectStore(objectStoreName)
+                .add(itemsArray[i]);
+        }
+    }    
+}
+
+
 export function getItem(idbDotnetRef, dotnetCallbacks, objectStoreName, id) {
 
     const transaction = idbDotnetRef.transaction([objectStoreName]);
