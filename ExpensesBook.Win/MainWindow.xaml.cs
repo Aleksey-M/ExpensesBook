@@ -25,7 +25,7 @@ namespace ExpensesBook.Win
             serviceCollection.AddBlazorWebViewDeveloperTools();
 
             serviceCollection.AddScoped<IndexedDbManager>();
-            serviceCollection.AddScoped<JsFileSaver>();
+            serviceCollection.AddScoped<IFileDownloader, JsFileSaver>();
             serviceCollection.AddMudServices();
 
             AddRepositories(serviceCollection);

@@ -8,7 +8,7 @@
 
 @inject IGlobalDataManager DataManager
 @inject IJSRuntime JSRuntime
-@inject JsFileSaver FileSaver
+@inject IFileDownloader FileSaver
 
     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
         <MudCard>
@@ -56,82 +56,10 @@
         </MudCard>
     </MudContainer>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
-    <MudCard>
-        <MudCardContent>
-            <MudText Typo="Typo.h5" GutterBottom="true">Импорт расходов</MudText>
-
-            @if (importExpensesMessage != string.Empty)
-            {
-                <MudAlert Severity="importExpensesMessageSeverity">@importExpensesMessage</MudAlert>
-            }
-
-            <InputFile id="expensesXlsxFileInput" OnChange="async e => await UploadExpensesXlsx(e)" hidden="hidden" accept=".xlsx" />
-
-            <MudButton 
-                Disabled="disabledButtons"
-                HtmlTag="label"
-                       Variant="Variant.Filled"
-                       Color="Color.Warning"
-                       Class="mt-3"
-                       StartIcon="@Icons.Filled.OpenInBrowser"
-                       for="expensesXlsxFileInput">
-                Импорт расходов
-            </MudButton>
-
-            <MudButton Href="_content/ExpensesBook.App/uploadtemplates/expenses_template.xlsx"
-                       Target="_top"
-                       Class="mt-3 mx-3"
-                       Variant="Variant.Filled"
-                       StartIcon="@Icons.Filled.FileDownload"
-                       Color="Color.Info">
-                Скачать шаблон
-            </MudButton>
-
-        </MudCardContent>
-    </MudCard>
-</MudContainer>
-
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
-    <MudCard>
-        <MudCardContent>
-            <MudText Typo="Typo.h5" GutterBottom="true">Импорт доходов</MudText>
-
-            @if (importIncomesMessage != string.Empty)
-            {
-                <MudAlert Severity="importIncomesMessageSeverity">@importIncomesMessage</MudAlert>
-            }
-
-            <InputFile id="incomesXlsxFileInput" OnChange="async e => await UploadIncomesXlsx(e)" hidden="hidden" accept=".xlsx" />
-
-            <MudButton 
-                Disabled = "disabledButtons"
-                HtmlTag="label"
-                       Variant="Variant.Filled"
-                       Color="Color.Warning"
-                       Class="mt-3"
-                       StartIcon="@Icons.Filled.OpenInBrowser"
-                       for="incomesXlsxFileInput">
-                Импорт доходов
-            </MudButton>
-
-            <MudButton Href="_content/ExpensesBook.App/uploadtemplates/incomes_template.xlsx"
-                       Target="_top"
-                       Class="mt-3 mx-3"
-                       Variant="Variant.Filled"
-                       StartIcon="@Icons.Filled.FileDownload"
-                       Color="Color.Info">
-                Скачать шаблон
-            </MudButton>
-
-        </MudCardContent>
-    </MudCard>
-</MudContainer>
-
     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
         <MudCard>
             <MudCardContent>
-                <MudText Typo="Typo.h5" GutterBottom="true" Style="color:red">Удалить данные из Local Storage</MudText>
+                <MudText Typo="Typo.h5" GutterBottom="true" Style="color:red">Удалить данные</MudText>
     
                 @if (clearMessage is { Length: > 0 })
                 {
@@ -162,9 +90,6 @@
     {
         uploadMessage = string.Empty;
         clearMessage = string.Empty;
-        importExpensesMessage = string.Empty;
-        importIncomesMessage = string.Empty;
-
         disabledButtons = true;
 
         StateHasChanged();
@@ -221,99 +146,6 @@
         await DataManager.ClearData();
 
         clearMessage = "Данные удалены";
-        await EnableButtons();
-    }
-
-
-    private string importExpensesMessage = string.Empty;
-    private Severity importExpensesMessageSeverity = Severity.Info;
-
-    private async Task UploadExpensesXlsx(InputFileChangeEventArgs e)
-    {
-        await ClearMessagesAndDisableButtons();
-
-        importExpensesMessageSeverity = Severity.Info;
-        importExpensesMessage = "Загрузка файла...";
-        StateHasChanged();
-        await Task.Yield();
-
-        var stream = e.File.OpenReadStream(2048_000);
-        using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream, Token);
-        memoryStream.Position = 0;
-
-        importExpensesMessage = "Чтение данных из файла...";
-        StateHasChanged();
-        await Task.Yield();
-
-        var (importedItems, errorMessage) = await ExpensesXlsxParser.Parse(memoryStream, Token);
-
-        if (errorMessage != null)
-        {
-            importExpensesMessageSeverity = Severity.Error;
-            importExpensesMessage = errorMessage;
-        }
-        else
-        {
-            importExpensesMessage = "Обработка загруженных данных...";
-            StateHasChanged();
-            await Task.Yield();
-
-            var count = await DataManager.ImportExpensesFromFlatList(importedItems, Token);
-
-            importExpensesMessageSeverity = Severity.Success;
-            importExpensesMessage = $"Импортировано {count} записей";
-        }
-
-        await EnableButtons();
-    }
-
-
-    private string importIncomesMessage = string.Empty;
-    private Severity importIncomesMessageSeverity = Severity.Info;
-
-    private async Task UploadIncomesXlsx(InputFileChangeEventArgs e)
-    {
-        await ClearMessagesAndDisableButtons();
-
-        importIncomesMessageSeverity = Severity.Info;
-        importIncomesMessage = "Загрузка файла...";
-        StateHasChanged();
-        await Task.Yield();
-
-        var stream = e.File.OpenReadStream(2048_000);
-        using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream, Token);
-        memoryStream.Position = 0;
-
-        importIncomesMessage = "Чтение данных из файла...";
-        StateHasChanged();
-        await Task.Yield();
-
-        var (importedItems, errorMessage) = await IncomesXlsxParser.Parse(memoryStream, Token);
-
-        if (errorMessage != null)
-        {
-            importIncomesMessageSeverity = Severity.Error;
-            importIncomesMessage = errorMessage;
-        }
-        else
-        {
-            importIncomesMessage = "Обработка загруженных данных...";
-            StateHasChanged();
-            await Task.Yield();
-
-            var data = new GlobalDataSerializable
-                {
-                    Incomes = importedItems
-                };
-
-            await DataManager.SetAllData(data, Token);
-
-            importIncomesMessageSeverity = Severity.Success;
-            importIncomesMessage = $"Импортировано {importedItems.Count} записей";
-        }
-
         await EnableButtons();
     }
 }

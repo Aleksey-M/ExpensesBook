@@ -1,7 +1,7 @@
 @using ExpensesBook.Shared
 @using ExpensesBook.Pages
 
-<Router AppAssembly="@typeof(MainLayout).Assembly">
+<Router AppAssembly="@typeof(MainLayout).Assembly" AdditionalAssemblies="new[] { typeof(ExpensesImport).Assembly}">
 
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />

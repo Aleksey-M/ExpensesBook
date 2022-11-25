@@ -8,7 +8,6 @@
 
 @inject IIncomesService IncomesService
 @inject IJSRuntime JsRuntime
-@inject JsFileSaver FileSaver
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
 
@@ -116,10 +115,9 @@
 
         <MudButton Class="mt-3"
                Variant="Variant.Filled"
-               EndIcon="@Icons.Filled.FileDownload"
                Color="Color.Info"
-               OnClick="async _ => await ExportToXlsx()">
-            Экспорт
+               Href="import-export-incomes">
+            Импорт / Экспорт
         </MudButton>
     }
 
@@ -191,15 +189,5 @@
 
         var i = Incomes.Single(i => i.Id == incomeId);
         Incomes.Remove(i);
-    }        
-
-    private async Task ExportToXlsx()
-    {
-        var data = await IncomesService.GetIncomes(null, null, null, Token);
-
-        var file = await IncomesXlsxExport.ExportExpenses(data, Token);
-        var base64String = Convert.ToBase64String(file);
-
-        await FileSaver.SaveFile("Доходы.xlsx", base64String);
     }
 }

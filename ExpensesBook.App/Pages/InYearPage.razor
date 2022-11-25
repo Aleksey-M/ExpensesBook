@@ -120,7 +120,14 @@
 
         XAxisLabels = _yearPivotTable.XAxisLabels;
 
-        Series = YearPivotTable.GetChartSeries(_selectedRows);
+        Series = YearPivotTable
+            .GetChartSeries(_selectedRows)
+            .Select(x => new ChartSeries
+                {
+                    Name = x.Name,
+                    Data = x.Data
+                })
+            .ToList();
 
         Options.YAxisTicks = YearPivotTable.GetYAxisTicks(_selectedRows);
     }

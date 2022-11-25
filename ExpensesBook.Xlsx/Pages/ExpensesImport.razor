@@ -1,0 +1,129 @@
+﻿@page "/import-export-expenses"
+
+@using ExpensesBook.Data;
+
+@namespace ExpensesBook.Pages
+
+@inject IGlobalDataManager DataManager
+@inject IExpensesService ExpensesService
+@inject IFileDownloader FileSaver
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <MudCard>
+        <MudCardContent>
+            <MudText Typo="Typo.h5" GutterBottom="true">Импорт/Экспорт расходов</MudText>
+
+            @if (importExpensesMessage != string.Empty)
+            {
+                <MudAlert Severity="importExpensesMessageSeverity">@importExpensesMessage</MudAlert>
+            }
+
+            <InputFile id="expensesXlsxFileInput" OnChange="async e => await UploadExpensesXlsx(e)" hidden="hidden" accept=".xlsx" />
+
+            <MudButton Disabled="disabledButtons"
+                       HtmlTag="label"
+                       Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       Class="mt-3"
+                       StartIcon="@Icons.Filled.OpenInBrowser"
+                       for="expensesXlsxFileInput">
+                Импорт расходов
+            </MudButton>
+
+            <MudButton Href="_content/ExpensesBook.App/uploadtemplates/expenses_template.xlsx"
+                       Target="_top"
+                       Class="mt-3 mx-3"
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Filled.FileDownload"
+                       Color="Color.Success">
+                Скачать шаблон
+            </MudButton>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudDatePicker Label="Начало периода" @bind-Date="_startDate" />
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="3">
+                <MudDatePicker Label="Конец периода" @bind-Date="_endDate" />
+            </MudItem>
+
+            <MudButton Class="mt-3"
+                       Disabled="disabledButtons"
+                       Variant="Variant.Filled"
+                       EndIcon="@Icons.Filled.FileDownload"
+                       Color="Color.Info"
+                       OnClick="async _ => await ExportToXlsx()">
+                Экспорт
+            </MudButton>
+
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string importExpensesMessage = string.Empty;
+    private Severity importExpensesMessageSeverity = Severity.Info;
+    private bool disabledButtons;
+
+    private async Task UploadExpensesXlsx(InputFileChangeEventArgs e)
+    {
+        disabledButtons = true;
+        importExpensesMessageSeverity = Severity.Info;
+        importExpensesMessage = "Загрузка файла...";
+        StateHasChanged();
+        await Task.Yield();
+
+        var stream = e.File.OpenReadStream(2048_000);
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+
+        importExpensesMessage = "Чтение данных из файла...";
+        StateHasChanged();
+        await Task.Yield();
+
+        var (importedItems, errorMessage) = await ExpensesXlsxParser.Parse(memoryStream, token: default);
+
+        if (errorMessage != null)
+        {
+            importExpensesMessageSeverity = Severity.Error;
+            importExpensesMessage = errorMessage;
+        }
+        else
+        {
+            importExpensesMessage = "Обработка загруженных данных...";
+            StateHasChanged();
+            await Task.Yield();
+
+            var count = await DataManager.ImportExpensesFromFlatList(importedItems, token: default);
+
+            importExpensesMessageSeverity = Severity.Success;
+            importExpensesMessage = $"Импортировано {count} записей";
+        }
+
+        disabledButtons = false;
+        StateHasChanged();
+        await Task.Yield();
+    }
+
+    private DateTime? _startDate = DateTimeOffset.Now.Date.AddDays(-14);
+    private DateTime? _endDate = DateTimeOffset.Now.Date.AddDays(1);
+
+    private async Task ExportToXlsx()
+    {
+        disabledButtons = true;
+        StateHasChanged();
+        await Task.Yield();
+
+        var data = await ExpensesService.GetExpensesWithRelatedData(_startDate, _endDate, null, token: default);
+
+        var file = await ExpensesXlsxExport.ExportExpenses(data, token: default);
+        var base64String = Convert.ToBase64String(file);
+
+        await FileSaver.SaveFile("Расходы.xlsx", base64String);
+
+        disabledButtons = false;
+        StateHasChanged();
+        await Task.Yield();
+    }
+}

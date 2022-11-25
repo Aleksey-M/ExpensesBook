@@ -1,0 +1,124 @@
+﻿@page "/import-export-incomes"
+
+@using ExpensesBook.Data;
+
+@namespace ExpensesBook.Pages
+
+@inject IGlobalDataManager DataManager
+@inject IIncomesService IncomesService
+@inject IFileDownloader FileSaver
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
+    <MudCard>
+        <MudCardContent>
+            <MudText Typo="Typo.h5" GutterBottom="true">Импорт/Экспорт доходов</MudText>
+
+            @if (importIncomesMessage != string.Empty)
+            {
+                <MudAlert Severity="importIncomesMessageSeverity">@importIncomesMessage</MudAlert>
+            }
+
+            <InputFile id="incomesXlsxFileInput" OnChange="async e => await UploadIncomesXlsx(e)" hidden="hidden" accept=".xlsx" />
+
+            <MudButton 
+                Disabled = "disabledButtons"
+                HtmlTag="label"
+                       Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       Class="mt-3"
+                       StartIcon="@Icons.Filled.OpenInBrowser"
+                       for="incomesXlsxFileInput">
+                Импорт доходов
+            </MudButton>
+
+            <MudButton Href="_content/ExpensesBook.App.Xlsx/uploadtemplates/incomes_template.xlsx"
+                       Target="_top"
+                       Class="mt-3 mx-3"
+                       Variant="Variant.Filled"
+                       StartIcon="@Icons.Filled.FileDownload"
+                       Color="Color.Success">
+                Скачать шаблон импорта
+            </MudButton>
+
+            <MudButton Class="mt-3"
+                       Disabled = "disabledButtons"
+                       Variant="Variant.Filled"
+                       EndIcon="@Icons.Filled.FileDownload"
+                       Color="Color.Info"
+                       OnClick="async _ => await ExportToXlsx()">
+                Экспорт
+            </MudButton>
+        </MudCardContent>
+    </MudCard>
+</MudContainer>
+
+@code {
+    private string importIncomesMessage = string.Empty;
+    private Severity importIncomesMessageSeverity = Severity.Info;
+    private bool disabledButtons;
+
+    private async Task UploadIncomesXlsx(InputFileChangeEventArgs e)
+    {
+        disabledButtons = true;
+        importIncomesMessageSeverity = Severity.Info;
+        importIncomesMessage = "Загрузка файла...";
+        StateHasChanged();
+        await Task.Yield();
+
+        var stream = e.File.OpenReadStream(2048_000);
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+
+        importIncomesMessage = "Чтение данных из файла...";
+        StateHasChanged();
+        await Task.Yield();
+
+        var (importedItems, errorMessage) = await IncomesXlsxParser.Parse(memoryStream, token: default);
+
+        if (errorMessage != null)
+        {
+            importIncomesMessageSeverity = Severity.Error;
+            importIncomesMessage = errorMessage;
+        }
+        else
+        {
+            importIncomesMessage = "Обработка загруженных данных...";
+            StateHasChanged();
+            await Task.Yield();
+
+            var data = new GlobalDataSerializable
+                {
+                    Incomes = importedItems
+                };
+
+            await DataManager.SetAllData(data, token: default);
+
+            importIncomesMessageSeverity = Severity.Success;
+            importIncomesMessage = $"Импортировано {importedItems.Count} записей";
+        }
+
+        disabledButtons = false;
+        StateHasChanged();
+        await Task.Yield();
+    }
+
+
+    private async Task ExportToXlsx()
+    {
+                disabledButtons = true;
+        StateHasChanged();
+        await Task.Yield();
+
+        var data = await IncomesService.GetIncomes(null, null, null, default);
+
+        var file = await IncomesXlsxExport.ExportExpenses(data, default);
+        var base64String = Convert.ToBase64String(file);
+
+        await FileSaver.SaveFile("Доходы.xlsx", base64String);
+
+        disabledButtons = false;
+        StateHasChanged();
+        await Task.Yield();
+    }
+}

@@ -8,7 +8,6 @@
 
 @inject PeriodExpenseCalculator Calc
 @inject IExpensesService ExpensesSvc
-@inject JsFileSaver FileSaver
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
     @if (_groupingCriteriaName == null)
@@ -147,18 +146,6 @@
                             Width="300px" Height="300px" />
                     </MudPaper>
                 }
-
-                if(_viewType == ExpensesGroupingType.None)
-                {
-                    <MudButton 
-                        Class="mt-3"
-                        Variant="Variant.Filled"
-                        EndIcon="@Icons.Filled.FileDownload"
-                        Color="Color.Info"
-                        OnClick="async _ => await ExportToXlsx()">
-                        Экспорт
-                    </MudButton>
-                }
             }
         }
     }
@@ -212,15 +199,5 @@
     private void HideDetails()
     {
         _groupingCriteriaName = null;
-    }
-
-    private async Task ExportToXlsx()
-    {
-        var data = await ExpensesSvc.GetExpensesWithRelatedData(_startDate, _endDate, null, Token);
-
-        var file = await ExpensesXlsxExport.ExportExpenses(data, Token);
-        var base64String = Convert.ToBase64String(file);
-
-        await FileSaver.SaveFile("Расходы.xlsx", base64String);
     }
 }

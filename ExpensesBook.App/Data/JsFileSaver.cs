@@ -1,8 +1,9 @@
-﻿using Microsoft.JSInterop;
+﻿using ExpensesBook.Domain;
+using Microsoft.JSInterop;
 
 namespace ExpensesBook.Data;
 
-public sealed class JsFileSaver : IAsyncDisposable
+public sealed class JsFileSaver : IAsyncDisposable, IFileDownloader
 {
     private readonly Lazy<Task<IJSObjectReference>> moduleTask;
 

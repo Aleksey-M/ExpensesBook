@@ -31,7 +31,7 @@ public sealed class GlobalDataManager : IGlobalDataManager
     public async Task<GlobalDataSerializable> GetAllData(CancellationToken token)
     {
         var categories = await _categoriesRepo.GetCategories(token);
-        var expenses = await _expensesRepo.GetExpenses(filters: null, token);
+        var expenses = await _expensesRepo.GetExpenses(null, null, null, token);
         var groups = await _groupsRepo.GetGroups(token);
         var groupsDefaultCategories = await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(null, null, token);
         var incomes = await _incomesRepo.GetIncomes(token);
@@ -50,7 +50,7 @@ public sealed class GlobalDataManager : IGlobalDataManager
 
     public async Task SetAllData(GlobalDataSerializable data, CancellationToken token)
     {
-        var expenses = await _expensesRepo.GetExpenses(filters: null, token);
+        var expenses = await _expensesRepo.GetExpenses(null, null, null, token);
         var categories = await _categoriesRepo.GetCategories(token);
         var groups = await _groupsRepo.GetGroups(token);
         var groupsDefaultCategories = await _groupDefaultCategoriesRepo.GetGroupDefaultCategories(null, null, token);
