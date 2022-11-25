@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using Blazored.LocalStorage;
+using ExpensesBook.App.Data;
 using ExpensesBook.Data;
 using ExpensesBook.Domain.Calculators;
 using ExpensesBook.Domain.Repositories;
@@ -28,6 +29,7 @@ namespace ExpensesBook.Win
 
             serviceCollection.AddBlazoredLocalStorage();
             serviceCollection.AddScoped<IndexedDbManager>();
+            serviceCollection.AddScoped<JsFileSaver>();
             serviceCollection.AddMudServices();
 
             AddRepositories(serviceCollection);

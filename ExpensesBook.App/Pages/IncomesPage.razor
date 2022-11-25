@@ -1,5 +1,6 @@
 ﻿@page "/incomespage"
 
+@using ExpensesBook.App.Data;
 @using ExpensesBook.Domain.Services
 @using ExpensesBook.Domain.Entities
 @using System.Collections.Generic
@@ -11,6 +12,7 @@
 
 @inject IIncomesService IncomesService
 @inject IJSRuntime JsRuntime
+@inject JsFileSaver FileSaver
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
 
@@ -202,6 +204,6 @@
         var file = await IncomesXlsxExport.ExportExpenses(data, Token);
         var base64String = Convert.ToBase64String(file);
 
-        await JsRuntime.InvokeVoidAsync("fileSaveAs", "Доходы.xlsx", base64String, true);
+        await FileSaver.SaveFile("Доходы.xlsx", base64String);
     }
 }

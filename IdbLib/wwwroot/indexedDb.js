@@ -54,7 +54,7 @@ export function addItem(idbDotnetRef, dotnetCallbacks, objectStoreName, item) {
 
 
 export function addItemsRange(idbDotnetRef, dotnetCallbacks, objectStoreName, itemsArray) {
-    console.log(itemsArray);
+
     const transaction = idbDotnetRef.transaction([objectStoreName], "readwrite");
 
     // waiting for transaction complete

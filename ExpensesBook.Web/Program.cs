@@ -3,11 +3,11 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Blazored.LocalStorage;
 using ExpensesBook.App;
+using ExpensesBook.App.Data;
 using ExpensesBook.Data;
 using ExpensesBook.Domain.Calculators;
 using ExpensesBook.Domain.Repositories;
 using ExpensesBook.Domain.Services;
-//using ExpensesBook.LocalStorageRepositories;
 using ExpensesBook.IndexedDbRepositories;
 using IdbLib;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -27,6 +27,7 @@ public class Program
 
         builder.Services.AddBlazoredLocalStorage();
         builder.Services.AddScoped<IndexedDbManager>();
+        builder.Services.AddScoped<JsFileSaver>();
         builder.Services.AddMudServices();
 
         #region register services

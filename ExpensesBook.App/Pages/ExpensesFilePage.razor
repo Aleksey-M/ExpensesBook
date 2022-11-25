@@ -1,5 +1,6 @@
 ﻿@page "/expensesfilepage"
 
+@using ExpensesBook.App.Data;
 @using ExpensesBook.Data
 @using System.IO
 
@@ -9,6 +10,7 @@
 
 @inject IGlobalDataManager DataManager
 @inject IJSRuntime JSRuntime
+@inject JsFileSaver FileSaver
 
     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-8">
         <MudCard>
@@ -79,7 +81,7 @@
                 Импорт расходов
             </MudButton>
 
-            <MudButton Href="uploadtemplates/expenses_template.xlsx"
+            <MudButton Href="_content/ExpensesBook.App/uploadtemplates/expenses_template.xlsx"
                        Target="_top"
                        Class="mt-3 mx-3"
                        Variant="Variant.Filled"
@@ -115,7 +117,7 @@
                 Импорт доходов
             </MudButton>
 
-            <MudButton Href="uploadtemplates/incomes_template.xlsx"
+            <MudButton Href="_content/ExpensesBook.App/uploadtemplates/incomes_template.xlsx"
                        Target="_top"
                        Class="mt-3 mx-3"
                        Variant="Variant.Filled"
@@ -186,7 +188,7 @@
         var str = JsonGlobalData.Export(data);
 
         var fileName = "exp." + DateTime.Now.ToString("yyyy.MM.dd") + ".json";
-        await JSRuntime.InvokeVoidAsync("fileSaveAs", fileName, str);
+        await FileSaver.SaveJsonFile(fileName, str);
 
         await EnableButtons();
     }

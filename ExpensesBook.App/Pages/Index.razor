@@ -1,5 +1,6 @@
 ﻿@page "/"
 
+@using ExpensesBook.App.Data;
 @using ExpensesBook.Domain.Calculators
 @using ExpensesBook.Domain.Entities
 @using System.Collections.Generic
@@ -11,7 +12,7 @@
 
 @inject PeriodExpenseCalculator Calc
 @inject IExpensesService ExpensesSvc
-@inject IJSRuntime JsRuntime
+@inject JsFileSaver FileSaver
 
 <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4 mb-4">
     @if (_groupingCriteriaName == null)
@@ -224,6 +225,6 @@
         var file = await ExpensesXlsxExport.ExportExpenses(data, Token);
         var base64String = Convert.ToBase64String(file);
 
-        await JsRuntime.InvokeVoidAsync("fileSaveAs", "Расходы.xlsx", base64String, true);
+        await FileSaver.SaveFile("Расходы.xlsx", base64String);
     }
 }
