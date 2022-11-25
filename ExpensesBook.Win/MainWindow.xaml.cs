@@ -1,11 +1,9 @@
 ﻿using System.Windows;
-using Blazored.LocalStorage;
 using ExpensesBook.App.Data;
 using ExpensesBook.Data;
 using ExpensesBook.Domain.Calculators;
 using ExpensesBook.Domain.Repositories;
 using ExpensesBook.Domain.Services;
-//using ExpensesBook.LocalStorageRepositories;
 using ExpensesBook.IndexedDbRepositories;
 using IdbLib;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +25,6 @@ namespace ExpensesBook.Win
             serviceCollection.AddWpfBlazorWebView();
             serviceCollection.AddBlazorWebViewDeveloperTools();
 
-            serviceCollection.AddBlazoredLocalStorage();
             serviceCollection.AddScoped<IndexedDbManager>();
             serviceCollection.AddScoped<JsFileSaver>();
             serviceCollection.AddMudServices();

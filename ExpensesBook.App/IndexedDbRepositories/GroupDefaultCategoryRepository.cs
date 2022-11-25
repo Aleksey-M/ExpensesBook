@@ -1,5 +1,4 @@
-﻿using Blazored.LocalStorage;
-using ExpensesBook.Domain.Entities;
+﻿using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
 using IdbLib;
 
