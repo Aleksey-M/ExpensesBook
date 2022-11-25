@@ -1,6 +1,6 @@
 ﻿using Microsoft.JSInterop;
 
-namespace ExpensesBook.App.Data;
+namespace ExpensesBook.Data;
 
 public sealed class JsFileSaver : IAsyncDisposable
 {

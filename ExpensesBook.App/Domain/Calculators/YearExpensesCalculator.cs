@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Globalization;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Services;
 using MudBlazor;
@@ -133,7 +128,7 @@ public sealed class YearPivotTable
             .ToList();
 
         MonthsTotals = new ReadOnlyCollection<MonthColumnTotal>(monthsTotalsList);
-        
+
 
         var monthsCalculated = new Dictionary<int, List<(string name, ValuePercent value)>>();
 
@@ -165,7 +160,7 @@ public sealed class YearPivotTable
             {
                 bool valueExists = monthsCalculated.ContainsKey(m)
                     && monthsCalculated[m].SingleOrDefault(v => v.name == n) != default;
-                
+
                 if (valueExists)
                 {
                     cellsValues.Add(monthsCalculated[m].SingleOrDefault(v => v.name == n).value);
@@ -179,7 +174,7 @@ public sealed class YearPivotTable
             if (cellsValues.Any(x => x.NumValue > 0))
             {
                 rows.Add(new YearPivotTableRow(n, new ReadOnlyCollection<ValuePercent>(cellsValues)));
-            }            
+            }
         }
 
         rows.Add(new YearPivotTableRow("За месяц", new ReadOnlyCollection<ValuePercent>(
@@ -210,9 +205,9 @@ public sealed class YearPivotTable
 
     public static List<ChartSeries> GetChartSeries(HashSet<YearPivotTableRow> selectedRows) => selectedRows
         .Select(x => new ChartSeries
-            {
-                Name = x.RowName,
-                Data = x.CellsValues.Select(y => y.NumValue).ToArray()
-            })
+        {
+            Name = x.RowName,
+            Data = x.CellsValues.Select(y => y.NumValue).ToArray()
+        })
         .ToList();
 }

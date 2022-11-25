@@ -1,6 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using System.IO;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace ExpensesBook.Domain.Entities;
 

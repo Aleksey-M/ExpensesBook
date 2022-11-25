@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ExpensesBook.Domain.Entities;
+﻿namespace ExpensesBook.Domain.Entities;
 
 public interface IEntity
 {

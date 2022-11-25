@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using ExpensesBook.Domain.Entities;
+﻿using ExpensesBook.Domain.Entities;
 
 namespace ExpensesBook.Data;
 
