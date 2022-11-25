@@ -33,10 +33,10 @@ public abstract class BaseIndexedDbRepository<T> where T : IEntity
         await store.AddItemsRange(collection);
     }
 
-    protected async Task<List<T>> GetCollection()
+    protected async Task<List<T>> GetCollection(List<PropertyCriteria>? filters = null)
     {
         var store = await _storeTask.Value;
-        return await store.GetItems();
+        return await store.GetItems(filters);
     }
 
     protected async Task AddEntity(T entity)

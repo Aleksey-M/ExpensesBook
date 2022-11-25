@@ -17,7 +17,8 @@ public sealed class ExpensesRepository : BaseIndexedDbRepository<Expense>, IExpe
 
     public async Task DeleteExpense(Guid expenseId) => await DeleteEntity(expenseId);
 
-    public async Task<List<Expense>> GetExpenses(CancellationToken token) => await GetCollection() ?? new();
+    public async Task<List<Expense>> GetExpenses(List<PropertyCriteria>? filters, CancellationToken token) =>
+        await GetCollection(filters) ?? new();
 
     public async Task UpdateExpense(Expense expense) => await UpdateEntity(expense);
 
@@ -27,7 +28,7 @@ public sealed class ExpensesRepository : BaseIndexedDbRepository<Expense>, IExpe
 
     public async Task<List<(int year, int month)>> GetMonths(CancellationToken token)
     {
-        var allExpenses = await GetExpenses(token);
+        var allExpenses = await GetExpenses(filters: null, token);
 
         return allExpenses
             .Select(x => (year: x.Date.Year, month: x.Date.Month))

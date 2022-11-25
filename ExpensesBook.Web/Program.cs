@@ -2,7 +2,6 @@ using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 using ExpensesBook.App;
-using ExpensesBook.App.Data;
 using ExpensesBook.Data;
 using ExpensesBook.Domain.Calculators;
 using ExpensesBook.Domain.Repositories;

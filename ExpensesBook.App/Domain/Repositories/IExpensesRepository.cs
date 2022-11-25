@@ -1,4 +1,5 @@
 ﻿using ExpensesBook.Domain.Entities;
+using IdbLib;
 
 namespace ExpensesBook.Domain.Repositories;
 
@@ -6,7 +7,7 @@ public interface IExpensesRepository
 {
     Task AddExpense(Expense expense);
 
-    Task<List<Expense>> GetExpenses(CancellationToken token);
+    Task<List<Expense>> GetExpenses(List<PropertyCriteria>? filters, CancellationToken token);
 
     Task UpdateExpense(Expense expense);
 

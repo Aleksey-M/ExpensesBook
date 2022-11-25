@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using ExpensesBook.Domain.Entities;
 using ExpensesBook.Domain.Repositories;
+using IdbLib;
 
 namespace ExpensesBook.Domain.Services;
 
@@ -59,27 +60,39 @@ public sealed class ExpensesService : IExpensesService
     public async Task<List<Expense>> GetExpenses(DateTimeOffset? startDate,
         DateTimeOffset? endDate, string? filter, CancellationToken token)
     {
-        filter ??= "";
+        var filters = new List<PropertyCriteria>();
 
-        Func<string, bool> descriptionFilter = filter == ""
-            ? _ => true
-            : desc => desc.Contains(filter, StringComparison.OrdinalIgnoreCase);
-
-        var fullList = await _expensesRepo.GetExpenses(token);
-
-        Func<DateTimeOffset, bool> datesFilter = (startDate, endDate) switch
+        if (!string.IsNullOrWhiteSpace(filter))
         {
-            (not null, not null) => d => d.Date >= startDate && d.Date <= endDate,
-            (null, not null) => d => d <= endDate,
-            (not null, null) => d => d >= startDate,
-            (null, null) => d => true
-        };
+            filters.Add(new PropertyCriteria
+            {
+                Type = PropertyCriteriaType.ContainsString,
+                PropertyJsName = "description",
+                Value = filter
+            });
+        }
 
-        return fullList
-            .Where(x => datesFilter(x.Date))
-            .Where(exp => descriptionFilter(exp.Description))
-            .OrderBy(exp => exp.Date)
-            .ToList();
+        if (startDate.HasValue && startDate.Value != default)
+        {
+            filters.Add(new PropertyCriteria
+            {
+                Type = PropertyCriteriaType.GreaterThan,
+                PropertyJsName = "date",
+                Value = startDate.Value
+            });
+        }
+
+        if (endDate.HasValue && endDate.Value != default)
+        {
+            filters.Add(new PropertyCriteria
+            {
+                Type = PropertyCriteriaType.LessThan,
+                PropertyJsName = "date",
+                Value = endDate.Value
+            });
+        }
+
+        return await _expensesRepo.GetExpenses(filters, token);
     }
 
     public async Task UpdateExpense(Guid expenseId, DateTimeOffset? date,
@@ -87,7 +100,7 @@ public sealed class ExpensesService : IExpensesService
     {
         if (date is null && amounth is null && description is null && categoryId is null) return;
 
-        var expenses = await _expensesRepo.GetExpenses(token: default);
+        var expenses = await _expensesRepo.GetExpenses(filters: null, token: default);
         var expense = expenses.SingleOrDefault(x => x.Id == expenseId);
 
         if (expense == null) throw new ArgumentException($"Expense with Id='{expenseId}' does not exists");

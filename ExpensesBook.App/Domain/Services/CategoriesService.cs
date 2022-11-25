@@ -56,7 +56,7 @@ public sealed class CategoriesService : ICategoriesService
 
     public async Task<bool> IsEmptyCategory(Guid categoryId, CancellationToken token)
     {
-        var expenses = await _expenseRepo.GetExpenses(token);
+        var expenses = await _expenseRepo.GetExpenses(filters: null, token);
         return !expenses.Any(e => e.CategoryId == categoryId);
     }
 

@@ -1,5 +1,4 @@
 ﻿using System.Windows;
-using ExpensesBook.App.Data;
 using ExpensesBook.Data;
 using ExpensesBook.Domain.Calculators;
 using ExpensesBook.Domain.Repositories;

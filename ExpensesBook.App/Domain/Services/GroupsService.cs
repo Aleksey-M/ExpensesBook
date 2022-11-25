@@ -68,7 +68,7 @@ public sealed class GroupsService : IGroupsService
 
     public async Task DeleteGroup(Guid groupId)
     {
-        var expenses = await _expensesRepo.GetExpenses(token: default);
+        var expenses = await _expensesRepo.GetExpenses(filters: null, token: default);
 
         foreach (var exp in expenses.Where(e => e.GroupId == groupId))
         {
