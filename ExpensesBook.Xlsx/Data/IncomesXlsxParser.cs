@@ -27,19 +27,19 @@ public static class IncomesXlsxParser
                 var cell1 = row.Cell(1).Value.ToString();
                 if (!DateTimeOffset.TryParse(cell1, out var date))
                 {
-                    return (new(), $"Неверный формат даты в строке {index}: {cell1}");
+                    return ([], $"Неверный формат даты в строке {index}: {cell1}");
                 }
 
-                var cell2 = row.Cell(2).Value?.ToString();
+                var cell2 = row.Cell(2).Value.ToString();
                 if (!double.TryParse(cell2, out var amounth))
                 {
-                    return (new(), $"Неверный формат числа в строке {index}: {cell2}");
+                    return ([], $"Неверный формат числа в строке {index}: {cell2}");
                 }
 
-                var description = row.Cell(3).Value?.ToString();
+                var description = row.Cell(3).Value.ToString();
                 if (string.IsNullOrWhiteSpace(description))
                 {
-                    return (new(), $"Пустое описание в строке {index}");
+                    return ([], $"Пустое описание в строке {index}");
                 }
 
                 result.Add(new Income
@@ -55,7 +55,7 @@ public static class IncomesXlsxParser
         }
         catch (Exception e)
         {
-            return (new(), e.Message);
+            return ([], e.Message);
         }
     }
 }

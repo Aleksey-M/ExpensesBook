@@ -1,0 +1,47 @@
+@using ExpensesBook.Shared
+@using ExpensesBook.Pages
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.WebAssembly.Services
+@using Microsoft.Extensions.Logging
+@using System.Reflection;
+
+@inject LazyAssemblyLoader AssemblyLoader
+@inject ILogger<MainApp> Logger
+
+<Router AppAssembly="@typeof(MainLayout).Assembly" OnNavigateAsync="@OnNavigateAsync" AdditionalAssemblies="@lazyLoadedAssemblies">
+
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+
+    <Navigating>
+        <h3>Загрузка дополнительных компонентов...</h3>
+    </Navigating>
+
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <h3>Ничего не найдено</h3>
+        </LayoutView>
+    </NotFound>
+
+</Router>
+
+@code {
+    private List<Assembly> lazyLoadedAssemblies = new();
+
+    private async Task OnNavigateAsync(NavigationContext args)
+    {
+        try
+        {
+            if (args.Path == "/import-export-expenses" || args.Path == "/import-export-incomes")
+            {
+                var assemblies = await AssemblyLoader.LoadAssembliesAsync(
+                    new[] { "ExpensesBook.App.Xlsx.dll" });
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error: {Message}", ex.Message);
+        }
+    }
+}

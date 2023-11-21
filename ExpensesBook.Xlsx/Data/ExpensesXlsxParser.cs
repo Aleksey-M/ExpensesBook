@@ -27,28 +27,28 @@ public static class ExpensesXlsxParser
                 var cell1 = row.Cell(1).Value.ToString();
                 if (!DateTimeOffset.TryParse(cell1, out var date))
                 {
-                    return (new(), $"Неверный формат даты в строке {index}: {cell1}");
+                    return ([], $"Неверный формат даты в строке {index}: {cell1}");
                 }
 
-                var cell2 = row.Cell(2).Value?.ToString();
+                var cell2 = row.Cell(2).Value.ToString();
                 if (!double.TryParse(cell2, out var amounth))
                 {
-                    return (new(), $"Неверный формат числа в строке {index}: {cell2}");
+                    return ([], $"Неверный формат числа в строке {index}: {cell2}");
                 }
 
-                var description = row.Cell(3).Value?.ToString();
+                var description = row.Cell(3).Value.ToString();
                 if (string.IsNullOrWhiteSpace(description))
                 {
-                    return (new(), $"Пустое описание расходов в строке {index}");
+                    return ([], $"Пустое описание расходов в строке {index}");
                 }
 
-                var categoryName = row.Cell(4).Value?.ToString();
+                var categoryName = row.Cell(4).Value.ToString();
                 if (string.IsNullOrWhiteSpace(categoryName))
                 {
-                    return (new(), $"Не указана категория расходов в строке {index}");
+                    return ([], $"Не указана категория расходов в строке {index}");
                 }
 
-                var groupName = row.Cell(5).Value?.ToString();
+                var groupName = row.Cell(5).Value.ToString();
 
                 result.Add(new ParsedExpense(
                     new Expense
@@ -67,7 +67,7 @@ public static class ExpensesXlsxParser
         }
         catch (Exception e)
         {
-            return (new(), e.Message);
+            return ([], e.Message);
         }
     }
 }
