@@ -18,5 +18,6 @@
   <ItemGroup>
     <ProjectReference Include="..\ExpensesBook.App.Domain\ExpensesBook.App.Domain.csproj" />
     <ProjectReference Include="..\ExpensesBook.Data.IndexedDb\ExpensesBook.Data.IndexedDb.csproj" />
+    <ProjectReference Include="..\ExpensesBook.Xlsx\ExpensesBook.App.Xlsx.csproj" />
   </ItemGroup>
 </Project>

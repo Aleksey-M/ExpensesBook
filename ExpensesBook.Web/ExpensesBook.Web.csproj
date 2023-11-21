@@ -25,10 +25,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ExpensesBook.App\ExpensesBook.App.csproj" />
-    <ProjectReference Include="..\ExpensesBook.Xlsx\ExpensesBook.App.Xlsx.csproj" />
   </ItemGroup>
 
-	<!--<ItemGroup>
-		<BlazorWebAssemblyLazyLoad Include="ExpensesBook.App.Xlsx.dll" />
-	</ItemGroup>-->
 </Project>

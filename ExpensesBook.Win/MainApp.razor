@@ -1,0 +1,22 @@
+@using ExpensesBook.Shared
+@using ExpensesBook.Pages
+@using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.AspNetCore.Components.WebAssembly.Services
+@using Microsoft.Extensions.Logging
+@using System.Reflection;
+
+@namespace ExpensesBook.Win 
+
+<Router AppAssembly="@typeof(MainLayout).Assembly" AdditionalAssemblies="new[] { typeof(ExpensesImport).Assembly}">
+
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+    </Found>
+
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <h3>Ничего не найдено</h3>
+        </LayoutView>
+    </NotFound>
+
+</Router>
